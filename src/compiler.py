@@ -6,19 +6,15 @@ import python_style_indents
 inputtext = r"""
 
 def int main():
-    a
-    if:
-        1
-    if:
-        2
 
+    not a and !(b);
+        
 """
 lexer = Lexer().get_lexer()
 
 raw = python_style_indents.convert(inputtext)
-print(raw)
 
-#tokens = lexer.lex(raw)
+tokens = lexer.lex(raw)
 
-#for token in tokens:
-#    print(token)
+for token in tokens:
+    print(token)
