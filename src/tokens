@@ -1,0 +1,30 @@
+COMMENT \#.*
+
+STRING "(?:[^"\\]*(?:\\.)?)*"
+
+PLUS \+
+MINUS \-
+STARSTAR \*\*
+STAR \*
+SLASH \\
+PERCENT \%
+
+SEMI_COLON \;
+COLON \:
+OPEN_CURL \{
+CLOSE_CURL \}
+
+OPEN_PAREN \(
+CLOSE_PAREN \)
+
+DEF def
+
+TYPE_NAME void|char|uchar|short|ushort|int|uint|long|ulong|float|double
+
+NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)
+
+PERIOD \.
+
+IDENTIFIER [a-zA-Z_]+
+
+IGNORE \s+
