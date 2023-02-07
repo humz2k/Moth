@@ -51,8 +51,8 @@ NEW new
 
 NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)
 
-PERIOD \.
+IDENTIFIER [a-zA-Z_0-9]+
 
-IDENTIFIER [a-zA-Z_]+
+PERIOD \.
 
 IGNORE \s+
