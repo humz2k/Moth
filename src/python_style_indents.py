@@ -4,7 +4,6 @@ def convert(raw):
     indent_level = 0
     out = ""
     for line in lines:
-        print("LINE",line)
         if len(line.strip()) != 0:
             indents = line.count("    ")
             if indents > indent_level:

@@ -5,9 +5,12 @@ import python_style_indents
 
 inputtext = r"""
 
+def void test():
+    a = 10
+
 def int main():
 
-    not a and !(b);
+    a = 5 + b * c
         
 """
 lexer = Lexer().get_lexer()
@@ -16,5 +19,9 @@ raw = python_style_indents.convert(inputtext)
 
 tokens = lexer.lex(raw)
 
-for token in tokens:
-    print(token)
+pg = Parser()
+pg.parse()
+parser = pg.get_parser()
+parsed = parser.parse(tokens,state = ParserState())
+
+parsed.show_tree()

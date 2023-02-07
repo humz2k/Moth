@@ -6,7 +6,7 @@ PLUS \+
 MINUS \-
 STARSTAR \*\*
 STAR \*
-SLASH \\
+SLASH \/
 PERCENT \%
 
 EQUAL \=\=
@@ -46,6 +46,8 @@ IN in
 WHILE while
 BREAK break
 RETURN return
+RANGE range
+NEW new
 
 NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)
 
