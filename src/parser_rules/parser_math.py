@@ -4,6 +4,11 @@ def math(self):
         state.info(p,'expression : OPEN_PAREN expression CLOSE_PAREN')
         return p[1]
 
+    @self.pg.production('expression : NOT expression')
+    def get_not(state,p):
+        state.info(p,'expression : NOT expression')
+        return self.ast.expressions.Not(p[1])
+
     @self.pg.production('expression : expression PLUS expression')
     @self.pg.production('expression : expression MINUS expression')
     @self.pg.production('expression : expression STARSTAR expression')

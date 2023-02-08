@@ -13,13 +13,17 @@ class Parser():
         self.ast = aster
         with open(filename,"r") as f:
             tokens = [i.split()[0] for i in f.read().splitlines() if (not i.startswith("//")) and (not len(i) == 0)]
+        if "IGNORE" in tokens:
+            tokens.remove("IGNORE")
         self.pg = ParserGenerator(tokens, precedence=[
         ('left', ['PLUS', 'MINUS']),
         ('left', ['STAR', 'SLASH']),
         ('left', ['PERCENT']),
         ('left', ['STARSTAR']),
         ('left', ['EQUAL', 'NOT_EQUAL','GREATER','LESS','GREATER_OR_EQUAL','LESS_OR_EQUAL']),
-        ('left', ['AND', 'OR'])
+        ('left', ['AND', 'OR']),
+        ('left', ['NOT']),
+        ('left', ['PERIOD'])
         ])
         self.parser_rules = parser_rules
 

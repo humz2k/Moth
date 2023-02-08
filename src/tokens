@@ -1,6 +1,14 @@
-COMMENT \#.*
-
 STRING "(?:[^"\\]*(?:\\.)?)*"
+
+PLUS_PLUS \+\+
+MINUS_MINUS \-\-
+
+PLUS_EQUAL \+\=
+MINUS_EQUAL \-\=
+STARSTAR_EQUAL \*\*\=
+STAR_EQUAL \*\=
+SLASH_EQUAL \/\=
+PERCENT_EQUAL \%\=
 
 PLUS \+
 MINUS \-
@@ -35,8 +43,9 @@ CLOSE_PAREN \)
 OPEN_SQUARE \[
 CLOSE_SQUARE \]
 
-TYPE_NAME void|char|uchar|short|ushort|int|uint|long|ulong|float|double
+TYPE_NAME void|char|uchar|short|ushort|int|uint|long|ulong|float|double|object
 
+CLASS class
 DEF def
 IF if
 ELSE else
@@ -46,8 +55,13 @@ IN in
 WHILE while
 BREAK break
 RETURN return
+LINSPACE linspace
+PRINT print
 RANGE range
 NEW new
+PASS pass
+TRUE True
+FALSE False
 
 NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)
 

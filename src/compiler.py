@@ -7,19 +7,15 @@ import parser_rules
 
 inputtext = r"""
 
-def void test():
-    a = 10
-
-def int main():
-
-    def void tes2_g():
-        a = 5
-    a = 55 + b * c
+def int main(int a, int b):
+    float c = float(b)
         
 """
-lexer = Lexer().get_lexer()
 
-raw = python_style_indents.convert(inputtext)
+lexer = Lexer().get_lexer()
+raw = python_style_indents.remove_comments(inputtext)
+
+raw = python_style_indents.convert(raw)
 
 tokens = lexer.lex(raw)
 
@@ -28,6 +24,9 @@ pg = Parser(aster,parser_rules)
 pg.parse()
 
 parser = pg.get_parser()
+
 parsed = parser.parse(tokens,state = ParserState())
 
 parsed.show_tree()
+
+#print(parsed.generate())

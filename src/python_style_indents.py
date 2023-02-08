@@ -1,3 +1,13 @@
+def remove_comments(raw):
+    out = ""
+    lines = raw.splitlines()
+    for line in lines:
+        if line.startswith("#"):
+            out += "\n"
+        else:
+            out += line.split("#")[0] + "\n"
+    return out
+
 def convert(raw):
     lines = raw.splitlines()
 
@@ -7,21 +17,33 @@ def convert(raw):
         if len(line.strip()) != 0:
             indents = line.count("    ")
             if indents > indent_level:
-                out += ("{\n" * (indents - indent_level))
+                out += ("{" * (indents - indent_level))
                 indent_level = indents
-                out += line.strip()
-                if out[-1] != ":":
-                    out += ";\n"
+                out += line
+                if line.strip()[-1] != ":":
+                    if line.strip()[-1] == ";":
+                        pass
+                    else:
+                        out += ";"
             elif indents < indent_level:
-                out += ("}\n" * (indent_level - indents))
+                out += ("}" * (indent_level - indents))
                 indent_level = indents
-                out += line.strip() 
-                if out[-1] != ":":
-                    out += ";\n"
+                out += line
+                if line.strip()[-1] != ":":
+                    if line.strip()[-1] == ";":
+                        pass
+                    else:
+                        out += ";"
             else:
-                out += line.strip()
-                if out[-1] != ":":
-                    out += ";\n"
-    out += ("}\n" * (indent_level))
+                out += line
+                if line.strip()[-1] != ":":
+                    if line.strip()[-1] == ";":
+                        pass
+                    else:
+                        out += ";"
+        else:
+            pass
+        out += "\n"
+    out += ("}" * (indent_level) + "\n")
 
     return out
