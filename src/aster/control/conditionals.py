@@ -1,3 +1,5 @@
+from . import error
+
 class IfStatement():
     def __init__(self,scope):
         self.scope = scope

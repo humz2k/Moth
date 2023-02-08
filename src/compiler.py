@@ -1,9 +1,11 @@
 from lex import Lexer
 from parse.ParserObject import Parser,ParserState
 import python_style_indents
-import aster
 import parser_rules
 
+import aster
+
+exit()
 
 inputtext = r"""
 

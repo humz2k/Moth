@@ -11,6 +11,19 @@ class WhileLoop():
         print(indent,"WhileLoop")
         self.scope.show_tree(indent+"   ")
 
+class ForLoop():
+    def __init__(self,scope):
+        self.scope = scope
+    
+    def is_a(self,check):
+        if check == "ForLoop":
+            return True
+        return False
+    
+    def show_tree(self,indent=""):
+        print(indent,"ForLoop")
+        self.scope.show_tree(indent+"   ")
+
 class WhileHeader():
     def __init__(self,expression):
         self.expression = expression
@@ -46,16 +59,3 @@ class ForHeader():
         self.variable.show_tree(indent+"       ")
         print(indent+"   ","Iterator")
         self.iterator.show_tree(indent+"       ")
-
-class ForLoop():
-    def __init__(self,scope):
-        self.scope = scope
-    
-    def is_a(self,check):
-        if check == "ForLoop":
-            return True
-        return False
-    
-    def show_tree(self,indent=""):
-        print(indent,"ForLoop")
-        self.scope.show_tree(indent+"   ")
