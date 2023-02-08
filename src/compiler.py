@@ -8,7 +8,7 @@ import parser_rules
 inputtext = r"""
 
 def int main(int a, int b):
-    float c = float(b)
+    float c = float(1+1+b) + 5.0*9.0
         
 """
 
@@ -27,6 +27,6 @@ parser = pg.get_parser()
 
 parsed = parser.parse(tokens,state = ParserState())
 
-parsed.show_tree()
+#parsed.show_tree()
 
-#print(parsed.generate())
+print(parsed.generate())
