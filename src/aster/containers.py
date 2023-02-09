@@ -17,6 +17,28 @@ class Program:
         print(indent,"Program")
         for scope in self.scopes:
             scope.show_tree(indent + "   ")
+    
+    def error(self,caller):
+        raise Exception(str(caller))
+
+    def cascade_parent(self):
+        for scope in self.scopes:
+            scope.cascade_parent(self)
+    
+    def cascade_classes(self):
+        for scope in self.scopes:
+            scope.cascade_classes(self.classes)
+    
+    def cascade_functions(self):
+        for scope in self.scopes:
+            scope.cascade_functions(self.functions)
+    
+    def generate(self):
+        self.cascade_parent()
+        self.cascade_classes()
+        self.cascade_functions()
+        print(self.classes)
+        print(self.functions)
 
 class Scope:
     def __init__(self,header,lines):
@@ -32,6 +54,24 @@ class Scope:
         print(indent,"Scope")
         self.header.show_tree(indent + "   ")
         self.lines.show_tree(indent + "      ")
+    
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+        self.lines.cascade_parent(self)
+        self.header.cascade_parent(self)
+    
+    def cascade_classes(self,out):
+        self.classes = out
+        self.lines.cascade_classes(out)
+        self.header.cascade_classes(out)
+    
+    def cascade_functions(self,out):
+        self.functions = out
+        self.lines.cascade_functions(out)
+        self.header.cascade_functions(out)
 
 class Lines:
     def __init__(self,line):
@@ -50,6 +90,24 @@ class Lines:
         print(indent,"Lines")
         for line in self.lines:
             line.show_tree(indent + "   ")
+    
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+        for line in self.lines:
+            line.cascade_parent(self)
+    
+    def cascade_classes(self,out):
+        self.classes = out
+        for line in self.lines:
+            line.cascade_classes(out)
+    
+    def cascade_functions(self,out):
+        self.functions = out
+        for line in self.lines:
+            line.cascade_functions(out)
 
 class EmptyLine():
     def __init__(self):
@@ -62,3 +120,12 @@ class EmptyLine():
 
     def show_tree(self,indent=""):
         print(indent,"EmptyLine")
+    
+    def cascade_parent(self,caller):
+        pass
+
+    def cascade_classes(self,out):
+        pass
+    
+    def cascade_functions(self,out):
+        pass

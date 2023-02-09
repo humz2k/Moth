@@ -5,8 +5,16 @@ import aster
 
 inputtext = r"""
 
+class a:
+    int j
+    def void test():
+        pass
+
 def int main():
     int[:,:,:] a = new int[1,2,3]
+
+def float test():
+    pass
         
 """
 
@@ -25,6 +33,6 @@ parser = pg.get_parser()
 
 parsed = parser.parse(tokens,state = ParserState())
 
-parsed.show_tree()
+print(parsed.generate())
 
 #print(parsed.generate())

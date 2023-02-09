@@ -10,6 +10,21 @@ class WhileLoop():
     def show_tree(self,indent=""):
         print(indent,"WhileLoop")
         self.scope.show_tree(indent+"   ")
+    
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+        self.scope.cascade_parent(self)
+    
+    def cascade_classes(self,out):
+        self.classes = out
+        self.scope.cascade_classes(out)
+    
+    def cascade_functions(self,out):
+        self.functions = out
+        self.scope.cascade_functions(out)
 
 class ForLoop():
     def __init__(self,scope):
@@ -23,6 +38,21 @@ class ForLoop():
     def show_tree(self,indent=""):
         print(indent,"ForLoop")
         self.scope.show_tree(indent+"   ")
+    
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+        self.scope.cascade_parent(self)
+    
+    def cascade_classes(self,out):
+        self.classes = out
+        self.scope.cascade_classes(out)
+    
+    def cascade_functions(self,out):
+        self.functions = out
+        self.scope.cascade_functions(out)
 
 class WhileHeader():
     def __init__(self,expression):
@@ -36,6 +66,21 @@ class WhileHeader():
     def show_tree(self,indent=""):
         print(indent,"WhileHeader")
         self.expression.show_tree(indent+"   ")
+    
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+        self.expression.cascade_parent(self)
+    
+    def cascade_classes(self,out):
+        self.classes = out
+        self.expression.cascade_classes(out)
+    
+    def cascade_functions(self,out):
+        self.functions = out
+        self.expression.cascade_functions(out)
 
 class ForHeader():
     def __init__(self,variable,iterator):
@@ -53,3 +98,21 @@ class ForHeader():
         self.variable.show_tree(indent+"       ")
         print(indent+"   ","Iterator")
         self.iterator.show_tree(indent+"       ")
+    
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+        self.variable.cascade_parent(self)
+        self.iterator.cascade_parent(self)
+    
+    def cascade_classes(self,out):
+        self.classes = out
+        self.variable.cascade_classes(out)
+        self.iterator.cascade_classes(out)
+    
+    def cascade_functions(self,out):
+        self.functions = out
+        self.variable.cascade_functions(out)
+        self.iterator.cascade_functions(out)

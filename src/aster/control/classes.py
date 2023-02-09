@@ -33,3 +33,31 @@ class Class():
         else:
             for scope in self.scopes:
                 scope.show_tree(indent+"       ")
+    
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+        for scope in self.scopes:
+            scope.cascade_parent(self)
+        for var in self.class_variables:
+            var.cascade_parent(self)
+
+    def cascade_classes(self,out):
+        if self.identifier.value in out:
+            self.parent.error([self])
+            return
+        out[self.identifier.value] = self
+        self.classes = out
+        for scope in self.scopes:
+            scope.cascade_classes(out)
+        for var in self.class_variables:
+            var.cascade_classes(out)
+    
+    def cascade_functions(self,out):
+        self.functions = out
+        for scope in self.scopes:
+            scope.cascade_functions(out)
+        for var in self.class_variables:
+            var.cascade_functions(out)

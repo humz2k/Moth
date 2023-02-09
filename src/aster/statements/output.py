@@ -15,3 +15,21 @@ class Print():
         print(indent,"Print")
         for expression in self.expressions:
             expression.show_tree(indent+"   ")
+    
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+        for exp in self.expressions:
+            exp.cascade_parent(self)
+    
+    def cascade_classes(self,out):
+        self.classes = out
+        for exp in self.expressions:
+            exp.cascade_classes(out)
+    
+    def cascade_functions(self,out):
+        self.functions = out
+        for exp in self.expressions:
+            exp.cascade_classes(out)

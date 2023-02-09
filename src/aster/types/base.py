@@ -24,6 +24,18 @@ class TypeObj():
         print(indent,"TypeObj")
         print(indent,"   ",self.typename)
     
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+    
+    def cascade_classes(self,out):
+        self.classes = out
+    
+    def cascade_functions(self,out):
+        self.functions = out
+    
     #def get_ctype(self):
     #    if "array" in self.typename:
     #        error.error("ARRAYS NOT IMPLEMENTED")

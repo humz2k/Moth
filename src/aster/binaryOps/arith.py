@@ -7,6 +7,24 @@ class MathOP():
         if check == "MathOP":
             return True
         return False
+    
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+        self.left.cascade_parent(self)
+        self.right.cascade_parent(self)
+    
+    def cascade_classes(self,out):
+        self.classes = out
+        self.left.cascade_classes(out)
+        self.right.cascade_classes(out)
+    
+    def cascade_functions(self,out):
+        self.functions = out
+        self.left.cascade_functions(out)
+        self.right.cascade_functions(out)
 
 class Add(MathOP):
     def show_tree(self,indent=""):

@@ -11,6 +11,18 @@ class Bool():
     def show_tree(self,indent=""):
         print(indent,"Bool")
         print(indent,"   ",self.value)
+    
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+    
+    def cascade_classes(self,out):
+        self.classes = out
+    
+    def cascade_functions(self,out):
+        self.functions = out
 
 class Number():
     def __init__(self,token):
@@ -25,6 +37,18 @@ class Number():
     def show_tree(self,indent=""):
         print(indent,"Number")
         print(indent,"   ",self.value)
+    
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+    
+    def cascade_classes(self,out):
+        self.classes = out
+    
+    def cascade_functions(self,out):
+        self.functions = out
 
 class String():
     def __init__(self,token):
@@ -39,3 +63,15 @@ class String():
     def show_tree(self,indent=""):
         print(indent,"String")
         print(indent+"   ",self.value)
+    
+    def error(self,caller=[]):
+        self.parent.error([self] + caller)
+
+    def cascade_parent(self,caller):
+        self.parent = caller
+    
+    def cascade_classes(self,out):
+        self.classes = out
+
+    def cascade_functions(self,out):
+        self.functions = out
