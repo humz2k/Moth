@@ -1,5 +1,3 @@
-from .. import error
-
 class InitializeArray():
     def __init__(self,inittype):
         self.type = inittype
@@ -8,9 +6,6 @@ class InitializeArray():
         if check == "InitializeArray":
             return True
         return False
-    
-    def find_variables(self,out):
-        self.type.find_variables(out)
     
     def show_tree(self,indent=""):
         print(indent,"InitializeArray")
@@ -25,10 +20,6 @@ class InitializeObjectArray():
         if check == "InitializeObjectArray":
             return True
         return False
-    
-    def find_variables(self,out):
-        self.call.find_variables(out)
-        self.index.find_variables(out)
     
     def show_tree(self,indent=""):
         print(indent,"InitializeObjectArray")

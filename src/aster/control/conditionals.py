@@ -1,5 +1,3 @@
-from . import error
-
 class IfStatement():
     def __init__(self,scope):
         self.scope = scope
@@ -36,9 +34,6 @@ class IfHeader():
             return True
         return False
     
-    def find_variables(self,out):
-        return None
-    
     def show_tree(self,indent=""):
         print(indent,"IfHeader")
         self.expression.show_tree(indent+"   ")
@@ -66,6 +61,19 @@ class ElifStatement():
         if type(self.next) != type(None):
             self.next.show_tree(indent+"       ")
 
+class ElifHeader():
+    def __init__(self,expression):
+        self.expression = expression
+    
+    def is_a(self,check):
+        if check == "ElifHeader":
+            return True
+        return False
+    
+    def show_tree(self,indent=""):
+        print(indent,"ElifHeader")
+        self.expression.show_tree(indent+"   ")
+
 class ElseStatement():
     def __init__(self,scope):
         self.scope = scope
@@ -79,22 +87,6 @@ class ElseStatement():
         print(indent,"ElseStatement")
         self.scope.show_tree(indent+"   ")
 
-class ElifHeader():
-    def __init__(self,expression):
-        self.expression = expression
-    
-    def is_a(self,check):
-        if check == "ElifHeader":
-            return True
-        return False
-    
-    def find_variables(self,out):
-        return None
-    
-    def show_tree(self,indent=""):
-        print(indent,"ElifHeader")
-        self.expression.show_tree(indent+"   ")
-
 class ElseHeader():
     def __init__(self):
         pass
@@ -103,9 +95,6 @@ class ElseHeader():
         if check == "ElseHeader":
             return True
         return False
-    
-    def find_variables(self,out):
-        return None
     
     def show_tree(self,indent=""):
         print(indent,"ElseHeader")

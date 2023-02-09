@@ -1,5 +1,3 @@
-from . import error
-
 class Class():
     def __init__(self,identifier):
         self.identifier = identifier
@@ -35,15 +33,3 @@ class Class():
         else:
             for scope in self.scopes:
                 scope.show_tree(indent+"       ")
-    
-    def is_main(self):
-        return 0
-    
-    def find_classes(self,program):
-        if self.identifier.value in program.classes:
-            error.error("Class '" + self.identifier.value + "' redefined",self.identifier.token.source_pos.lineno)
-        program.classes[self.identifier.value] = self
-        return self.identifier.value
-
-    def find_top_level_functions(self,program):
-        return None

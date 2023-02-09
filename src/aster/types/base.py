@@ -1,5 +1,3 @@
-from . import error
-
 class TypeObj():
     def __init__(self,value):
         self.token = value
@@ -22,18 +20,15 @@ class TypeObj():
             return True
         return False
     
-    def find_variables(self,out):
-        pass
-    
     def show_tree(self,indent=""):
         print(indent,"TypeObj")
         print(indent,"   ",self.typename)
     
-    def get_ctype(self):
-        if "array" in self.typename:
-            error.error("ARRAYS NOT IMPLEMENTED")
-        if "object" in self.typename:
-            error.error("OBJECTS NOT IMPLEMENTED")
-        if "string" in self.typename:
-            error.error("STRINGS NOT IMPLEMENTED")
-        return self.ctype_map[self.typename]
+    #def get_ctype(self):
+    #    if "array" in self.typename:
+    #        error.error("ARRAYS NOT IMPLEMENTED")
+    #    if "object" in self.typename:
+    #        error.error("OBJECTS NOT IMPLEMENTED")
+    #    if "string" in self.typename:
+    #        error.error("STRINGS NOT IMPLEMENTED")
+    #    return self.ctype_map[self.typename]

@@ -33,9 +33,6 @@ class WhileHeader():
             return True
         return False
     
-    def find_variables(self,out):
-        return None
-    
     def show_tree(self,indent=""):
         print(indent,"WhileHeader")
         self.expression.show_tree(indent+"   ")
@@ -49,9 +46,6 @@ class ForHeader():
         if check == "ForHeader":
             return True
         return False
-    
-    def find_variables(self,out):
-        self.variable.find_variables(out)
     
     def show_tree(self,indent=""):
         print(indent,"ForHeader")

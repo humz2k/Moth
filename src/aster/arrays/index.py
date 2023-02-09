@@ -1,5 +1,3 @@
-from .. import error
-
 class Index():
     def __init__(self,dimension=None):
         if type(dimension) == type(None):
@@ -11,11 +9,6 @@ class Index():
         if check == "Index":
             return True
         return False
-
-    def find_variables(self,out):
-        self.variables = out
-        for i in self.dimensions:
-            i.find_variables(out)
 
     def add_dimension(self,dimension):
         self.dimensions.append(dimension)
@@ -34,9 +27,6 @@ class EmptyIndex():
         if check == "EmptyIndex":
             return True
         return False
-    
-    def find_variables(self,out):
-        pass
 
     def show_tree(self,indent=""):
         print(indent,"EmptyIndex")
@@ -51,11 +41,6 @@ class ArrayIndex():
         if check == "ArrayIndex":
             return True
         return False
-    
-    def find_variables(self,out):
-        self.variables = out
-        self.identifier.find_variables(out)
-        self.index.find_variables(out)
     
     def show_tree(self,indent=""):
         print(indent,"ArrayIndex")

@@ -7,9 +7,6 @@ class InitializeObject():
             return True
         return False
     
-    def find_variables(self,out):
-        self.call.find_variables(out)
-    
     def show_tree(self,indent=""):
         print(indent,"InitializeObject")
         self.call.show_tree(indent+"   ")

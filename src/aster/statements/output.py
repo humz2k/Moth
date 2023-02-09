@@ -1,5 +1,3 @@
-from .. import error
-
 class Print():
     def __init__(self):
         self.expressions = []
@@ -17,6 +15,3 @@ class Print():
         print(indent,"Print")
         for expression in self.expressions:
             expression.show_tree(indent+"   ")
-    
-    def find_variables(self,out):
-        return
