@@ -14,7 +14,7 @@ class ArrayType():
         self.type.show_tree(indent+"   ")
         self.index.show_tree(indent+"   ")
     
-    def error(self,caller):
+    def error(self,caller=[]):
         self.parent.error([self] + caller)
 
     def cascade_parent(self,caller):
