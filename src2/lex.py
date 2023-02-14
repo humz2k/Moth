@@ -4,10 +4,12 @@ class Lexer():
     def __init__(self):
         self.lexer = LexerGenerator()
     
-    def _add_tokens(self,filename = "/Users/humzaqureshi/GitHub/Moth/src2/preprocessor/preprocessor_tokens"):
+    def _add_tokens(self,filename = "/Users/humzaqureshi/GitHub/Moth/src2/tokens"):
         
         with open(filename,"r") as f:
             raw = [i.split() for i in f.read().splitlines() if (not i.startswith("//")) and (not len(i) == 0)]
+
+        print(raw)
 
         for i in raw:
             if i[0] == "IGNORE":
