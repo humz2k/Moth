@@ -46,6 +46,11 @@ CLOSE_SQUARE \]
 TYPE_NAME void|char|uchar|short|ushort|int|uint|long|ulong|float|double|object
 
 CLASS class
+TYPEDEF typedef
+KERNEL kernel
+CIMPORT cimport
+IMPORT import
+LINK link
 DEF def
 IF if
 ELSE else
