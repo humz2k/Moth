@@ -1,0 +1,75 @@
+STRING "(?:[^"\\]*(?:\\.)?)*"
+SINGLE_QUOTE \'
+
+PLUS_PLUS \+\+
+MINUS_MINUS \-\-
+
+PLUS_EQUAL \+\=
+MINUS_EQUAL \-\=
+STARSTAR_EQUAL \*\*\=
+STAR_EQUAL \*\=
+SLASH_EQUAL \/\=
+PERCENT_EQUAL \%\=
+
+PLUS \+
+MINUS \-
+STARSTAR \*\*
+STAR \*
+SLASH \/
+PERCENT \%
+
+EQUAL \=\=
+NOT_EQUAL \!\=
+GREATER \>
+LESS \<
+GREATER_OR_EQUAL \>\=
+LESS_OR_EQUAL \<\=
+AND and|\&\&
+OR or|\|\|
+NOT \!|not
+AMP \&
+VERT \|
+
+
+ASSIGN \=
+
+
+COMMA \,
+SEMI_COLON \;
+COLON \:
+OPEN_CURL \{
+CLOSE_CURL \}
+
+OPEN_PAREN \(
+CLOSE_PAREN \)
+
+OPEN_SQUARE \[
+CLOSE_SQUARE \]
+
+TYPE_NAME void|char|uchar|short|ushort|int|uint|long|ulong|float|double|object
+
+CLASS class
+DEF def
+IF if
+ELSE else
+ELIF elif
+FOR for
+IN in
+WHILE while
+BREAK break
+RETURN return
+LINSPACE linspace
+PRINT print
+RANGE range
+NEW new
+PASS pass
+TRUE True
+FALSE False
+
+NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)
+
+IDENTIFIER [a-zA-Z_0-9]+
+
+PERIOD \.
+
+IGNORE \s+
