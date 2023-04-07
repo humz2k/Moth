@@ -237,6 +237,7 @@ class Assign(AstObj):
         self.expression = expression
     
     def eval(self,parent):
+        other_out = ""
         out = ""
         isArray = False
         if isinstance(self.var,Declaration):
