@@ -1,5 +1,4 @@
 STRING "(?:[^"\\]*(?:\\.)?)*"
-SINGLE_QUOTE \'
 
 PLUS_PLUS \+\+
 MINUS_MINUS \-\-
@@ -46,7 +45,12 @@ CLOSE_PAREN \)
 OPEN_SQUARE \[
 CLOSE_SQUARE \]
 
-TYPE_NAME void|char|uchar|short|ushort|int|uint|long|ulong|float|double|object
+TYPE_NAME void|char|uchar|short|ushort|int|uint|long|ulong|float|double
+OBJECT object|obj
+
+C_VAL __c_val
+C_PTR __c_ptr
+C_CALL __c_call
 
 CLASS class
 DEF def
@@ -58,13 +62,13 @@ IN in
 WHILE while
 BREAK break
 RETURN return
-LINSPACE linspace
 PRINT print
 RANGE range
-NEW new
 PASS pass
 TRUE True
 FALSE False
+ARRAY array
+FREE free
 
 NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)
 

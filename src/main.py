@@ -1,10 +1,12 @@
 import lex
+import parse
 
-raw = """
+raw = r"""
 
-int main():
-    int i = 0
-
+def int main():
+    int i
+    i[0] = 5
+    free(i)
 
 """
 
@@ -14,8 +16,17 @@ raw = lex.convert(raw)
 
 lexer = lex.get_lexer()
 
-print(raw)
-
 tokens = lexer.lex(raw)
+
+parser = parse.get_parser()
+
+base = parser.parse(tokens)
+
+out = base.eval()
+print(out)
+
+with open("test.c","w") as f:
+    f.write(out)
+
 
 
