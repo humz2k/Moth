@@ -6,6 +6,28 @@ def throwError(err):
     print(err)
     exit()
 
+def evaluateExpression(expression,parent):
+    if isinstance(expression,Token):
+        outType = ""
+        if expression.value in parent.variables.keys():
+            outType = parent.variables[expression.value].name.value
+        else:
+            try:
+                a = int(expression.value)
+                outType = "flint"
+            except:
+                try:
+                    a = float(expression.value)
+                except:
+                    outType = "float"
+        if outType == "":
+            print("Yo wtf going on in evaluate expression (the token bit innit)")
+            exit()
+        return "(" + expression.value + ")",outType
+    if isinstance(expression,BinOp):
+        print(expression)
+        exit()
+
 class AstObj:
     pass
 
@@ -180,6 +202,7 @@ class FunctionCall(AstObj):
 
     def add(self,inp):
         self.inputs.append(inp)
+        return self
 
 class ScopeBody(AstObj):
     def __init__(self,lines):
@@ -235,39 +258,56 @@ class Assign(AstObj):
     def __init__(self,var,expression):
         self.var = var
         self.expression = expression
+
+    def isArrayAssign(self,parent):
+        if isinstance(self.var,Declaration):
+            if isinstance(self.var.type_name,ArrayType):
+                return True
+            return False
+        if isinstance(self.var,Token):
+            if isinstance(parent.variables[self.var.value],ArrayType):
+                return True
+            return False
+        if isinstance(self.var,Reference):
+            print("FIX ARRAY ASSIGN")
+            exit()
+        if isinstance(self.var,ArrayReference):
+            return False
+        return False
+    
+    def getDestinationType(self,parent):
+        if isinstance(self.var,Declaration):
+            if isinstance(self.var.type_name,ArrayType):
+                return self.var.type_name.name.name.value
+            else:
+                return self.var.type_name.name.value
+        if isinstance(self.var,Token):
+            if isinstance(parent.variables[self.var.value],ArrayType):
+                return parent.variables[self.var.value].name.name.value
+            else:
+                return parent.variables[self.var.value].name.value
+        if isinstance(self.var,Reference):
+            print("FIX DESTINATION TYPE")
+            exit()
+        if isinstance(self.var,ArrayReference):
+            refType = parent.variables[self.var.name.value]
+            if isinstance(refType,ArrayType):
+                return refType.name.name.value
+            else:
+                return refType.name.value
+        print("Yo wtf going on at Destination Type")
+        exit()
     
     def eval(self,parent):
-        other_out = ""
-        out = ""
-        isArray = False
-        if isinstance(self.var,Declaration):
-            out += self.var.get_c()
-            if isinstance(self.var.type_name,ArrayType):
-                isArray = True
+        destType = self.getDestinationType(parent)
+        if self.isArrayAssign(parent):
+            print("ARRAY ASSIGN")
+            return ""
         else:
-            out += self.var.value
-            if isinstance(self.parent.variables[self.var.value],ArrayType):
-                isArray = True
-        out += " = "
-        if isArray:
-            arrayType = self.var.type_name.name.get_c()
-            ndims = self.var.type_name.dimensions
-            dimensions = []
-            for i in self.expression.items:
-                if isinstance(i,Token):
-                    dimensions.append(i.value)
-                else:
-                    dimensions.append(i.eval(parent))
-            if len(dimensions) != ndims:
-                throwError("Dimension mismatch")
-            out += "(" + self.var.type_name.get_c() + ")malloc(sizeof(" + arrayType + ")*(" + "*".join(dimensions) + "))"
-            print(arrayType,ndims,"*".join(dimensions))
-        else:
-            if isinstance(self.expression,Token):
-                out += self.expression.value
-            else:
-                out += self.expression.eval(parent)
-        return out + ";"
+            print("Normal Assign")
+            print(evaluateExpression(self.expression,parent))
+            print(destType)
+            return ""
     
 class Free(AstObj):
     def __init__(self,var):
@@ -364,3 +404,8 @@ class Reference(AstObj):
     def __init__(self,parent,child):
         self.parent = parent
         self.child = child
+
+class Cast(AstObj):
+    def __init__(self,new_type,expression):
+        self.new_type = new_type
+        self.expression = expression

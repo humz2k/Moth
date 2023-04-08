@@ -243,10 +243,14 @@ def get_parser(filename="tokens.txt"):
     def brackets(p):
         return p[1]
     
-    @pg.production('expression : NUMBER|STRING|IDENTIFIER|function_call|TRUE|FALSE|reference|alloc_array')
+    @pg.production('expression : NUMBER|STRING|IDENTIFIER|function_call|TRUE|FALSE|reference|alloc_array|cast')
     def num_str_idn(p):
         return p[0]
     
+    @pg.production('cast : type_name OPEN_PAREN expression CLOSE_PAREN')
+    def cast(p):
+        return aster.Cast(p[0],p[2])
+
     @pg.production('function_call : IDENTIFIER OPEN_PAREN CLOSE_PAREN')
     @pg.production('function_call : function_call_open CLOSE_PAREN')
     def function_call(p):
