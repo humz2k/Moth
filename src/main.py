@@ -4,8 +4,7 @@ import parse
 raw = r"""
 
 def int main():
-    int i = 5
-    float k = 5 + 5.5
+    int[:] k = array(10)
 
 """
 

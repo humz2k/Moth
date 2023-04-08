@@ -45,7 +45,7 @@ CLOSE_PAREN \)
 OPEN_SQUARE \[
 CLOSE_SQUARE \]
 
-TYPE_NAME void|char|uchar|short|ushort|int|uint|long|ulong|float|double
+TYPE_NAME void|char|uchar|short|ushort|int|uint|long|ulong|float|double|bool
 OBJECT object|obj
 
 C_VAL __c_val

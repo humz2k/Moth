@@ -1,10 +1,57 @@
 from rply.token import Token
 
 HEADERS = "#include <stdlib.h>\n#include <stdio.h>\n#include <math.h>\n"
+DEFINES = ""
+
+ARRAY_TYPES = []
 
 def throwError(err):
     print(err)
     exit()
+
+def generateArrayType(arrayT):
+    out = r"""
+    struct """ + arrayT + r"""Array {
+        int refs;
+        int initialized;
+        int ndims;
+        int* dims;
+        """ + arrayT + r"""* raw;
+    };
+    """
+    return out
+
+def getVarC(var):
+    if isinstance(var,Token):
+        return var.value
+    if isinstance(var,Declaration):
+        return var.get_c()
+    if isinstance(var,ArrayReference):
+        print("FIX GET VARC")
+        exit()
+    if isinstance(var,Reference):
+        print("FIX GET VARC")
+        exit()
+
+def combineNonArrayTypes(ltype,rtype):
+    if ltype == rtype:
+        return ltype
+    else:
+        combined = [ltype,rtype]
+        if "int" in combined and "flint" in combined:
+            return "int"
+        if "float" in combined and "flint" in combined:
+            return "float"
+        throwError("Invalid Types")
+
+def doRawTypesAgree(type1,type2):
+    if type1 == type2:
+        return True
+    else:
+        if type1 in ["float","int"] and type2 == "flint":
+            return True
+        else:
+            return False        
 
 def evaluateExpression(expression,parent):
     if isinstance(expression,Token):
@@ -18,15 +65,27 @@ def evaluateExpression(expression,parent):
             except:
                 try:
                     a = float(expression.value)
-                except:
                     outType = "float"
+                except:
+                    outType = ""
         if outType == "":
             print("Yo wtf going on in evaluate expression (the token bit innit)")
             exit()
-        return "(" + expression.value + ")",outType
+        return expression.value,outType
     if isinstance(expression,BinOp):
-        print(expression)
-        exit()
+        left,ltype = evaluateExpression(expression.left,parent)
+        right,rtype = evaluateExpression(expression.right,parent)
+        newType = combineNonArrayTypes(ltype,rtype)
+        if expression.op.name in ["AND","OR"] and not newType in ["int","flint"]:
+            throwError("BOOL TYPE AADHS")
+        if expression.op.value == "**":
+            return "pow(" + left + "," + right + ")",newType
+        if expression.op.value == "and":
+            return "(" + left + " && " + right + ")",newType
+        if expression.op.value == "or":
+            return "(" + left + " || " + right + ")",newType
+        else:
+            return "(" + left + " " + expression.op.value + " " + right + ")",newType
 
 class AstObj:
     pass
@@ -65,7 +124,7 @@ class Program(Container):
             scope.find_variables()
 
     def eval(self):
-        global HEADERS
+        global HEADERS,DEFINES
         self.verify()
         self.find_classes()
         self.find_functions()
@@ -73,7 +132,7 @@ class Program(Container):
         out = ""
         for scope in self.items:
             out += scope.eval(self)
-        return HEADERS + out
+        return HEADERS + DEFINES + out
 
 class Scope(AstObj):
     def __init__(self,header,body):
@@ -215,6 +274,9 @@ class Lines(Container):
 class BaseType(AstObj):
     def __init__(self,name):
         self.name = name
+        if isinstance(self.name,Token):
+            if self.name.value == "bool":
+                self.name.value = "int"
         self.dimensions = 1
 
 class Type(BaseType):
@@ -230,7 +292,7 @@ class ArrayType(BaseType):
         return self
 
     def get_c(self):
-        return self.name.name.value + "*"
+        return "struct " + self.name.name.value + "Array" + "*"
     
 class AllocArray(Container):
     pass
@@ -299,15 +361,28 @@ class Assign(AstObj):
         exit()
     
     def eval(self,parent):
+        global ARRAY_TYPES,DEFINES
         destType = self.getDestinationType(parent)
         if self.isArrayAssign(parent):
-            print("ARRAY ASSIGN")
+            preamble = ""
+            midamble = ""
+            postamble = ""
+            if isinstance(self.var,Declaration):
+                arrayT = self.var.type_name.name.name.value
+                if not arrayT in ARRAY_TYPES:
+                    ARRAY_TYPES.append(arrayT)
+                    newType = generateArrayType(arrayT)
+                    DEFINES += newType + "\n"
+                arrayT = "struct " + arrayT + "Array"
+                preamble = getVarC(self.var) + " = " + "(" +arrayT + "*)malloc(sizeof(" + arrayT + "))"
+                print(preamble)
             return ""
         else:
             print("Normal Assign")
-            print(evaluateExpression(self.expression,parent))
-            print(destType)
-            return ""
+            expr,exprType = evaluateExpression(self.expression,parent)
+            if not doRawTypesAgree(destType,exprType):
+                throwError("types dont agree")
+            return getVarC(self.var) + " = " + expr + ";"
     
 class Free(AstObj):
     def __init__(self,var):
@@ -322,32 +397,25 @@ class AssignInc(AstObj):
         self.var = var
         self.expression = expression
         self.op = op
+    
+    def eval(self,parent):
+        newExpr = BinOp(self.var,Token("",self.op.value[:-1]),self.expression)
+        return Assign(self.var,newExpr).eval(parent)
 
 class Inc(AstObj):
     def __init__(self,var,op):
         self.var = var
         self.op = op
+    
+    def eval(self,parent):
+        newExpr = BinOp(self.var,Token("",self.op.value[0]),Token("Number","1"))
+        return Assign(self.var,newExpr).eval(parent)
 
 class BinOp(AstObj):
     def __init__(self,left,op,right):
         self.left = left
         self.op = op
         self.right = right
-    
-    def eval(self,parent):
-        out = ""
-        if isinstance(self.left,Token):
-            left = "(" + self.left.value + ")"
-        else:
-            left = "(" + self.left.eval(parent) + ")"
-        if isinstance(self.right,Token):
-            right = "(" + self.right.value + ")"
-        else:
-            right = "(" + self.right.eval(parent) + ")"
-        if self.op.value == "**":
-            return "pow(" + left + "," + right + ")"
-        else:
-            return left + self.op.value + right
 
 class Not(AstObj):
     def __init__(self,val):

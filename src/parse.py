@@ -1,5 +1,6 @@
 import aster
 from rply import ParserGenerator
+from rply.token import Token
 
 def get_parser(filename="tokens.txt"):
     with open(filename,"r") as f:
@@ -243,9 +244,16 @@ def get_parser(filename="tokens.txt"):
     def brackets(p):
         return p[1]
     
-    @pg.production('expression : NUMBER|STRING|IDENTIFIER|function_call|TRUE|FALSE|reference|alloc_array|cast')
+    @pg.production('expression : NUMBER|STRING|IDENTIFIER|function_call|bool|reference|alloc_array|cast')
     def num_str_idn(p):
         return p[0]
+    
+    @pg.production('bool : TRUE|FALSE')
+    def ret_bool(p):
+        if p[0].name == "TRUE":
+            return Token("NUMBER","1")
+        else:
+            return Token("NUMBER","0")
     
     @pg.production('cast : type_name OPEN_PAREN expression CLOSE_PAREN')
     def cast(p):
