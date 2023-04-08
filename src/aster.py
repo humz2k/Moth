@@ -53,6 +53,24 @@ def doRawTypesAgree(type1,type2):
         else:
             return False        
 
+def evaluateArrayExpression(var,expression,parent):
+    out = ""
+    checks = ""
+    if isinstance(expression,AllocArray):
+        varName = getVarC(var).split(" ")[-1].split("*")[-1]
+        arrayT = var.type_name.name.name.value
+        allocDims = len(expression.items)
+        checks += """if (""" + varName + """->initialized != 0){ printf("arrayErr");exit(1);}\n"""
+        if var.type_name.dimensions != allocDims:
+            throwError("ArrayDims mismatch")
+        #checks += """if (""" + varName + """->ndims != """ + str(allocDims) + """){ printf("arrayErr");exit(1);}\n"""
+        raw_size = "*".join(["("+i.value+")" for i in expression.items])
+        out += varName + "->raw = (" + arrayT + "*)malloc(" + raw_size + "*sizeof("+arrayT+"));\n"
+        out += varName + "->ndims = " + str(allocDims) + ";\n"
+        out += varName + "->dims = (int*)malloc(" + str(allocDims) + "*sizeof(int));\n"
+        out += ";".join([varName + "->dims["+str(idx)+"] = " + i.value for idx,i in enumerate(expression.items)]) + ";"
+        return checks + out
+
 def evaluateExpression(expression,parent):
     if isinstance(expression,Token):
         outType = ""
@@ -86,6 +104,11 @@ def evaluateExpression(expression,parent):
             return "(" + left + " || " + right + ")",newType
         else:
             return "(" + left + " " + expression.op.value + " " + right + ")",newType
+    if isinstance(expression,ArrayReference):
+        calc_index = ""
+        #print(expression.name.value + "->raw[" + ",".join([i.value + "* expression.name.value->dims" + str(len(expression.index) - idx) for idx,i in enumerate(expression.index)]) + "]")
+    print("yo wtf going on in evaluate expression (the end)")
+    exit()
 
 class AstObj:
     pass
@@ -365,17 +388,16 @@ class Assign(AstObj):
         destType = self.getDestinationType(parent)
         if self.isArrayAssign(parent):
             preamble = ""
-            midamble = ""
-            postamble = ""
             if isinstance(self.var,Declaration):
                 arrayT = self.var.type_name.name.name.value
                 if not arrayT in ARRAY_TYPES:
                     ARRAY_TYPES.append(arrayT)
                     newType = generateArrayType(arrayT)
                     DEFINES += newType + "\n"
-                arrayT = "struct " + arrayT + "Array"
-                preamble = getVarC(self.var) + " = " + "(" +arrayT + "*)malloc(sizeof(" + arrayT + "))"
-                print(preamble)
+                structArrayT = "struct " + arrayT + "Array"
+                preamble = getVarC(self.var) + " = " + "(" +structArrayT + "*)malloc(sizeof(" + structArrayT + "));\n"
+                expr = evaluateArrayExpression(self.var,self.expression,parent)
+                return preamble + expr
             return ""
         else:
             print("Normal Assign")
@@ -439,7 +461,7 @@ class Print(Container):
                     formatter = {"int" : r"%d","float" : r"%f"}
                     statements.append('printf("' + formatter[var_t] + '"' + ',' + i.value + ')')
             else:
-                print(i.eval(parent))
+                statements.append(evaluateExpression(i,parent))
         return ";".join(statements) + ";"
 
 class Pass(AstObj):

@@ -5,6 +5,7 @@ raw = r"""
 
 def int main():
     int[:] k = array(10)
+    print(k[0])
 
 """
 
