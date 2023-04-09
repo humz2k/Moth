@@ -4,11 +4,12 @@ import parse
 raw = r"""
 
 def int main():
-    int[:,:] k = array(2,3)
-    k[1,0] = 1
-    k[0,0] = 2
-    print(k[1,0],"\n")
-    print(k[0,0],"\n")
+    float[:,:] particles = array(2,3)
+    
+    particles[0,0] = 1.0
+    particles[1,0] = -1.0
+
+    free(particles)
 
 """
 

@@ -69,8 +69,12 @@ def get_parser(filename="tokens.txt"):
         return aster.ElseHeader()
     
     @pg.production('for_header : FOR IDENTIFIER IN range_obj COLON')
+    @pg.production('for_header : FOR type_name IDENTIFIER IN range_obj COLON')
     def for_header(p):
-        return aster.ForHeader(p[1],p[3])
+        if len(p) == 5:
+            return aster.ForHeader(p[1],p[3])
+        else:
+            return aster.ForHeader(p[2],p[4],p[1])
     
     @pg.production('range_obj : RANGE OPEN_PAREN expression CLOSE_PAREN')
     @pg.production('range_obj : RANGE OPEN_PAREN expression COMMA expression CLOSE_PAREN')
@@ -90,7 +94,7 @@ def get_parser(filename="tokens.txt"):
             step = p[6]
         return aster.RangeObj(start,end,step)
 
-    @pg.production('while_header : WHILE expression')
+    @pg.production('while_header : WHILE expression COLON')
     def while_header(p):
         return aster.WhileHeader(p[1])
     
@@ -247,6 +251,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('expression : NUMBER|STRING|IDENTIFIER|function_call|bool|reference|alloc_array|cast')
     def num_str_idn(p):
         return p[0]
+    
+    @pg.production('expression : MINUS NUMBER')
+    def negative(p):
+        return Token("NUMBER","-" + p[1].value)
     
     @pg.production('bool : TRUE|FALSE')
     def ret_bool(p):

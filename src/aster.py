@@ -69,10 +69,18 @@ def evaluateArrayExpression(var,expression,parent):
     checks = ""
     if isinstance(expression,AllocArray):
         varName = getVarC(var).split(" ")[-1].split("*")[-1]
-        arrayT = var.type_name.name.name.value
+        if isinstance(var,Token):
+            arrayT = parent.variables[var.value].name.name.value
+            tName = parent.variables[var.value]
+        else:
+            arrayT = var.type_name.name.name.value
+            tName = var.type_name
         allocDims = len(expression.items)
-        checks += """if (""" + varName + """->initialized != 0){ printf("arrayErr");exit(1);}\n"""
-        if var.type_name.dimensions != allocDims:
+        cArrayT = "struct " + arrayT + "Array"
+        print(cArrayT)
+        tmpVar = varName + "Tmp"
+        checks += """if (""" + varName + """->initialized != 0){ printf("array err"); exit(1);}\n"""
+        if tName.dimensions != allocDims:
             throwError("ArrayDims mismatch")
         #checks += """if (""" + varName + """->ndims != """ + str(allocDims) + """){ printf("arrayErr");exit(1);}\n"""
         raw_size = "*".join(["("+i.value+")" for i in expression.items])
@@ -132,6 +140,9 @@ def evaluateExpression(expression,parent):
         index = "+".join(["(" + i + ")" for i in additions])
         return expression.name.value + "->raw[" + index + "]",parent.variables[expression.name.value].name.name.value
         #print(expression.name.value + "->raw[" + ",".join([i.value + "* expression.name.value->dims" + str(len(expression.index) - idx) for idx,i in enumerate(expression.index)]) + "]")
+    if isinstance(expression,FunctionCall):
+        tmp = expression.eval(parent)
+        return tmp[:-1],parent.functions[expression.name.value].name.value
     print("yo wtf going on in evaluate expression (the end)")
     exit()
 
@@ -220,6 +231,11 @@ class Scope(AstObj):
                 if i[1].value in self.variables.keys():
                     throwError("Redefined variable " + i[1].value)
                 self.variables[i[1].value] = i[0]
+        if self.header.type == "for":
+            if type(self.header.var_t) != None:
+                if self.header.var.value in self.variables.keys():
+                    throwError("Redefined variable " + self.var.value)
+                self.variables[self.header.var.value] = self.header.var_t
         for line in self.body.lines.items:
             if isinstance(line,Scope):
                 line.find_variables()
@@ -246,7 +262,28 @@ class Scope(AstObj):
             for line in self.body.lines.items:
                 c_body += line.eval(self) + "\n"
             out = c_header + "{\n" + c_body + "}\n"
-        
+        elif self.header.type == "for":
+            start,start_t = evaluateExpression(self.header.range_obj.start,self)
+            end,end_t = evaluateExpression(self.header.range_obj.end,self)
+            step,step_t = evaluateExpression(self.header.range_obj.step,self)
+            var_name = self.header.var.value
+            var_t = self.header.var_t
+            if type(self.header.var_t) == type(None):
+                var_t = ""
+            else:
+                var_t = var_t.name.value
+            c_header = "for (" + var_t + " " + var_name + " = " + start + "; " + var_name + " < " + end + "; " + var_name + " = " + var_name + " + " + step + ")"
+            c_body = ""
+            for line in self.body.lines.items:
+                c_body += line.eval(self) + "\n"
+            out = c_header + "{\n" + c_body + "}\n"
+        elif self.header.type == "while":
+            cond,cond_t = evaluateExpression(self.header.condition,self)
+            c_header = "while (" + cond + ")"
+            c_body = ""
+            for line in self.body.lines.items:
+                c_body += line.eval(self) + "\n"
+            out = c_header + "{\n" + c_body + "}\n"
         return out
 
 class ScopeHeader(AstObj):
@@ -283,14 +320,19 @@ class ElseHeader(ScopeHeader):
         self.type = "else"
 
 class ForHeader(ScopeHeader):
-    def __init__(self,var,range_obj):
+    def __init__(self,var,range_obj,var_t = None):
         self.var = var
         self.range_obj = range_obj
         self.type = "for"
+        self.var_t = var_t
 
 class RangeObj(AstObj):
     def __init__(self,start,end,step):
         self.start,self.end,self.step = start,end,step
+        if type(self.start) == type(None):
+            self.start = Token("NUMBER","0")
+        if type(self.step) == type(None):
+            self.step = Token("NUMBER","1")
         self.type = "range"
 
 class WhileHeader(ScopeHeader):
@@ -310,6 +352,20 @@ class FunctionCall(AstObj):
     def add(self,inp):
         self.inputs.append(inp)
         return self
+    
+    def eval(self,parent):
+        inps = []
+        for inp in self.inputs:
+            if isinstance(inp,Token):
+                print(parent.variables[inp.value])
+                if isinstance(parent.variables[inp.value],ArrayType):
+                    inps.append(inp.value)
+                else:
+                    inps.append(evaluateExpression(inp,parent)[0])
+            else:
+                inps.append(evaluateExpression(inp,parent)[0])
+        #inps = [evaluateExpression(inp,parent)[0] for inp in self.inputs]
+        return self.name.value + "(" + ",".join(inps) + ")" + ";"
 
 class ScopeBody(AstObj):
     def __init__(self,lines):
@@ -423,6 +479,18 @@ class Assign(AstObj):
                     DEFINES += newType + "\n"
                 structArrayT = "struct " + arrayT + "Array"
                 preamble = getVarC(self.var) + " = " + "(" +structArrayT + "*)malloc(sizeof(" + structArrayT + "));\n"
+                preamble += self.var.name.value + "->initialized = 0;\n"
+                expr = evaluateArrayExpression(self.var,self.expression,parent)
+                return preamble + expr
+            else:
+                arrayT = parent.variables[self.var.value].name.name.value
+                if not arrayT in ARRAY_TYPES:
+                    ARRAY_TYPES.append(arrayT)
+                    newType = generateArrayType(arrayT)
+                    DEFINES += newType + "\n"
+                structArrayT = "struct " + arrayT + "Array"
+                preamble = self.var.value + " = " + "(" +structArrayT + "*)malloc(sizeof(" + structArrayT + "));\n"
+                preamble += self.var.value + "->initialized = 0;\n"
                 expr = evaluateArrayExpression(self.var,self.expression,parent)
                 return preamble + expr
             return ""
@@ -438,8 +506,12 @@ class Free(AstObj):
         self.var = var
     
     def eval(self,parent):
+        out = ""
         if isinstance(self.var,Token):
-            return "free(" + self.var.value + ");"
+            out += "free(" + self.var.value + "->raw" + ");"
+            out += "free(" + self.var.value + "->dims" + ");"
+            out += "free(" + self.var.value + ");"
+            return out
  
 class AssignInc(AstObj):
     def __init__(self,var,expression,op):
@@ -473,6 +545,9 @@ class Not(AstObj):
 class Return(AstObj):
     def __init__(self,val=None):
         self.val = val
+    
+    def eval(self,parent):
+        return "return " + evaluateExpression(self.val,parent)[0] + ";"
 
 class Print(Container):
     def eval(self,parent):
@@ -493,10 +568,12 @@ class Print(Container):
         return ";".join(statements) + ";"
 
 class Pass(AstObj):
-    pass
+    def eval(self,parent):
+        return ""
 
 class Break(AstObj):
-    pass
+    def eval(self,parent):
+        return "break;"
 
 class Ctypes(AstObj):
     pass
