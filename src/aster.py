@@ -21,14 +21,25 @@ def generateArrayType(arrayT):
     """
     return out
 
-def getVarC(var):
+def getVarC(var,parent=None):
     if isinstance(var,Token):
         return var.value
     if isinstance(var,Declaration):
         return var.get_c()
     if isinstance(var,ArrayReference):
-        print("FIX GET VARC")
-        exit()
+        dims = list(range(len(var.index)))
+        dims = [var.name.value + "->dims[" + str(i) + "]" for i in dims[1:]]
+        dims.append("1")
+        dims = dims[::-1]
+        additions = []
+        for idx,i in enumerate(var.index):
+            to_mul = dims[:len(dims) - idx]
+            evaluated,t = evaluateExpression(i,parent)
+            if not t in ["int","flint"]:
+                throwError("array index error")
+            additions.append(evaluated + "*(" + "*".join(to_mul) + ")")
+        index = "+".join(["(" + i + ")" for i in additions])
+        return var.name.value + "->raw[" + index + "]"
     if isinstance(var,Reference):
         print("FIX GET VARC")
         exit()
@@ -108,7 +119,7 @@ def evaluateExpression(expression,parent):
         calc_index = ""
         print(expression.index)
         dims = list(range(len(expression.index)))
-        dims = [expression.name.value + "->dims[" + i + "]" for i in dims[1:]]
+        dims = [expression.name.value + "->dims[" + str(i) + "]" for i in dims[1:]]
         dims.append("1")
         dims = dims[::-1]
         additions = []
@@ -341,6 +352,7 @@ class ArrayReference(AstObj):
     
     def add(self,index):
         self.index.append(index)
+        return self
 
 class Declaration(AstObj):
     def __init__(self,type_name,name):
@@ -394,6 +406,7 @@ class Assign(AstObj):
                 return refType.name.name.value
             else:
                 return refType.name.value
+        print(self.var)
         print("Yo wtf going on at Destination Type")
         exit()
     
@@ -418,7 +431,7 @@ class Assign(AstObj):
             expr,exprType = evaluateExpression(self.expression,parent)
             if not doRawTypesAgree(destType,exprType):
                 throwError("types dont agree")
-            return getVarC(self.var) + " = " + expr + ";"
+            return getVarC(self.var,parent) + " = " + expr + ";"
     
 class Free(AstObj):
     def __init__(self,var):
@@ -465,6 +478,7 @@ class Print(Container):
     def eval(self,parent):
         out = ""
         statements = []
+        formatter = {"int" : r"%d","float" : r"%f"}
         for i in self.items:
             if isinstance(i,Token):
                 if i.name == "STRING":
@@ -472,11 +486,10 @@ class Print(Container):
                 if i.name == "IDENTIFIER":
                     print("FF")
                     var_t = parent.variables[i.value].get_c()
-                    formatter = {"int" : r"%d","float" : r"%f"}
                     statements.append('printf("' + formatter[var_t] + '"' + ',' + i.value + ')')
             else:
                 statement,var_t = evaluateExpression(i,parent)
-                statements.append("")
+                statements.append('printf("' + formatter[var_t] + '",' + statement + ')')
         return ";".join(statements) + ";"
 
 class Pass(AstObj):

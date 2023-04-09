@@ -4,8 +4,11 @@ import parse
 raw = r"""
 
 def int main():
-    int[:] k = array(10)
-    print(k[0])
+    int[:,:] k = array(2,3)
+    k[1,0] = 1
+    k[0,0] = 2
+    print(k[1,0],"\n")
+    print(k[0,0],"\n")
 
 """
 

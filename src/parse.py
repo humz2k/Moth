@@ -187,7 +187,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('array_reference_open : array_reference_open COMMA expression')
     @pg.production('array_reference_open : array_reference_open COMMA COLON')
     def array_reference_cont(p):
-        return p[0].append(p[2])
+        return p[0].add(p[2])
     
     @pg.production('alloc_array_open : ARRAY OPEN_PAREN expression')
     def alloc_array_open(p):
