@@ -143,6 +143,13 @@ def evaluateExpression(expression,parent):
     if isinstance(expression,FunctionCall):
         tmp = expression.eval(parent)
         return tmp[:-1],parent.functions[expression.name.value].name.value
+    if isinstance(expression,Cptr):
+        if isinstance(expression.var,Token):
+            return expression.var.value + "->raw","__c_ptr"
+    if isinstance(expression,Cval):
+        return evaluateExpression(expression.val,parent)
+    if isinstance(expression,Ccall):
+        return expression.eval(parent)[:-1],"__c_val"
     print("yo wtf going on in evaluate expression (the end)")
     exit()
 
@@ -191,7 +198,7 @@ class Program(Container):
         out = ""
         for scope in self.items:
             out += scope.eval(self)
-        return HEADERS + DEFINES + out
+        return HEADERS + DEFINES + out + "\n int main() { return Mothmain();}\n"
 
 class Scope(AstObj):
     def __init__(self,header,body):
@@ -298,7 +305,7 @@ class ClassHeader(ScopeHeader):
 class FunctionHeader(ScopeHeader):
     def __init__(self,return_type,name,inputs):
         self.return_type = return_type
-        self.name = name
+        self.name = Token("IDENTIFIER","Moth" + name.value)
         self.inputs = inputs
         self.type = "function"
 
@@ -342,7 +349,7 @@ class WhileHeader(ScopeHeader):
 
 class FunctionCall(AstObj):
     def __init__(self,name,inp=None):
-        self.name = name
+        self.name = Token("IDENTIFIER","Moth" + name.value)
         if type(inp) != type(None):
             self.inputs = [inp]
         else:
@@ -357,9 +364,11 @@ class FunctionCall(AstObj):
         inps = []
         for inp in self.inputs:
             if isinstance(inp,Token):
-                print(parent.variables[inp.value])
-                if isinstance(parent.variables[inp.value],ArrayType):
-                    inps.append(inp.value)
+                if inp.value in parent.variables.keys():
+                    if isinstance(parent.variables[inp.value],ArrayType):
+                        inps.append(inp.value)
+                    else:
+                        inps.append(evaluateExpression(inp,parent)[0])
                 else:
                     inps.append(evaluateExpression(inp,parent)[0])
             else:
@@ -594,6 +603,10 @@ class Ccall(Ctypes):
     def add(self,inp):
         self.inputs.append(inp)
         return self
+
+    def eval(self,parent):
+        evals = [evaluateExpression(i,parent)[0] for i in self.inputs]
+        return self.func_name.value + "(" + ",".join(evals) + ");"
     
 class Reference(AstObj):
     def __init__(self,parent,child):

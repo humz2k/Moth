@@ -130,6 +130,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('line : return SEMI_COLON')
     @pg.production('line : print SEMI_COLON')
     @pg.production('line : free SEMI_COLON')
+    @pg.production('line : c_call SEMI_COLON')
     @pg.production('line : scope')
     def line(p):
         return p[0]
@@ -248,7 +249,7 @@ def get_parser(filename="tokens.txt"):
     def brackets(p):
         return p[1]
     
-    @pg.production('expression : NUMBER|STRING|IDENTIFIER|function_call|bool|reference|alloc_array|cast')
+    @pg.production('expression : NUMBER|STRING|IDENTIFIER|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val')
     def num_str_idn(p):
         return p[0]
     
@@ -292,6 +293,7 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('c_call : C_CALL OPEN_PAREN IDENTIFIER CLOSE_PAREN')
     def c_call(p):
+        print("C_CALL")
         return aster.Ccall(p[2])
     
     @pg.production('c_call : c_call_open CLOSE_PAREN')
