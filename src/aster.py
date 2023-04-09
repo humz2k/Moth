@@ -106,6 +106,20 @@ def evaluateExpression(expression,parent):
             return "(" + left + " " + expression.op.value + " " + right + ")",newType
     if isinstance(expression,ArrayReference):
         calc_index = ""
+        print(expression.index)
+        dims = list(range(len(expression.index)))
+        dims = [expression.name.value + "->dims[" + i + "]" for i in dims[1:]]
+        dims.append("1")
+        dims = dims[::-1]
+        additions = []
+        for idx,i in enumerate(expression.index):
+            to_mul = dims[:len(dims) - idx]
+            evaluated,t = evaluateExpression(i,parent)
+            if not t in ["int","flint"]:
+                throwError("array index error")
+            additions.append(evaluated + "*(" + "*".join(to_mul) + ")")
+        index = "+".join(["(" + i + ")" for i in additions])
+        return expression.name.value + "->raw[" + index + "]",parent.variables[expression.name.value].name.name.value
         #print(expression.name.value + "->raw[" + ",".join([i.value + "* expression.name.value->dims" + str(len(expression.index) - idx) for idx,i in enumerate(expression.index)]) + "]")
     print("yo wtf going on in evaluate expression (the end)")
     exit()
@@ -461,7 +475,8 @@ class Print(Container):
                     formatter = {"int" : r"%d","float" : r"%f"}
                     statements.append('printf("' + formatter[var_t] + '"' + ',' + i.value + ')')
             else:
-                statements.append(evaluateExpression(i,parent))
+                statement,var_t = evaluateExpression(i,parent)
+                statements.append("")
         return ";".join(statements) + ";"
 
 class Pass(AstObj):

@@ -17,5 +17,5 @@ k->raw = (int*)malloc((10)*sizeof(int));
 k->ndims = 1;
 k->dims = (int*)malloc(1*sizeof(int));
 k->dims[0] = 10;
-;
+k->raw[(0*(1))];
 }
