@@ -6,4 +6,4 @@ printf("Hello World!\n");
 return 0;
 }
 
- int main() { return Mothmain();}
+int main() { return Mothmain();}

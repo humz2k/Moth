@@ -1,47 +1,31 @@
 import lex
 import parse
+import sys
 
-raw = r"""
+if __name__ == "__main__":
 
-def float sqrtf(float a):
-    return __c_call(sqrtf,__c_val(a))
+    args = sys.argv[1:]
 
-def int main():
-    float[:,:] particles = array(2,3)
-    
-    float test = sqrtf(2.0)
+    with open(args[0],"r") as f:
+        raw = f.read()
 
-    print(test)
+    raw = lex.remove_comments(raw)
 
-    free(particles)
+    raw = lex.convert(raw)
 
-    return 0
+    lexer = lex.get_lexer()
 
-"""
-
-with open("mothTest.moth","r") as f:
-    raw = f.read()
-
-print(raw)
-
-raw = lex.remove_comments(raw)
-
-raw = lex.convert(raw)
-
-lexer = lex.get_lexer()
-
-tokens = lexer.lex(raw)
+    tokens = lexer.lex(raw)
 
 
-parser = parse.get_parser()
+    parser = parse.get_parser()
 
-base = parser.parse(tokens)
+    base = parser.parse(tokens)
 
-out = base.eval()
-#print(out)
+    out = base.eval()
 
-with open("test.c","w") as f:
-    f.write(out)
+    with open("test.c","w") as f:
+        f.write(out)
 
 
 

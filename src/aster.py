@@ -198,7 +198,7 @@ class Program(Container):
         out = ""
         for scope in self.items:
             out += scope.eval(self)
-        return HEADERS + DEFINES + out + "\n int main() { return Mothmain();}\n"
+        return HEADERS + DEFINES + out + "\nint main() { return Mothmain();}\n"
 
 class Scope(AstObj):
     def __init__(self,header,body):
