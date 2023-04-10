@@ -6,7 +6,9 @@ if __name__ == "__main__":
 
     args = sys.argv[1:]
 
-    with open(args[0],"r") as f:
+    f = args[0]
+
+    with open(f,"r") as f:
         raw = f.read()
 
     raw = lex.remove_comments(raw)

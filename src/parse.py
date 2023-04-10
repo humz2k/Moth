@@ -41,15 +41,15 @@ def get_parser(filename="tokens.txt"):
     def scope_header(p):
         return p[0]
     
-    @pg.production('class_header : CLASS IDENTIFIER COLON')
-    @pg.production('class_header : CLASS IDENTIFIER OPEN_PAREN IDENTIFIER CLOSE_PAREN COLON')
+    @pg.production('class_header : CLASS identifier COLON')
+    @pg.production('class_header : CLASS identifier OPEN_PAREN identifier CLOSE_PAREN COLON')
     def class_header(p):
         if len(p) == 3:
             return aster.ClassHeader(p[1])
         return aster.ClassHeader(p[1],p[3])
     
-    @pg.production('function_header : DEF type IDENTIFIER OPEN_PAREN CLOSE_PAREN COLON')
-    @pg.production('function_header : DEF type IDENTIFIER func_def_inputs COLON')
+    @pg.production('function_header : DEF type identifier OPEN_PAREN CLOSE_PAREN COLON')
+    @pg.production('function_header : DEF type identifier func_def_inputs COLON')
     def function_header(p):
         if len(p) == 5:
             return aster.FunctionHeader(p[1],p[2],p[3])
@@ -68,8 +68,8 @@ def get_parser(filename="tokens.txt"):
     def else_header(p):
         return aster.ElseHeader()
     
-    @pg.production('for_header : FOR IDENTIFIER IN range_obj COLON')
-    @pg.production('for_header : FOR type_name IDENTIFIER IN range_obj COLON')
+    @pg.production('for_header : FOR identifier IN range_obj COLON')
+    @pg.production('for_header : FOR type_name identifier IN range_obj COLON')
     def for_header(p):
         if len(p) == 5:
             return aster.ForHeader(p[1],p[3])
@@ -98,11 +98,11 @@ def get_parser(filename="tokens.txt"):
     def while_header(p):
         return aster.WhileHeader(p[1])
     
-    @pg.production('func_def_inputs_open : OPEN_PAREN type IDENTIFIER')
+    @pg.production('func_def_inputs_open : OPEN_PAREN type identifier')
     def func_def_inputs_open(p):
         return aster.FunctionDefInputs((p[1],p[2]))
 
-    @pg.production('func_def_inputs_open : func_def_inputs_open COMMA type IDENTIFIER')
+    @pg.production('func_def_inputs_open : func_def_inputs_open COMMA type identifier')
     def func_def_inputs_cont(p):
         return p[0].add((p[2],p[3]))
 
@@ -143,34 +143,34 @@ def get_parser(filename="tokens.txt"):
         else:
             return aster.Return()
         
-    @pg.production('declaration : type IDENTIFIER')
+    @pg.production('declaration : type identifier')
     def declaration(p):
         return aster.Declaration(p[0],p[1])
     
     @pg.production('assignment : declaration ASSIGN expression')
-    @pg.production('assignment : IDENTIFIER ASSIGN expression')
+    @pg.production('assignment : identifier ASSIGN expression')
     @pg.production('assignment : reference ASSIGN expression')
     def assignment(p):
         return aster.Assign(p[0],p[2])
     
-    @pg.production('assignment : IDENTIFIER PLUS_EQUAL expression')
+    @pg.production('assignment : identifier PLUS_EQUAL expression')
     @pg.production('assignment : reference PLUS_EQUAL expression')
-    @pg.production('assignment : IDENTIFIER MINUS_EQUAL expression')
+    @pg.production('assignment : identifier MINUS_EQUAL expression')
     @pg.production('assignment : reference MINUS_EQUAL expression')
-    @pg.production('assignment : IDENTIFIER STARSTAR_EQUAL expression')
+    @pg.production('assignment : identifier STARSTAR_EQUAL expression')
     @pg.production('assignment : reference STARSTAR_EQUAL expression')
-    @pg.production('assignment : IDENTIFIER STAR_EQUAL expression')
+    @pg.production('assignment : identifier STAR_EQUAL expression')
     @pg.production('assignment : reference STAR_EQUAL expression')
-    @pg.production('assignment : IDENTIFIER SLASH_EQUAL expression')
+    @pg.production('assignment : identifier SLASH_EQUAL expression')
     @pg.production('assignment : reference SLASH_EQUAL expression')
-    @pg.production('assignment : IDENTIFIER PERCENT_EQUAL expression')
+    @pg.production('assignment : identifier PERCENT_EQUAL expression')
     @pg.production('assignment : reference PERCENT_EQUAL expression')
     def assignment2(p):
         return aster.AssignInc(p[0],p[2],p[1])
     
-    @pg.production('assignment : IDENTIFIER PLUS_PLUS')
+    @pg.production('assignment : identifier PLUS_PLUS')
     @pg.production('assignment : reference PLUS_PLUS')
-    @pg.production('assignment : IDENTIFIER MINUS_MINUS')
+    @pg.production('assignment : identifier MINUS_MINUS')
     @pg.production('assignment : reference MINUS_MINUS')
     def inc(p):
         return aster.Inc(p[0],p[1])
@@ -215,7 +215,7 @@ def get_parser(filename="tokens.txt"):
         return p[0].add_dim()
         
     @pg.production('type_name : TYPE_NAME')
-    @pg.production('type_name : OBJECT IDENTIFIER')
+    @pg.production('type_name : OBJECT identifier')
     def type_name(p):
         if len(p) == 1:
             return aster.Type(p[0])
@@ -249,26 +249,26 @@ def get_parser(filename="tokens.txt"):
     def brackets(p):
         return p[1]
     
-    @pg.production('expression : NUMBER|STRING|IDENTIFIER|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val')
+    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val')
     def num_str_idn(p):
         return p[0]
     
-    @pg.production('expression : MINUS NUMBER')
-    def negative(p):
-        return Token("NUMBER","-" + p[1].value)
+    #@pg.production('expression : MINUS number')
+    #def negative(p):
+    #    return Token("number","-" + p[1].value)
     
     @pg.production('bool : TRUE|FALSE')
     def ret_bool(p):
         if p[0].name == "TRUE":
-            return Token("NUMBER","1")
+            return aster.Number(Token("Number","1"))
         else:
-            return Token("NUMBER","0")
+            return aster.Number(Token("Number","0"))
     
     @pg.production('cast : type_name OPEN_PAREN expression CLOSE_PAREN')
     def cast(p):
         return aster.Cast(p[0],p[2])
 
-    @pg.production('function_call : IDENTIFIER OPEN_PAREN CLOSE_PAREN')
+    @pg.production('function_call : identifier OPEN_PAREN CLOSE_PAREN')
     @pg.production('function_call : function_call_open CLOSE_PAREN')
     def function_call(p):
         if len(p) == 3:
@@ -279,7 +279,7 @@ def get_parser(filename="tokens.txt"):
     def function_call_cont(p):
         return p[0].add(p[2])
 
-    @pg.production('function_call_open : IDENTIFIER OPEN_PAREN expression')
+    @pg.production('function_call_open : identifier OPEN_PAREN expression')
     def function_call_open(p):
         return aster.FunctionCall(p[0],p[2])
     
@@ -287,11 +287,11 @@ def get_parser(filename="tokens.txt"):
     def c_val(p):
         return aster.Cval(p[2])
     
-    @pg.production('c_ptr : C_PTR OPEN_PAREN IDENTIFIER CLOSE_PAREN')
+    @pg.production('c_ptr : C_PTR OPEN_PAREN identifier CLOSE_PAREN')
     def c_ptr(p):
         return aster.Cptr(p[2])
     
-    @pg.production('c_call : C_CALL OPEN_PAREN IDENTIFIER CLOSE_PAREN')
+    @pg.production('c_call : C_CALL OPEN_PAREN identifier CLOSE_PAREN')
     def c_call(p):
         print("C_CALL")
         return aster.Ccall(p[2])
@@ -300,9 +300,9 @@ def get_parser(filename="tokens.txt"):
     def c_call_close(p):
         return p[0]
     
-    @pg.production('c_call_open : C_CALL OPEN_PAREN IDENTIFIER COMMA c_val')
-    @pg.production('c_call_open : C_CALL OPEN_PAREN IDENTIFIER COMMA c_ptr')
-    @pg.production('c_call_open : C_CALL OPEN_PAREN IDENTIFIER COMMA c_call')
+    @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_val')
+    @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_ptr')
+    @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_call')
     def c_call_open(p):
         tmp = aster.Ccall(p[2])
         return tmp.add(p[4])
@@ -337,15 +337,31 @@ def get_parser(filename="tokens.txt"):
     def pass_break(p):
         return aster.Break()
     
-    @pg.production('free : FREE OPEN_PAREN IDENTIFIER CLOSE_PAREN')
+    @pg.production('free : FREE OPEN_PAREN identifier CLOSE_PAREN')
     @pg.production('free : FREE OPEN_PAREN reference CLOSE_PAREN')
     def free(p):
         return aster.Free(p[2])
     
-    @pg.production('reference : IDENTIFIER PERIOD IDENTIFIER')
-    @pg.production('reference : reference PERIOD IDENTIFIER')
+    @pg.production('reference : identifier PERIOD identifier')
+    @pg.production('reference : reference PERIOD identifier')
     def reference(p):
         return aster.Reference(p[0],p[2])
+    
+    @pg.production('number : NUMBER')
+    @pg.production('number : MINUS NUMBER')
+    def number(p):
+        if len(p) == 1:
+            return aster.Number(p[0])
+        else:
+            return aster.Number(Token("NUMBER","-"+p[1].value))
+
+    @pg.production('identifier : IDENTIFIER')
+    def identifier(p):
+        return aster.Identifier(p[0])
+    
+    @pg.production('string : STRING')
+    def string(p):
+        return aster.String(p[0])
 
     return pg.build()
 

@@ -5,163 +5,119 @@ DEFINES = ""
 
 ARRAY_TYPES = []
 
-def throwError(err):
-    print(err)
+INT_TYPES = ["char","short","int","long","bool","flint"]
+UINT_TYPES = ["unsigned char","unsigned short","unsigned int","unsigned long","bool","flint"]
+FLOAT_TYPES = ["float","double","flint"]
+
+def throwError(err,lineno):
+    print("CODE GEN ERROR @ line " + str(lineno) + ":")
+    print("   " + err)
     exit()
 
 def generateArrayType(arrayT):
-    out = r"""
-    struct """ + arrayT + r"""Array {
-        int refs;
-        int initialized;
-        int ndims;
-        int* dims;
-        """ + arrayT + r"""* raw;
-    };
-    """
-    return out
-
-def getVarC(var,parent=None):
-    if isinstance(var,Token):
-        return var.value
-    if isinstance(var,Declaration):
-        return var.get_c()
-    if isinstance(var,ArrayReference):
-        dims = list(range(len(var.index)))
-        dims = [var.name.value + "->dims[" + str(i) + "]" for i in dims[1:]]
-        dims.append("1")
-        dims = dims[::-1]
-        additions = []
-        for idx,i in enumerate(var.index):
-            to_mul = dims[:len(dims) - idx]
-            evaluated,t = evaluateExpression(i,parent)
-            if not t in ["int","flint"]:
-                throwError("array index error")
-            additions.append(evaluated + "*(" + "*".join(to_mul) + ")")
-        index = "+".join(["(" + i + ")" for i in additions])
-        return var.name.value + "->raw[" + index + "]"
-    if isinstance(var,Reference):
-        print("FIX GET VARC")
-        exit()
-
-def combineNonArrayTypes(ltype,rtype):
-    if ltype == rtype:
-        return ltype
-    else:
-        combined = [ltype,rtype]
-        if "int" in combined and "flint" in combined:
-            return "int"
-        if "float" in combined and "flint" in combined:
-            return "float"
-        throwError("Invalid Types")
+    global ARRAY_TYPES,DEFINES
+    if not arrayT in ARRAY_TYPES:
+        out = r"""
+struct """ + arrayT + r"""Array {
+    int initialized;
+    int ndims;
+    int* dims;
+    """ + arrayT + r"""* raw;
+};
+        """
+        DEFINES += out
+    return "struct " + arrayT + "Array"
 
 def doRawTypesAgree(type1,type2):
-    if type1 == type2:
+    global INT_TYPES,UINT_TYPES,FLOAT_TYPES
+    if (type1 in INT_TYPES) and (type2 in INT_TYPES):
         return True
-    else:
-        if type1 in ["float","int"] and type2 == "flint":
-            return True
-        else:
-            return False        
+    if (type1 in UINT_TYPES) and (type2 in UINT_TYPES):
+        return True
+    if (type1 in FLOAT_TYPES) and (type2 in FLOAT_TYPES):
+        return True
+    if (type1 in (INT_TYPES + UINT_TYPES)) and (type2 in (INT_TYPES + UINT_TYPES)):
+        return True
+    return False
 
-def evaluateArrayExpression(var,expression,parent):
-    out = ""
-    checks = ""
-    if isinstance(expression,AllocArray):
-        varName = getVarC(var).split(" ")[-1].split("*")[-1]
-        if isinstance(var,Token):
-            arrayT = parent.variables[var.value].name.name.value
-            tName = parent.variables[var.value]
-        else:
-            arrayT = var.type_name.name.name.value
-            tName = var.type_name
-        allocDims = len(expression.items)
-        cArrayT = "struct " + arrayT + "Array"
-        print(cArrayT)
-        tmpVar = varName + "Tmp"
-        checks += """if (""" + varName + """->initialized != 0){ printf("array err"); exit(1);}\n"""
-        if tName.dimensions != allocDims:
-            throwError("ArrayDims mismatch")
-        #checks += """if (""" + varName + """->ndims != """ + str(allocDims) + """){ printf("arrayErr");exit(1);}\n"""
-        raw_size = "*".join(["("+i.value+")" for i in expression.items])
-        out += varName + "->raw = (" + arrayT + "*)malloc(" + raw_size + "*sizeof("+arrayT+"));\n"
-        out += varName + "->ndims = " + str(allocDims) + ";\n"
-        out += varName + "->dims = (int*)malloc(" + str(allocDims) + "*sizeof(int));\n"
-        out += ";".join([varName + "->dims["+str(idx)+"] = " + i.value for idx,i in enumerate(expression.items)]) + ";"
-        return checks + out
+def isidentifier(val):
+    try:
+        float(val)
+        return False
+    except:
+        return True
 
-def evaluateExpression(expression,parent):
-    if isinstance(expression,Token):
-        outType = ""
-        if expression.value in parent.variables.keys():
-            outType = parent.variables[expression.value].name.value
-        else:
-            try:
-                a = int(expression.value)
-                outType = "flint"
-            except:
-                try:
-                    a = float(expression.value)
-                    outType = "float"
-                except:
-                    outType = ""
-        if outType == "":
-            print("Yo wtf going on in evaluate expression (the token bit innit)")
-            exit()
-        return expression.value,outType
-    if isinstance(expression,BinOp):
-        left,ltype = evaluateExpression(expression.left,parent)
-        right,rtype = evaluateExpression(expression.right,parent)
-        newType = combineNonArrayTypes(ltype,rtype)
-        if expression.op.name in ["AND","OR"] and not newType in ["int","flint"]:
-            throwError("BOOL TYPE AADHS")
-        if expression.op.value == "**":
-            return "pow(" + left + "," + right + ")",newType
-        if expression.op.value == "and":
-            return "(" + left + " && " + right + ")",newType
-        if expression.op.value == "or":
-            return "(" + left + " || " + right + ")",newType
-        else:
-            return "(" + left + " " + expression.op.value + " " + right + ")",newType
-    if isinstance(expression,ArrayReference):
-        calc_index = ""
-        print(expression.index)
-        dims = list(range(len(expression.index)))
-        dims = [expression.name.value + "->dims[" + str(i) + "]" for i in dims[1:]]
-        dims.append("1")
-        dims = dims[::-1]
-        additions = []
-        for idx,i in enumerate(expression.index):
-            to_mul = dims[:len(dims) - idx]
-            evaluated,t = evaluateExpression(i,parent)
-            if not t in ["int","flint"]:
-                throwError("array index error")
-            additions.append(evaluated + "*(" + "*".join(to_mul) + ")")
-        index = "+".join(["(" + i + ")" for i in additions])
-        return expression.name.value + "->raw[" + index + "]",parent.variables[expression.name.value].name.name.value
-        #print(expression.name.value + "->raw[" + ",".join([i.value + "* expression.name.value->dims" + str(len(expression.index) - idx) for idx,i in enumerate(expression.index)]) + "]")
-    if isinstance(expression,FunctionCall):
-        tmp = expression.eval(parent)
-        return tmp[:-1],parent.functions[expression.name.value].name.value
-    if isinstance(expression,Cptr):
-        if isinstance(expression.var,Token):
-            return expression.var.value + "->raw","__c_ptr"
-    if isinstance(expression,Cval):
-        return evaluateExpression(expression.val,parent)
-    if isinstance(expression,Ccall):
-        return expression.eval(parent)[:-1],"__c_val"
-    print("yo wtf going on in evaluate expression (the end)")
-    exit()
+class Constant:
+    def __init__(self,c_str,c_type):
+        self.c_str = c_str
+        self.c_type = c_type
+
+class Variable:
+    def __init__(self,raw,c_str,c_type,moth_type):
+        self.raw = raw
+        self.c_str = c_str
+        self.c_type = c_type
+        self.moth_type = moth_type
+    
+    def eval(self,parent):
+        return self.c_str
 
 class AstObj:
     pass
 
+class Identifier(AstObj):
+    def __init__(self,token):
+        self.token = token
+        self.value = self.token.value
+        self.name = self.token.name
+    
+    def find_variables(self,parent):
+        raw = self
+        c_str = self.value
+        c_type = parent.declarations[c_str].get_c()
+        moth_type = parent.declarations[c_str]
+        return Variable(raw,c_str,c_type,moth_type)
+
+class String(AstObj):
+    def __init__(self,token):
+        self.token = token
+        self.value = self.token.value
+        self.name = self.token.name
+
+    def find_variables(self,parent):
+        return self
+
+class Number(AstObj):
+    def __init__(self,token):
+        self.token = token
+        self.value = self.token.value
+        self.name = self.token.name
+        if "." in self.value:
+            self.c_type = "float"
+        else:
+            self.c_type = "int"
+        self.c_str = self.value
+    
+    def find_variables(self,parent):
+        return self
+
+    def eval(self,parent):
+        return self.value
+
 class Container(AstObj):
-    def __init__(self,item=None):
+    def __init__(self,item=None,lineno=None):
+        self.lineno = lineno
         if type(item) != type(None):
             self.items = [item]
         else:
             self.items = []
+    
+    def find_variables(self,parent):
+        items = []
+        for i in self.items:
+            items.append(i.find_variables(parent))
+        self.items = items
+        return self
     
     def add(self,item):
         self.items.append(item)
@@ -171,8 +127,8 @@ class Program(Container):
 
     def verify(self):
         for scope in self.items:
-            if not scope.header.type in ["function","class"]:
-                throwError("Found non-function or non-class on top level")
+            if not (isinstance(scope.header,FunctionHeader) or isinstance(scope.header,ClassHeader)):
+                throwError("Found non-function or non-class on top level",self.lineno)
 
     def find_classes(self):
         self.classes = []
@@ -183,17 +139,23 @@ class Program(Container):
         self.functions = {}
         for scope in self.items:
             scope.find_functions(self.functions)
+    
+    def find_declarations(self):
+        self.declarations = {}
+        for scope in self.items:
+            scope.find_declarations(self.declarations)
 
     def find_variables(self):
         self.variables = {}
         for scope in self.items:
-            scope.find_variables()
+            scope.find_variables(self)
 
     def eval(self):
         global HEADERS,DEFINES
         self.verify()
         self.find_classes()
         self.find_functions()
+        self.find_declarations()
         self.find_variables()
         out = ""
         for scope in self.items:
@@ -201,195 +163,239 @@ class Program(Container):
         return HEADERS + DEFINES + out + "\nint main() { return Mothmain();}\n"
 
 class Scope(AstObj):
-    def __init__(self,header,body):
+    def __init__(self,header,body,lineno=None):
+        self.lineno = lineno
         self.header = header
         self.body = body
         self.type = "scope"
         self.functions = {}
         self.variables = {}
+        self.declarations = {}
 
     def find_classes(self,out):
-        if self.header.type == "class":
+        if isinstance(self.header,ClassHeader):
             if self.header.name.value in out:
-                throwError("Redefined class " + self.header.name.value)
+                throwError("Redefined class " + self.header.name.value,self.lineno)
             out.append(self.header.name.value)
     
     def find_functions(self,out):
-        if self.header.type == "function":
+        if isinstance(self.header,FunctionHeader):
             if self.header.name.value in out.keys():
-                throwError("Redefined function " + self.header.name.value)
+                throwError("Redefined function " + self.header.name.value,self.lineno)
             out[self.header.name.value] = self.header.return_type
             return
         
-        if self.header.type == "class":
+        if isinstance(self.header,ClassHeader):
             self.functions = {}
             for i in self.body.lines.items:
                 if isinstance(i,Scope):
-                    if i.header.type == "function":
+                    if isinstance(i.header,FunctionHeader):
                         if i.header.name.value in self.functions:
-                            throwError("Redefined function " + self.header.name.value + "." + i.header.name.value)
+                            throwError("Redefined function " + self.header.name.value + "." + i.header.name.value,self.lineno)
                         self.functions[i.header.name.value] = i.header.return_type
+                        out[i.header.name.value] = i.header.return_type
             return
+    
+    def find_declarations(self,declarations):
+        if isinstance(self.header,ForHeader):
+            if type(self.header.var_t) != type(None):
+                self.declarations[self.header.var.name.value] = self.header.var_t
+        self.dont_declare = []
+        if isinstance(self.header,FunctionHeader):
+            self.header.find_declarations(self.declarations,self.dont_declare)
+        self.body.find_declarations(self.declarations)
 
-    def find_variables(self):
-        self.variables = {}
-        if self.header.type == "function":
-            for i in self.header.inputs.items:
-                if i[1].value in self.variables.keys():
-                    throwError("Redefined variable " + i[1].value)
-                self.variables[i[1].value] = i[0]
-        if self.header.type == "for":
-            if type(self.header.var_t) != None:
-                if self.header.var.value in self.variables.keys():
-                    throwError("Redefined variable " + self.var.value)
-                self.variables[self.header.var.value] = self.header.var_t
-        for line in self.body.lines.items:
-            if isinstance(line,Scope):
-                line.find_variables()
-            else:
-                if isinstance(line,Assign):
-                    if isinstance(line.var,Declaration):
-                        if line.var.name.value in self.variables.keys():
-                            throwError("Redefined variable " + line.var.name.value)
-                        self.variables[line.var.name.value] = line.var.type_name
-                elif isinstance(line,Declaration):
-                    if line.name.value in self.variables.keys():
-                        throwError("Redefined variable " + line.name.value)
-                    self.variables[line.name.value] = line.type_name
+    def find_variables(self,parent):
+        self.declarations.update(parent.declarations)
+        self.header.find_variables(self)
+        self.body.find_variables(self)
 
     def eval(self,parent):
-        self.functions.update(parent.functions)
-        self.variables.update(parent.variables)
-        self.classes = parent.classes
+        self.functions = parent.functions
         out = ""
-        if self.header.type == "function":
-            c_header = self.header.return_type.get_c() + " " + self.header.name.value
-            c_header += "(" + ",".join([i[0].get_c() + " " + i[1].value for i in self.header.inputs.items]) + ")"
-            c_body = ""
-            for line in self.body.lines.items:
-                c_body += line.eval(self) + "\n"
-            out = c_header + "{\n" + c_body + "}\n"
-        elif self.header.type == "for":
-            start,start_t = evaluateExpression(self.header.range_obj.start,self)
-            end,end_t = evaluateExpression(self.header.range_obj.end,self)
-            step,step_t = evaluateExpression(self.header.range_obj.step,self)
-            var_name = self.header.var.value
-            var_t = self.header.var_t
-            if type(self.header.var_t) == type(None):
-                var_t = ""
-            else:
-                var_t = var_t.name.value
-            c_header = "for (" + var_t + " " + var_name + " = " + start + "; " + var_name + " < " + end + "; " + var_name + " = " + var_name + " + " + step + ")"
-            c_body = ""
-            for line in self.body.lines.items:
-                c_body += line.eval(self) + "\n"
-            out = c_header + "{\n" + c_body + "}\n"
-        elif self.header.type == "while":
-            cond,cond_t = evaluateExpression(self.header.condition,self)
-            c_header = "while (" + cond + ")"
-            c_body = ""
-            for line in self.body.lines.items:
-                c_body += line.eval(self) + "\n"
-            out = c_header + "{\n" + c_body + "}\n"
+        out += self.header.eval(parent) + "{\n"
+        out += "".join([self.declarations[i].get_c() + " " + i + ";" for i in self.declarations.keys() if not i in self.dont_declare]) + "\n"
+        out += self.body.eval(self)
+        out += "\n}\n"
         return out
+
+class ScopeBody(AstObj):
+    def __init__(self,lines,lineno=None):
+        self.lineno = lineno
+        self.lines = lines
+    
+    def find_declarations(self,declarations):
+        for line in self.lines.items:
+            if isinstance(line,Declaration):
+                declarations[line.name.value] = line.type_name
+            elif isinstance(line,Assign):
+                if isinstance(line.var,Declaration):
+                    declarations[line.var.name.value] = line.var.type_name
+
+    def find_variables(self,parent):
+        lines = []
+        for line in self.lines.items:
+            lines.append(line.find_variables(parent))
+        self.lines = lines
+        return self
+
+    def eval(self,parent):
+        out = ""
+        for line in self.lines:
+            out += line.eval(parent) + ";\n"
+        return out
+
 
 class ScopeHeader(AstObj):
     pass
 
 class ClassHeader(ScopeHeader):
-    def __init__(self,name,inherits=None):
+    def __init__(self,name,inherits=None,lineno = None):
+        self.lineno = lineno
         self.name = name
         self.inherits = inherits
         self.type = "class"
+    
+    def find_variables(self,parent):
+        return self
 
 class FunctionHeader(ScopeHeader):
-    def __init__(self,return_type,name,inputs):
+    def __init__(self,return_type,name,inputs,lineno = None):
+        self.lineno = lineno
         self.return_type = return_type
         self.name = Token("IDENTIFIER","Moth" + name.value)
         self.inputs = inputs
-        self.type = "function"
+    
+    def find_variables(self,parent):
+        self.inputs = self.inputs.find_variables(parent)
+        return self
+
+    def find_declarations(self,declarations,dont_declare):
+        self.inputs.find_declarations(declarations,dont_declare)
+    
+    def eval(self,parent):
+        c_header = self.return_type.get_c() + " " + self.name.value
+        c_header += "(" + ",".join([i[0].get_c() + " " + i[1].c_str for i in self.inputs.items]) + ")"
+        return c_header
 
 class FunctionDefInputs(Container):
-    pass
+    
+    def find_variables(self,parent):
+        items = []
+        for i in self.items:
+            items.append((i[0],i[1].find_variables(parent)))
+        self.items = items
+        return self
+
+    def find_declarations(self,declarations,dont_declare):
+        for i in self.items:
+            declarations[i[1].value] = i[0]
+            dont_declare.append(i[1].value)
 
 class IfHeader(ScopeHeader):
-    def __init__(self,expression):
+    def __init__(self,expression,lineno=None):
+        self.lineno = lineno
         self.expression = expression
-        self.type = "if"
+    
+    def find_variables(self,parent):
+        self.expression = self.expression.find_variables(parent)
+        return self
 
 class ElifHeader(ScopeHeader):
-    def __init__(self,expression):
+    def __init__(self,expression,lineno = None):
+        self.lineno = lineno
         self.expression = expression
-        self.type = "elif"
+    
+    def find_variables(self,parent):
+        self.expression = self.expression.find_variables(parent)
+        return self
 
 class ElseHeader(ScopeHeader):
-    def __init__(self):
-        self.type = "else"
+    def __init__(self,lineno = None):
+        self.lineno = lineno
+    
+    def find_variables(self,parent):
+        return self
 
 class ForHeader(ScopeHeader):
-    def __init__(self,var,range_obj,var_t = None):
+    def __init__(self,var,range_obj,var_t = None,lineno = None):
+        self.lineno = lineno
         self.var = var
         self.range_obj = range_obj
-        self.type = "for"
         self.var_t = var_t
+    
+    def find_variables(self,parent):
+        self.var = self.var.find_variables(parent)
+        self.range_obj = self.range_obj.find_variables(parent)
+        return self
+    
+    def eval(self,parent):
+        pass
 
 class RangeObj(AstObj):
-    def __init__(self,start,end,step):
+    def __init__(self,start,end,step,lineno = None):
+        self.lineno = lineno
         self.start,self.end,self.step = start,end,step
         if type(self.start) == type(None):
-            self.start = Token("NUMBER","0")
+            self.start = Constant(Token("NUMBER","0"))
         if type(self.step) == type(None):
-            self.step = Token("NUMBER","1")
-        self.type = "range"
+            self.step = Constant(Token("NUMBER","1"))
+    
+    def find_variables(self,parent):
+        self.start = self.start.find_variables(parent)
+        self.end = self.end.find_variables(parent)
+        self.step = self.step.find_variables(parent)
+        return self
 
 class WhileHeader(ScopeHeader):
-    def __init__(self,condition):
+    def __init__(self,condition,lineno = None):
+        self.lineno = lineno
         self.condition = condition
         self.type = "while"
+    
+    def find_variables(self,parent):
+        self.condition = self.condition.find_variables(parent)
+        return self
+    
+    def eval(self,parent):
+        pass
 
 class FunctionCall(AstObj):
-    def __init__(self,name,inp=None):
+    def __init__(self,name,inp=None,lineno=None):
+        self.lineno = lineno
         self.name = Token("IDENTIFIER","Moth" + name.value)
         if type(inp) != type(None):
             self.inputs = [inp]
         else:
             self.inputs = []
         self.type = "function_call"
+    
+    def find_variables(self,parent):
+        inputs = []
+        for i in self.inputs:
+            inputs.append(i.find_variables(parent))
+        self.inputs = inputs
+        return self
 
     def add(self,inp):
         self.inputs.append(inp)
         return self
     
     def eval(self,parent):
-        inps = []
-        for inp in self.inputs:
-            if isinstance(inp,Token):
-                if inp.value in parent.variables.keys():
-                    if isinstance(parent.variables[inp.value],ArrayType):
-                        inps.append(inp.value)
-                    else:
-                        inps.append(evaluateExpression(inp,parent)[0])
-                else:
-                    inps.append(evaluateExpression(inp,parent)[0])
-            else:
-                inps.append(evaluateExpression(inp,parent)[0])
-        #inps = [evaluateExpression(inp,parent)[0] for inp in self.inputs]
-        return self.name.value + "(" + ",".join(inps) + ")" + ";"
-
-class ScopeBody(AstObj):
-    def __init__(self,lines):
-        self.lines = lines
-        self.type = "scope_body"
+        return self.name.value + "(" + ",".join([i.eval(parent) for i in self.inputs]) + ")"
 
 class Lines(Container):
     pass
 
 class BaseType(AstObj):
-    def __init__(self,name):
+    def __init__(self,name,lineno = None):
+        self.lineno = lineno
         self.name = name
         if isinstance(self.name,Token):
             if self.name.value == "bool":
                 self.name.value = "int"
+            if self.name.value[0] == "u":
+                self.name.value = "unsigned " + self.name.value[1:]
         self.dimensions = 1
 
 class Type(BaseType):
@@ -397,190 +403,211 @@ class Type(BaseType):
         return self.name.value
 
 class ObjectType(BaseType):
-    pass
+    def get_c(self):
+        print("OBJECT TYPE NOT IMPLEMENTED")
+        exit()
 
 class ArrayType(BaseType):
     def add_dim(self):
         self.dimensions += 1
         return self
-
-    def get_c(self):
-        return "struct " + self.name.name.value + "Array" + "*"
     
-class AllocArray(Container):
-    pass
+    def get_c(self):
+        return "struct " + self.name.get_c() + "Array*"
     
 class ArrayReference(AstObj):
-    def __init__(self,name,index):
+    def __init__(self,name,index,lineno=None):
+        self.lineno = lineno
         self.name = name
         self.index = [index]
+    
+    def find_variables(self,parent):
+        self.name = self.name.find_variables(parent)
+        index = []
+        for i in self.index:
+            index.append(i.find_variables(parent))
+        self.index = index
+        return self
     
     def add(self,index):
         self.index.append(index)
         return self
 
+    def eval(self,parent):
+        index = [i.eval(parent) for idx,i in enumerate(self.index)]
+        reverse = ["(" + self.name.c_str + "->dims[" + str(i) + "])" for i in list(range(len(index)))]
+        if parent.declarations[self.name.c_str].dimensions != len(self.index):
+            throwError("Array index error",self.lineno)
+        reverse.pop(0)
+        reverse.append(str(1))
+        reverse = reverse[::-1]
+        c_index = []
+        for i in range(len(index)):
+            c_index.append("(" + index[i] + "*" + "*".join(reverse[:len(index)-i]) + ")")
+        return self.name.c_str + "->raw[" + "+".join(c_index) + "]"
+
 class Declaration(AstObj):
-    def __init__(self,type_name,name):
+    def __init__(self,type_name,name,lineno=None):
+        self.lineno = lineno
         self.type_name = type_name
         self.name = name
+    
+    def find_variables(self,parent):
+        var = Variable(self,self.name.value,self.type_name.get_c(),self.type_name)
+        return var
 
     def eval(self,parent):
-        return self.get_c() + ";"
-    
-    def get_c(self):
-        return self.type_name.get_c() + " " + self.name.value
+        pass
 
 class Assign(AstObj):
-    def __init__(self,var,expression):
+    def __init__(self,var,expression,lineno=None):
         self.var = var
         self.expression = expression
-
-    def isArrayAssign(self,parent):
-        if isinstance(self.var,Declaration):
-            if isinstance(self.var.type_name,ArrayType):
-                return True
-            return False
-        if isinstance(self.var,Token):
-            if isinstance(parent.variables[self.var.value],ArrayType):
-                return True
-            return False
-        if isinstance(self.var,Reference):
-            print("FIX ARRAY ASSIGN")
-            exit()
-        if isinstance(self.var,ArrayReference):
-            return False
-        return False
     
-    def getDestinationType(self,parent):
-        if isinstance(self.var,Declaration):
-            if isinstance(self.var.type_name,ArrayType):
-                return self.var.type_name.name.name.value
-            else:
-                return self.var.type_name.name.value
-        if isinstance(self.var,Token):
-            if isinstance(parent.variables[self.var.value],ArrayType):
-                return parent.variables[self.var.value].name.name.value
-            else:
-                return parent.variables[self.var.value].name.value
-        if isinstance(self.var,Reference):
-            print("FIX DESTINATION TYPE")
-            exit()
-        if isinstance(self.var,ArrayReference):
-            refType = parent.variables[self.var.name.value]
-            if isinstance(refType,ArrayType):
-                return refType.name.name.value
-            else:
-                return refType.name.value
-        print(self.var)
-        print("Yo wtf going on at Destination Type")
-        exit()
+    def find_variables(self,parent):
+        self.var = self.var.find_variables(parent)
+        self.expression = self.expression.find_variables(parent)
+        return self
     
     def eval(self,parent):
-        global ARRAY_TYPES,DEFINES
-        destType = self.getDestinationType(parent)
-        if self.isArrayAssign(parent):
-            preamble = ""
-            if isinstance(self.var,Declaration):
-                arrayT = self.var.type_name.name.name.value
-                if not arrayT in ARRAY_TYPES:
-                    ARRAY_TYPES.append(arrayT)
-                    newType = generateArrayType(arrayT)
-                    DEFINES += newType + "\n"
-                structArrayT = "struct " + arrayT + "Array"
-                preamble = getVarC(self.var) + " = " + "(" +structArrayT + "*)malloc(sizeof(" + structArrayT + "));\n"
-                preamble += self.var.name.value + "->initialized = 0;\n"
-                expr = evaluateArrayExpression(self.var,self.expression,parent)
-                return preamble + expr
-            else:
-                arrayT = parent.variables[self.var.value].name.name.value
-                if not arrayT in ARRAY_TYPES:
-                    ARRAY_TYPES.append(arrayT)
-                    newType = generateArrayType(arrayT)
-                    DEFINES += newType + "\n"
-                structArrayT = "struct " + arrayT + "Array"
-                preamble = self.var.value + " = " + "(" +structArrayT + "*)malloc(sizeof(" + structArrayT + "));\n"
-                preamble += self.var.value + "->initialized = 0;\n"
-                expr = evaluateArrayExpression(self.var,self.expression,parent)
-                return preamble + expr
-            return ""
-        else:
-            print("Normal Assign")
-            expr,exprType = evaluateExpression(self.expression,parent)
-            if not doRawTypesAgree(destType,exprType):
-                throwError("types dont agree")
-            return getVarC(self.var,parent) + " = " + expr + ";"
+        if isinstance(self.var,ArrayReference):
+            return self.var.eval(parent) + " = " + self.expression.eval(parent)
+        if isinstance(self.var.moth_type,ArrayType):
+            return self.expression.get_c(self.var,parent)
+        return self.var.c_str + " = " + self.expression.eval(parent)
     
+class AllocArray(Container):
+    def get_c(self,var,parent):
+        dims = [i.eval(parent) for i in self.items]
+        ndims = len(dims)
+        vardims = var.raw.type_name.dimensions
+        if ndims != vardims:
+            throwError("Array Dims dont match",self.lineno)
+        c_t = var.raw.type_name.name.get_c()
+        array_t = generateArrayType(var.raw.type_name.name.get_c())
+        out = ""
+        out += var.c_str + " = (" + array_t + "*)malloc(" + "sizeof(" + array_t + "));\n"
+        out += var.c_str + "->dims = (int*)malloc(" + str(ndims) + "*sizeof(int));\n"
+        out += "".join([var.c_str + "->dims[" + str(idx) + "] = " + i + ";" for idx,i in enumerate(dims)]) + "\n"
+        out += var.c_str + "->raw = (" + c_t + "*" + ")malloc(" + "*".join(dims) + "*sizeof(" + c_t + "))"
+        return out 
+
 class Free(AstObj):
-    def __init__(self,var):
+    def __init__(self,var,lineno=None):
+        self.lineno = lineno
         self.var = var
+    
+    def find_variables(self,parent):
+        self.var = self.var.find_variables(parent)
+        return self
     
     def eval(self,parent):
         out = ""
-        if isinstance(self.var,Token):
-            out += "free(" + self.var.value + "->raw" + ");"
-            out += "free(" + self.var.value + "->dims" + ");"
-            out += "free(" + self.var.value + ");"
-            return out
+        out += "free(" + self.var.c_str + "->dims);free(" + self.var.c_str + "->raw);free(" + self.var.c_str + ")"
+        return out
  
 class AssignInc(AstObj):
-    def __init__(self,var,expression,op):
+    def __init__(self,var,expression,op,lineno=None):
+        self.lineno = lineno
         self.var = var
         self.expression = expression
         self.op = op
     
+    def find_variables(self,parent):
+        self.var = self.var.find_variables(parent)
+        self.expression = self.expression.find_variables(parent)
+        return self
+    
     def eval(self,parent):
-        newExpr = BinOp(self.var,Token("",self.op.value[:-1]),self.expression)
-        return Assign(self.var,newExpr).eval(parent)
+        pass
 
 class Inc(AstObj):
-    def __init__(self,var,op):
+    def __init__(self,var,op,lineno=None):
+        self.lineno = lineno
         self.var = var
         self.op = op
     
-    def eval(self,parent):
-        newExpr = BinOp(self.var,Token("",self.op.value[0]),Token("Number","1"))
-        return Assign(self.var,newExpr).eval(parent)
-
-class BinOp(AstObj):
-    def __init__(self,left,op,right):
-        self.left = left
-        self.op = op
-        self.right = right
-
-class Not(AstObj):
-    def __init__(self,val):
-        self.val = val
-
-class Return(AstObj):
-    def __init__(self,val=None):
-        self.val = val
+    def find_variables(self,parent):
+        self.var = self.var.find_variables(parent)
     
     def eval(self,parent):
-        return "return " + evaluateExpression(self.val,parent)[0] + ";"
+        pass
+
+class BinOp(AstObj):
+    def __init__(self,left,op,right,lineno=None):
+        self.lineno = lineno
+        self.left = left
+        self.op = op
+        if self.op.value == "and":
+            self.op.value = "&&"
+        elif self.op.value == "or":
+            self.op.value = "||"
+        self.right = right
+    
+    def find_variables(self,parent):
+        self.left = self.left.find_variables(parent)
+        self.right = self.right.find_variables(parent)
+        return self
+
+    def eval(self,parent):
+        out = ""
+        op = self.op.value
+        if op in ["+","-","*","/","%","&&","||","&","|","==","!=",">","<",">=","<="]:
+            out += "(" + self.left.eval(parent) + ") " + op + " (" + self.right.eval(parent) + ")"
+        else:
+            print("OP",op,"not implemented")
+            exit()
+        return out
+
+class Not(AstObj):
+    def __init__(self,val,lineno=None):
+        self.lineno = lineno
+        self.val = val
+    
+    def find_variables(self,parent):
+        self.val = self.val.find_variables(parent)
+        return self
+
+class Return(AstObj):
+    def __init__(self,val=None,lineno=None):
+        self.lineno = lineno
+        self.val = val
+    
+    def find_variables(self,parent):
+        if type(self.val) != type(None):
+            self.val = self.val.find_variables(parent)
+        return self
+    
+    def eval(self,parent):
+        out = "return "
+        if type(self.val) != type(None):
+            out += self.val.eval(parent)
+        return out
 
 class Print(Container):
     def eval(self,parent):
-        out = ""
-        statements = []
-        formatter = {"int" : r"%d","float" : r"%f"}
+        out = []
+        formatters = {"int" : r"%d", "float": r"%f"}
         for i in self.items:
-            if isinstance(i,Token):
-                if i.name == "STRING":
-                    statements.append("printf(" + i.value + ")")
-                if i.name == "IDENTIFIER":
-                    print("FF")
-                    var_t = parent.variables[i.value].get_c()
-                    statements.append('printf("' + formatter[var_t] + '"' + ',' + i.value + ')')
+            if isinstance(i,String):
+                out.append(r'printf("%s",' + i.value + r')')
+            elif isinstance(i,ArrayReference):
+                c_t = i.name.moth_type.name.get_c()
+                out.append(r'printf("' + formatters[c_t] + r'",' + i.eval(parent) + r')')
             else:
-                statement,var_t = evaluateExpression(i,parent)
-                statements.append('printf("' + formatter[var_t] + '",' + statement + ')')
-        return ";".join(statements) + ";"
+                out.append(r'printf("' + formatters[i.c_type] + r'",' + i.eval(parent) + r')')
+        return ";".join(out)
 
 class Pass(AstObj):
+    def find_variables(self,parent):
+        return self
+    
     def eval(self,parent):
         return ""
 
 class Break(AstObj):
+    def find_variables(self,parent):
+        return self
     def eval(self,parent):
         return "break;"
 
@@ -588,32 +615,60 @@ class Ctypes(AstObj):
     pass
 
 class Cval(Ctypes):
-    def __init__(self,val):
+    def __init__(self,val,lineno=None):
+        self.lineno = lineno
         self.val = val
+    
+    def find_variables(self,parent):
+        self.val = self.val.find_variables(parent)
+        return self
 
 class Cptr(Ctypes):
-    def __init__(self,var):
+    def __init__(self,var,lineno=None):
+        self.lineno = lineno
         self.var = var
+    
+    def find_variables(self,parent):
+        self.val = self.val.find_variables(parent)
+        return self
 
 class Ccall(Ctypes):
-    def __init__(self,func_name):
+    def __init__(self,func_name,lineno=None):
+        self.lineno = lineno
         self.func_name = func_name
         self.inputs = []
     
+    def find_variables(self,parent):
+        inputs = []
+        for i in self.inputs:
+            inputs.append(i.find_variables(parent))
+        self.inputs = inputs
+        return self
+
     def add(self,inp):
         self.inputs.append(inp)
         return self
 
     def eval(self,parent):
-        evals = [evaluateExpression(i,parent)[0] for i in self.inputs]
-        return self.func_name.value + "(" + ",".join(evals) + ");"
+        pass
     
 class Reference(AstObj):
-    def __init__(self,parent,child):
+    def __init__(self,parent,child,lineno=None):
+        self.lineno = lineno
         self.parent = parent
         self.child = child
+    
+    def find_variables(self,parent):
+        self.parent = self.parent.find_variables(parent)
+        self.child = self.child.find_variables(parent)
+        return self
 
 class Cast(AstObj):
-    def __init__(self,new_type,expression):
+    def __init__(self,new_type,expression,lineno=None):
+        self.lineno = lineno
         self.new_type = new_type
         self.expression = expression
+    
+    def find_variables(self,parent):
+        self.expression = self.expression.find_variables(parent)
+        return self
