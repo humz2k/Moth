@@ -196,8 +196,10 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def array_reference(p):
         return p[0]
 
-    @pg.production('array_reference_open : expression OPEN_SQUARE expression')
-    @pg.production('array_reference_open : expression OPEN_SQUARE COLON')
+    @pg.production('array_reference_open : reference OPEN_SQUARE expression')
+    @pg.production('array_reference_open : reference OPEN_SQUARE COLON')
+    @pg.production('array_reference_open : identifier OPEN_SQUARE expression')
+    @pg.production('array_reference_open : identifier OPEN_SQUARE COLON')
     def array_reference_open(p):
         return aster.ArrayReference(p[0],p[2])
 
@@ -230,9 +232,29 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def allocobj(p):
         return aster.AllocObject(p[1])
     
+    @pg.production('list_literal : OPEN_SQUARE CLOSE_SQUARE')
+    def empty_list(p):
+        return aster.ListLiteral()
+    
+    @pg.production('list_literal : list_literal_open CLOSE_SQUARE')
+    def close_list(p):
+        return p[0]
+    
+    @pg.production('list_literal_open : OPEN_SQUARE expression')
+    def open_list(p):
+        return aster.ListLiteral(p[1])
+
+    @pg.production('list_literal_open : list_literal_open COMMA expression')
+    def cont_list(p):
+        return p[0].add(p[2])
+    
     @pg.production('type_name_base : c_type')
     def c_type(p):
         return p[0]
+    
+    @pg.production('type_name_base : LIST type_name')
+    def list_type_name(p):
+        return aster.ListType(p[1])
         
     @pg.production('type_name_base : TYPE_NAME')
     @pg.production('type_name_base : OBJECT identifier')
@@ -277,7 +299,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def brackets(p):
         return p[1]
     
-    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null|c_lit')
+    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null|c_lit|list_literal')
     def num_str_idn(p):
         return p[0]
     

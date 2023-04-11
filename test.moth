@@ -1,4 +1,8 @@
-include moth-libs/mpi
-
 def int main():
+    list int a = [1,2,3,4,5]
+    a[3] = a[1] + a[4]
+    print(a[3],",",a[1],",",a[4],"\n")
+    int[:,:] b = array(1,3)
+    b[0,0] = a[0] + a[1] + a[2]
+    print(b[0,0],"\n")
     return 0

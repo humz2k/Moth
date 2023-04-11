@@ -4,6 +4,7 @@ HEADERS = "#include <stdlib.h>\n#include <stdio.h>\n#include <math.h>\n"
 DEFINES = ""
 
 ARRAY_TYPES = []
+LIST_TYPES = []
 
 INT_TYPES = ["char","short","int","long","bool","flint"]
 UINT_TYPES = ["unsigned char","unsigned short","unsigned int","unsigned long","bool","flint"]
@@ -26,10 +27,43 @@ struct """ + arrayT + r"""Array {
     int* dims;
     """ + arrayTptr + r"""* raw;
 };
-        """
+"""
         DEFINES += out
         ARRAY_TYPES.append(arrayT)
     return "struct " + arrayT + "Array"
+
+def generateListType(listT):
+    if listT != "void":
+        global LIST_TYPES,DEFINES
+        listTptr = listT
+        listT = "".join(listT.split())
+        if not listT in LIST_TYPES:
+            out = r"""
+struct """ + listT + r"""List {
+
+    """ + listTptr + r""" val;
+    int terminator;
+    struct """ + listT + r"""List* next;
+};
+""" + listTptr + r"""* index""" + listT + r"""List(struct """ + listT + r"""List* input, int index) {
+
+    struct """ + listT + r"""List* indexer = input;
+    if (index == 0){
+        return &indexer->val;
+    }
+    for (int i = 0; i < index; i++){
+        if (indexer->terminator == 1){
+            printf("LIST ERROR: index out of range in list type""" + listT + r"""\n");
+            exit(1);
+        }
+        indexer = indexer->next;
+    }
+    return &indexer->val;
+}
+"""
+            DEFINES += out
+            LIST_TYPES.append(listT)
+    return "struct " + listT + "List"
 
 def doRawTypesAgree(type1,type2):
     global INT_TYPES,UINT_TYPES,FLOAT_TYPES
@@ -464,7 +498,18 @@ class BaseType(AstObj):
             if self.name.value[0] == "u":
                 self.name.value = "unsigned " + self.name.value[1:]
             generateArrayType(self.name.value)
+            generateListType(self.name.value)
         self.dimensions = 1
+
+class ListType(BaseType):
+    def get_c(self):
+        return "struct " + "".join(self.name.get_c().split()) + "List*"
+    
+    def get_raw(self):
+        return self.get_c()
+
+class ListLiteral(Container):
+    pass
 
 class Type(BaseType):
     def get_c(self):
@@ -510,17 +555,22 @@ class ArrayReference(AstObj):
         return self
 
     def eval(self,parent):
-        index = [i.eval(parent) for idx,i in enumerate(self.index)]
-        reverse = ["(" + self.name.eval(parent) + "->dims[" + str(i) + "])" for i in list(range(len(index)))]
-        #if parent.declarations[self.name.c_str].dimensions != len(self.index):
-        #    throwError("Array index error",self.lineno)
-        reverse.pop(0)
-        reverse.append(str(1))
-        reverse = reverse[::-1]
-        c_index = []
-        for i in range(len(index)):
-            c_index.append("(" + index[i] + "*" + "*".join(reverse[:len(index)-i]) + ")")
-        return self.name.eval(parent) + "->raw[" + "+".join(c_index) + "]"
+        if isinstance(self.name.moth_type,ListType):
+            if len(self.index) != 1:
+                throwError("LIST IS ONLY 1 DIMENSION",self.lineno)
+            return "*(index" + self.name.moth_type.get_c().split(" ")[1][:-1] + "(" + self.name.c_str + "," + self.index[0].eval(parent) + "))"
+        else:
+            index = [i.eval(parent) for idx,i in enumerate(self.index)]
+            reverse = ["(" + self.name.eval(parent) + "->dims[" + str(i) + "])" for i in list(range(len(index)))]
+            #if parent.declarations[self.name.c_str].dimensions != len(self.index):
+            #    throwError("Array index error",self.lineno)
+            reverse.pop(0)
+            reverse.append(str(1))
+            reverse = reverse[::-1]
+            c_index = []
+            for i in range(len(index)):
+                c_index.append("(" + index[i] + "*" + "*".join(reverse[:len(index)-i]) + ")")
+            return self.name.eval(parent) + "->raw[" + "+".join(c_index) + "]"
 
 class Declaration(AstObj):
     def __init__(self,type_name,name,lineno=None):
@@ -539,6 +589,7 @@ class Assign(AstObj):
     def __init__(self,var,expression,lineno=None):
         self.var = var
         self.expression = expression
+        self.lineno = lineno
     
     def find_variables(self,parent):
         self.var = self.var.find_variables(parent)
@@ -546,6 +597,26 @@ class Assign(AstObj):
         return self
     
     def eval(self,parent):
+        if isinstance(self.expression,ListLiteral):
+            if not isinstance(self.var.moth_type,ListType):
+                throwError("List type error",self.lineno)
+            nitems = len(self.expression.items)
+            out = self.var.c_str + " = ("+self.var.moth_type.get_c()+")malloc(sizeof(" + self.var.moth_type.get_c()[:-1] + "));\n"
+            out += self.var.c_str + "->terminator = 1"
+            if nitems > 0:
+                temp_var = "Moth_tmp_" + "_".join(self.var.c_str.split("->"))
+                
+                out += ";\n" + self.var.moth_type.get_c() + " " + temp_var + " = " + self.var.c_str + ";\n"
+                for i in range(nitems-1):
+                    out += temp_var + "->val = " + self.expression.items[i].eval(parent) + ";\n"
+                    out += temp_var + "->terminator = 0;\n"
+                    out += temp_var + "->next = " + "("+self.var.moth_type.get_c()+")malloc(sizeof(" + self.var.moth_type.get_c()[:-1] + "));\n"
+                    out += temp_var + " = " + temp_var + "->next;\n"
+                out += temp_var + "->val = " + self.expression.items[-1].eval(parent) + ";\n"
+                out += temp_var + "->terminator = 1;\n"
+            
+            return out
+
         if isinstance(self.expression,AllocArray):
             return self.expression.get_c(self.var,parent)
         if isinstance(self.expression,AllocObject):
