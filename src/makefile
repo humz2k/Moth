@@ -1,9 +1,5 @@
-translate:
-	/usr/local/bin/python3 main.py mothTest.moth
-
 build:
-	/usr/local/bin/python3 main.py mothTest.moth
-	gcc test.c -o test
+	/usr/local/bin/python3 main.py mothTest.moth -o mothTest -keep_temp
 
 run:
-	./test
+	./mothTest

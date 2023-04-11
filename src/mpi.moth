@@ -1,0 +1,5 @@
+cinclude <mpi.h>
+
+class mpi:
+    def void __init__(object mpi self):
+        __c_call(MPI_Init,__c_val(NULL),__c_val(NULL))

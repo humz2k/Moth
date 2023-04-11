@@ -69,6 +69,8 @@ TRUE \bTrue\b
 FALSE \bFalse\b
 ARRAY \barray\b
 FREE \bfree\b
+NEW \bnew\b
+NULL \bNULL\b
 
 NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)
 

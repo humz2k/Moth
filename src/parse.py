@@ -150,6 +150,9 @@ def get_parser(filename="tokens.txt"):
     @pg.production('assignment : declaration ASSIGN expression')
     @pg.production('assignment : identifier ASSIGN expression')
     @pg.production('assignment : reference ASSIGN expression')
+    @pg.production('assignment : declaration ASSIGN allocobj')
+    @pg.production('assignment : identifier ASSIGN allocobj')
+    @pg.production('assignment : reference ASSIGN allocobj')
     def assignment(p):
         return aster.Assign(p[0],p[2])
     
@@ -213,6 +216,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('open_array_type : open_array_type COMMA COLON')
     def cont_array_type(p):
         return p[0].add_dim()
+    
+    @pg.production('allocobj : NEW function_call')
+    def allocobj(p):
+        return aster.AllocObject(p[1])
         
     @pg.production('type_name : TYPE_NAME')
     @pg.production('type_name : OBJECT identifier')
@@ -249,7 +256,7 @@ def get_parser(filename="tokens.txt"):
     def brackets(p):
         return p[1]
     
-    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val')
+    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null')
     def num_str_idn(p):
         return p[0]
     
@@ -269,6 +276,7 @@ def get_parser(filename="tokens.txt"):
         return aster.Cast(p[0],p[2])
 
     @pg.production('function_call : identifier OPEN_PAREN CLOSE_PAREN')
+    @pg.production('function_call : reference OPEN_PAREN CLOSE_PAREN')
     @pg.production('function_call : function_call_open CLOSE_PAREN')
     def function_call(p):
         if len(p) == 3:
@@ -280,6 +288,7 @@ def get_parser(filename="tokens.txt"):
         return p[0].add(p[2])
 
     @pg.production('function_call_open : identifier OPEN_PAREN expression')
+    @pg.production('function_call_open : reference OPEN_PAREN expression')
     def function_call_open(p):
         return aster.FunctionCall(p[0],p[2])
     
@@ -362,6 +371,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('string : STRING')
     def string(p):
         return aster.String(p[0])
+    
+    @pg.production('null : NULL')
+    def null(p):
+        return aster.Null()
 
     return pg.build()
 

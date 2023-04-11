@@ -1,0 +1,3 @@
+
+def float sqrtf(float inp):
+    return __c_call(sqrtf,__c_val(inp))
