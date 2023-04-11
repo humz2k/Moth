@@ -1,0 +1,109 @@
+include mpi
+include pencils
+include changefastaxis
+
+class Distribution:
+    int ng
+    int world_size
+    int world_rank
+    int nlocal
+    bool verbose
+    object MPI mpi
+    int[:] dims
+    int[:] coords
+    int[:] local_grid_size
+    int[:] local_coordinates_start
+    object mpi_datatype fft_t
+
+    def int[:] get_coords(object Distribution self):
+        int[:] out = array(3)
+        out[0] = self.world_rank / (self.dims[1]*self.dims[2])
+        out[1] = (self.world_rank - (out[0]*(self.dims[1]*self.dims[2]))) / self.dims[2]
+        out[2] = (self.world_rank - (out[0]*(self.dims[1]*self.dims[2]))) - (out[1]*self.dims[2])
+        return out
+    
+    def int[:] get_local_grid(object Distribution self):
+        int[:] out = array(3)
+        out[0] = self.ng / self.dims[0]
+        out[1] = self.ng / self.dims[1]
+        out[2] = self.ng / self.dims[2]
+        return out
+    
+    def int[:] get_local_grid_start(object Distribution self):
+        int[:] out = array(3)
+        out[0] = self.local_grid_size[0] * self.coords[0]
+        out[1] = self.local_grid_size[1] * self.coords[1]
+        out[2] = self.local_grid_size[2] * self.coords[2]
+        return out
+    
+    def void getZPencils(object Distribution self, double[:,:] buff1, double[:,:] buff2):
+        int nsends = ((self.local_grid_size[0] * self.local_grid_size[1])/self.world_size) * self.local_grid_size[2]
+        self.mpi.alltoall(buff1,nsends,self.fft_t,buff2,nsends,self.fft_t,self.mpi.comm_world)
+        z_a2a_to_z_pencils(buff2,buff1,self.world_size,self.nlocal,self.local_grid_size,self.dims)
+
+    def void returnZPencils(object Distribution self, double[:,:] buff1, double[:,:] buff2):
+        int nsends = ((self.local_grid_size[0] * self.local_grid_size[1])/self.world_size) * self.local_grid_size[2]
+        z_pencils_to_z_a2a(buff2,buff1,self.world_size,self.nlocal,self.local_grid_size,self.dims)
+        self.mpi.alltoall(buff1,nsends,self.fft_t,buff2,nsends,self.fft_t,self.mpi.comm_world)
+
+    def void getXPencils(object Distribution self, double[:,:] buff1, double[:,:] buff2):
+        int nsends = ((self.local_grid_size[2] * self.local_grid_size[1])/self.world_size) * self.local_grid_size[0]
+        fast_z_to_x(buff2,buff1,self.local_grid_size)
+        self.mpi.alltoall(buff1,nsends,self.fft_t,buff2,nsends,self.fft_t,self.mpi.comm_world)
+        x_a2a_to_x_pencils(buff2,buff1,self.world_size,self.nlocal,self.local_grid_size,self.dims)
+    
+    def void returnXPencils(object Distribution self, double[:,:] buff1, double[:,:] buff2):
+        int nsends = ((self.local_grid_size[2] * self.local_grid_size[1])/self.world_size) * self.local_grid_size[0]
+        x_pencils_to_x_a2a(buff2,buff1,self.world_size,self.nlocal,self.local_grid_size,self.dims)
+        self.mpi.alltoall(buff1,nsends,self.fft_t,buff2,nsends,self.fft_t,self.mpi.comm_world)
+
+    def void getYPencils(object Distribution self, double[:,:] buff1, double[:,:] buff2):
+        int nsends = ((self.local_grid_size[2] * self.local_grid_size[0])/self.world_size) * self.local_grid_size[1]
+        fast_x_to_y(buff2,buff1,self.local_grid_size)
+        self.mpi.alltoall(buff1,nsends,self.fft_t,buff2,nsends,self.fft_t,self.mpi.comm_world)
+        y_a2a_to_y_pencils(buff2,buff1,self.world_size,self.nlocal,self.local_grid_size,self.dims)
+    
+    def void returnYPencils(object Distribution self, double[:,:] buff1, double[:,:] buff2):
+        int nsends = ((self.local_grid_size[2] * self.local_grid_size[0])/self.world_size) * self.local_grid_size[1]
+        y_pencils_to_y_a2a(buff2,buff1,self.world_size,self.nlocal,self.local_grid_size,self.dims)
+        self.mpi.alltoall(buff1,nsends,self.fft_t,buff2,nsends,self.fft_t,self.mpi.comm_world)
+        fast_y_to_z(buff2,buff1,self.local_grid_size)
+
+    def void __free__(object Distribution self):
+        free(self.dims)
+        free(self.coords)
+        free(self.local_grid_size)
+        free(self.local_coordinates_start)
+        free(self.fft_t)
+
+    def void __init__(object Distribution self, int ng):
+
+        self.verbose = True
+
+        self.ng = ng
+        self.mpi = new MPI()
+        self.world_size = self.mpi.comm_size(self.mpi.comm_world)
+        self.world_rank = self.mpi.comm_rank(self.mpi.comm_world)
+        self.dims = self.mpi.dims_create(self.world_size,3)
+        self.coords = self.get_coords()
+        self.local_grid_size = self.get_local_grid()
+        self.local_coordinates_start = self.get_local_grid_start()
+        self.nlocal = self.local_grid_size[0] * self.local_grid_size[1] * self.local_grid_size[2]
+
+        self.fft_t = new mpi_datatype()
+        self.mpi.type_contiguous(8*2,self.fft_t)
+        self.mpi.type_commit(self.fft_t)
+
+        if self.verbose:
+            if self.world_rank == 0:
+                print("World Size: ",self.world_size,"\n")
+                print("Ng: ",self.ng,"\n")
+                print("Dims: [",self.dims[0],",",self.dims[1],",",self.dims[2],"]\n")
+                print("Grid: [",self.local_grid_size[0],",",self.local_grid_size[1],",",self.local_grid_size[2],"]\n")
+                print("nlocal: ",self.nlocal,"\n")
+            self.mpi.barrier(self.mpi.comm_world)
+            for int rank in range(self.world_size):
+                if (rank == self.world_rank):
+                    print("Rank ",rank,":\n   Coords: [",self.coords[0],",",self.coords[1],",",self.coords[2],"]\n")
+                    print("   Start: [",self.local_coordinates_start[0],",",self.local_coordinates_start[1],",",self.local_coordinates_start[2],"]\n")
+                self.mpi.barrier(self.mpi.comm_world)

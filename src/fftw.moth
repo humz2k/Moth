@@ -1,0 +1,22 @@
+cinclude <fftw3.h>
+
+class fftw_plan:
+    __c_type(fftw_plan) raw_plan
+    def void __init__(object fftw_plan self):
+        pass
+    
+    def void __free__(object fftw_plan self):
+        pass
+
+class FFTW:
+
+    def object fftw_plan plan_many_dft(object FFTW self, int rank, int[:] n, int howmany, double[:,:] inp, int[:] inembed, int istride, int idist, double[:,:] out, int[:] onembed, int ostride, int odist, int sign, uint flags):
+        object fftw_plan plan = new fftw_plan()
+        plan.raw_plan = __c_call(fftw_plan_many_dft,__c_val(rank),__c_ptr(n),__c_val(howmany),__c_ptr(inp),__c_lit(NULL),__c_val(istride),__c_val(idist),__c_ptr(out),__c_lit(NULL),__c_val(ostride),__c_val(odist),__c_val(sign),__c_val(flags))
+        return plan
+
+    def void __init__(object FFTW self):
+        pass
+
+    def void __free__(object FFTW self):
+        pass

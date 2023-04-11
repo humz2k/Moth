@@ -1,6 +1,6 @@
 
 
-def resolve(raw):
+def resolve(raw,imported=[]):
     split = raw.splitlines()
     headers = ""
     imports = [i.strip().split()[1] + ".moth" for i in split if i.strip().startswith("include")]
@@ -9,10 +9,13 @@ def resolve(raw):
     raw = "\n".join(no_imports)
     additions = []
     for fname in imports:
-        with open(fname,"r") as f:
-            tmp,tmp_headers = resolve(f.read())
-            additions.append(tmp + "\n")
-            headers += tmp_headers
+        if not fname in imported:
+            with open(fname,"r") as f:
+                tmp,tmp_headers,tmp_imported = resolve(f.read(),imported[:])
+                imported += tmp_imported
+                additions.append(tmp + "\n")
+                headers += tmp_headers
+                imported.append(fname)
     headers += "\n".join(cincludes) + "\n"
     raw = "".join(additions) + raw
-    return raw,headers
+    return raw,headers,imported

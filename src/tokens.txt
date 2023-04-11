@@ -48,9 +48,11 @@ CLOSE_SQUARE \]
 TYPE_NAME \bvoid\b|\bchar\b|\buchar\b|\bshort\b|\bushort\b|\bint\b|\buint\b|\blong\b|\bulong\b|\bfloat\b|\bdouble\b|\bbool\b
 OBJECT object|obj
 
-C_VAL __c_val
-C_PTR __c_ptr
-C_CALL __c_call
+C_VAL \b__c_val\b
+C_PTR \b__c_ptr\b
+C_CALL \b__c_call\b
+C_LIT \b__c_lit\b
+C_TYPE \b__c_type\b
 
 CLASS \bclass\b
 DEF \bdef\b

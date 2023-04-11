@@ -10,7 +10,9 @@ def parse_flags(args):
     output_file = "a.out"
     cc = "gcc"
     keep_temp = False
-    flags = ["-o","-keep_temp","-cc"]
+    flags = ["-o","-keep_temp","-cc","-I","-L","-l"]
+    includes = []
+    links = []
     while i < len(args):
         currentFlag = ""
         val = args[i]
@@ -34,7 +36,13 @@ def parse_flags(args):
                 output_file = val
             if currentFlag == "-cc":
                 cc = val
-    return {"filename": to_compile,"output":output_file,"keep_temp":keep_temp,"cc":cc}
+            if currentFlag == "-I":
+                includes.append("-I" + val)
+            if currentFlag == "-L":
+                links.append("-L" + val)
+            if currentFlag == "-l":
+                links.append("-l" + val)
+    return {"filename": to_compile,"output":output_file,"keep_temp":keep_temp,"cc":cc,"includes":includes,"links":links}
 
 if __name__ == "__main__":
 
@@ -51,7 +59,7 @@ if __name__ == "__main__":
     with open(f,"r") as f:
         raw = f.read()
 
-    raw,headers = resolve_imports.resolve(raw)
+    raw,headers,tmp = resolve_imports.resolve(raw)
 
     raw = lex.remove_comments(raw)
 
@@ -69,7 +77,7 @@ if __name__ == "__main__":
 
     with open(tmp_file,"w") as f:
         f.write(out)
-    os.system(flags["cc"] + ' ' + tmp_file + ' -o ' + out_file)
+    os.system(flags["cc"] + ' ' + tmp_file + ' -o ' + out_file + " " + " ".join(flags["includes"]) + " " + " ".join(flags["links"]))
 
     if not flags["keep_temp"]:
         os.remove(tmp_file)

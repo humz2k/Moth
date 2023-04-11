@@ -26,6 +26,7 @@ struct """ + arrayT + r"""Array {
 };
         """
         DEFINES += out
+        ARRAY_TYPES.append(arrayT)
     return "struct " + arrayT + "Array"
 
 def doRawTypesAgree(type1,type2):
@@ -171,6 +172,7 @@ class Scope(AstObj):
         self.functions = {}
         self.variables = {}
         self.declarations = {}
+        self.classes = {}
 
     def find_classes(self,out):
         self.classes = out
@@ -209,6 +211,7 @@ class Scope(AstObj):
         self.body.find_declarations(self.declarations)
 
     def find_variables(self,parent):
+        self.classes.update(parent.classes)
         self.declarations.update(parent.declarations)
         self.dont_declare += list(parent.declarations.keys())
         self.header.find_variables(self)
@@ -491,7 +494,7 @@ class ArrayReference(AstObj):
 
     def eval(self,parent):
         index = [i.eval(parent) for idx,i in enumerate(self.index)]
-        reverse = ["(" + self.name.c_str + "->dims[" + str(i) + "])" for i in list(range(len(index)))]
+        reverse = ["(" + self.name.eval(parent) + "->dims[" + str(i) + "])" for i in list(range(len(index)))]
         #if parent.declarations[self.name.c_str].dimensions != len(self.index):
         #    throwError("Array index error",self.lineno)
         reverse.pop(0)
@@ -500,7 +503,7 @@ class ArrayReference(AstObj):
         c_index = []
         for i in range(len(index)):
             c_index.append("(" + index[i] + "*" + "*".join(reverse[:len(index)-i]) + ")")
-        return self.name.c_str + "->raw[" + "+".join(c_index) + "]"
+        return self.name.eval(parent) + "->raw[" + "+".join(c_index) + "]"
 
 class Declaration(AstObj):
     def __init__(self,type_name,name,lineno=None):
@@ -701,6 +704,34 @@ class Break(AstObj):
 class Ctypes(AstObj):
     pass
 
+class Ctype(Ctypes):
+    def __init__(self,val,lineno=None):
+        self.lineno = lineno
+        self.val = val
+
+    def find_variables(self,parent):
+        return self
+    
+    def get_c(self,parent=None):
+        return self.val.value
+    
+    def get_raw(self,parent=None):
+        return self.get_c()
+
+class Clit(Ctypes):
+    def __init__(self,val,lineno=None):
+        self.lineno = lineno
+        self.val = val
+    
+    def find_variables(self,parent):
+        return self
+    
+    def eval(self,parent):
+        try:
+            return self.val.value
+        except:
+            return self.val.eval(parent)
+
 class Cval(Ctypes):
     def __init__(self,val,lineno=None):
         self.lineno = lineno
@@ -719,8 +750,16 @@ class Cptr(Ctypes):
         self.var = var
     
     def find_variables(self,parent):
-        self.val = self.val.find_variables(parent)
+        self.var = self.var.find_variables(parent)
         return self
+
+    def eval(self,parent):
+        if isinstance(self.var.moth_type,ArrayType):
+            return self.var.c_str + "->raw"
+        if isinstance(self.var.moth_type,ObjectType):
+            return self.var.c_str
+        else:
+            return "&"+self.var.c_str
 
 class Ccall(Ctypes):
     def __init__(self,func_name,lineno=None):

@@ -220,6 +220,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('allocobj : NEW function_call')
     def allocobj(p):
         return aster.AllocObject(p[1])
+    
+    @pg.production('type_name : c_type')
+    def c_type(p):
+        return p[0]
         
     @pg.production('type_name : TYPE_NAME')
     @pg.production('type_name : OBJECT identifier')
@@ -256,7 +260,7 @@ def get_parser(filename="tokens.txt"):
     def brackets(p):
         return p[1]
     
-    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null')
+    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null|c_lit')
     def num_str_idn(p):
         return p[0]
     
@@ -296,13 +300,21 @@ def get_parser(filename="tokens.txt"):
     def c_val(p):
         return aster.Cval(p[2])
     
-    @pg.production('c_ptr : C_PTR OPEN_PAREN identifier CLOSE_PAREN')
+    @pg.production('c_lit : C_LIT OPEN_PAREN identifier CLOSE_PAREN')
+    @pg.production('c_lit : C_LIT OPEN_PAREN null CLOSE_PAREN')
+    def c_val(p):
+        return aster.Clit(p[2])
+    
+    @pg.production('c_type : C_TYPE OPEN_PAREN identifier CLOSE_PAREN')
+    def c_val(p):
+        return aster.Ctype(p[2])
+    
+    @pg.production('c_ptr : C_PTR OPEN_PAREN expression CLOSE_PAREN')
     def c_ptr(p):
         return aster.Cptr(p[2])
     
     @pg.production('c_call : C_CALL OPEN_PAREN identifier CLOSE_PAREN')
     def c_call(p):
-        print("C_CALL")
         return aster.Ccall(p[2])
     
     @pg.production('c_call : c_call_open CLOSE_PAREN')
@@ -312,6 +324,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_val')
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_ptr')
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_call')
+    @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_lit')
     def c_call_open(p):
         tmp = aster.Ccall(p[2])
         return tmp.add(p[4])
@@ -319,6 +332,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('c_call_open : c_call_open COMMA c_val')
     @pg.production('c_call_open : c_call_open COMMA c_ptr')
     @pg.production('c_call_open : c_call_open COMMA c_call')
+    @pg.production('c_call_open : c_call_open COMMA c_lit')
     def c_call_cont(p):
         return p[0].add(p[2])
     
@@ -375,6 +389,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('null : NULL')
     def null(p):
         return aster.Null()
+
+    @pg.error
+    def error_handler(token):
+        raise ValueError("Ran into a %s where it wasn't expected" % token.gettokentype())
 
     return pg.build()
 
