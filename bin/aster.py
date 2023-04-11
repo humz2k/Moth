@@ -400,11 +400,22 @@ class WhileHeader(ScopeHeader):
     
     def eval(self,parent):
         return "while (" + self.condition.eval(parent) + ")"
+    
+class StaticFunction(AstObj):
+    def __init__(self,class_name,function_name,lineno=None):
+        self.class_name = class_name
+        self.function_name = function_name
+        self.lineno = lineno
+    
+    def find_variables(self,parent):
+        return self
 
 class FunctionCall(AstObj):
     def __init__(self,name,inp=None,lineno=None):
         self.lineno = lineno
         if (isinstance(name,Reference)):
+            self.name = name
+        elif (isinstance(name,StaticFunction)):
             self.name = name
         else:
             self.name = Token("IDENTIFIER","Moth" + name.value)
@@ -431,6 +442,8 @@ class FunctionCall(AstObj):
         if isinstance(self.name,Reference):
             name = "OBJECT_"+self.name.parent.moth_type.name.value+"_Moth"+self.name.child.value
             self.inputs.insert(0,self.name.parent)
+        elif isinstance(self.name,StaticFunction):
+            name = "OBJECT_"+self.name.class_name.value+"_Moth"+self.name.function_name.value
         else:
             name = self.name.value
         return name + "(" + ",".join([i.eval(parent) for i in self.inputs]) + ")"

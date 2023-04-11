@@ -2,9 +2,9 @@ import aster
 from rply import ParserGenerator
 from rply.token import Token
 
-def get_parser(filename="tokens.txt"):
+def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STATIC_OBJECT"]):
     with open(filename,"r") as f:
-        tokens = [i.split()[0] for i in f.read().splitlines() if (not i.startswith("//")) and (not len(i) == 0)]
+        tokens = [i.split()[0] for i in f.read().splitlines() if (not i.startswith("//")) and (not len(i) == 0)] + user_types + statics
     if "IGNORE" in tokens:
         tokens.remove("IGNORE")
     pg = ParserGenerator(tokens, precedence=[
@@ -47,6 +47,11 @@ def get_parser(filename="tokens.txt"):
         if len(p) == 3:
             return aster.ClassHeader(p[1])
         return aster.ClassHeader(p[1],p[3])
+    
+    @pg.production('class_header : CLASS user_type OPEN_PAREN identifier CLOSE_PAREN COLON')
+    @pg.production('class_header : CLASS static_object OPEN_PAREN identifier CLOSE_PAREN COLON')
+    def class_header_type(p):
+        return aster.ClassHeader(p[1])
     
     @pg.production('function_header : DEF type identifier OPEN_PAREN CLOSE_PAREN COLON')
     @pg.production('function_header : DEF type identifier func_def_inputs COLON')
@@ -221,17 +226,25 @@ def get_parser(filename="tokens.txt"):
     def allocobj(p):
         return aster.AllocObject(p[1])
     
-    @pg.production('type_name : c_type')
+    @pg.production('type_name_base : c_type')
     def c_type(p):
         return p[0]
         
-    @pg.production('type_name : TYPE_NAME')
-    @pg.production('type_name : OBJECT identifier')
+    @pg.production('type_name_base : TYPE_NAME')
+    @pg.production('type_name_base : OBJECT identifier')
     def type_name(p):
         if len(p) == 1:
             return aster.Type(p[0])
         if len(p) == 2:
             return aster.ObjectType(p[1])
+        
+    @pg.production('type_name : type_name_base')
+    def type_name_base(p):
+        return p[0]
+        
+    @pg.production('type_name : user_type')
+    def user_type_name(p):
+        return aster.ObjectType(p[0])
         
     @pg.production('expression : expression PLUS expression')
     @pg.production('expression : expression MINUS expression')
@@ -275,12 +288,13 @@ def get_parser(filename="tokens.txt"):
         else:
             return aster.Number(Token("Number","0"))
     
-    @pg.production('cast : type_name OPEN_PAREN expression CLOSE_PAREN')
+    @pg.production('cast : type_name_base OPEN_PAREN expression CLOSE_PAREN')
     def cast(p):
         return aster.Cast(p[0],p[2])
 
     @pg.production('function_call : identifier OPEN_PAREN CLOSE_PAREN')
     @pg.production('function_call : reference OPEN_PAREN CLOSE_PAREN')
+    @pg.production('function_call : user_type OPEN_PAREN CLOSE_PAREN')
     @pg.production('function_call : function_call_open CLOSE_PAREN')
     def function_call(p):
         if len(p) == 3:
@@ -293,6 +307,7 @@ def get_parser(filename="tokens.txt"):
 
     @pg.production('function_call_open : identifier OPEN_PAREN expression')
     @pg.production('function_call_open : reference OPEN_PAREN expression')
+    @pg.production('function_call_open : user_type OPEN_PAREN expression')
     def function_call_open(p):
         return aster.FunctionCall(p[0],p[2])
     
@@ -365,6 +380,10 @@ def get_parser(filename="tokens.txt"):
     def free(p):
         return aster.Free(p[2])
     
+    @pg.production('reference : static_object PERIOD identifier')
+    def reference2(p):
+        return aster.StaticFunction(p[0],p[2])
+    
     @pg.production('reference : identifier PERIOD identifier')
     @pg.production('reference : reference PERIOD identifier')
     def reference(p):
@@ -377,6 +396,14 @@ def get_parser(filename="tokens.txt"):
             return aster.Number(p[0])
         else:
             return aster.Number(Token("NUMBER","-"+p[1].value))
+        
+    @pg.production('static_object : STATIC_OBJECT')
+    def user_type(p):
+        return aster.Identifier(p[0])
+    
+    @pg.production('user_type : USER_TYPE')
+    def user_type(p):
+        return aster.Identifier(p[0])
 
     @pg.production('identifier : IDENTIFIER')
     def identifier(p):

@@ -1,9 +1,14 @@
 from rply import LexerGenerator
 
-def get_lexer(filename = "tokens.txt"):
+def get_lexer(filename = "tokens.txt",user_types = [], statics = []):
     lexer = LexerGenerator()
     with open(filename,"r") as f:
         raw = [i.split() for i in f.read().splitlines() if (not i.startswith("//")) and (not len(i) == 0)]
+
+    for i in user_types:
+        lexer.add("USER_TYPE",i)
+    for i in statics:
+        lexer.add("STATIC_OBJECT",i)
 
     for i in raw:
         if i[0] == "IGNORE":
