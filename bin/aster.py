@@ -10,15 +10,19 @@ INT_TYPES = ["char","short","int","long","bool","flint"]
 UINT_TYPES = ["unsigned char","unsigned short","unsigned int","unsigned long","bool","flint"]
 FLOAT_TYPES = ["float","double","flint"]
 
+STRUCTS = ""
+
 def throwError(err,lineno):
     print("CODE GEN ERROR @ line " + str(lineno) + ":")
     print("   " + err)
     exit()
 
 def generateArrayType(arrayT):
-    global ARRAY_TYPES,DEFINES
+    global ARRAY_TYPES,DEFINES,STRUCTS
     arrayTptr = arrayT
     arrayT = "".join(arrayT.split())
+    if arrayT.endswith("*"):
+        arrayT = arrayT[:-1]
     if not arrayT in ARRAY_TYPES:
         out = r"""
 struct """ + arrayT + r"""Array {
@@ -26,17 +30,20 @@ struct """ + arrayT + r"""Array {
     int ndims;
     int* dims;
     """ + arrayTptr + r"""* raw;
-};
+}""" + r"""; 
 """
+        STRUCTS += "struct " + arrayT + "Array; typedef struct " + arrayT + "Array " + arrayT + "Array;\n"
         DEFINES += out
         ARRAY_TYPES.append(arrayT)
-    return "struct " + arrayT + "Array"
+    return arrayT + "Array"
 
 def generateListType(listT):
     if listT != "void":
-        global LIST_TYPES,DEFINES
-        listTptr = listT
+        global LIST_TYPES,DEFINES,STRUCTS
+        listTptr = listT.strip()
         listT = "".join(listT.split())
+        if listT.endswith("*"):
+            listT = listT[:-1]
         if not listT in LIST_TYPES:
             out = r"""
 struct """ + listT + r"""List {
@@ -44,10 +51,10 @@ struct """ + listT + r"""List {
     """ + listTptr + r""" val;
     int terminator;
     struct """ + listT + r"""List* next;
-};
-""" + listTptr + r"""* index""" + listT + r"""List(struct """ + listT + r"""List* input, int index) {
+}""" + r""";
+""" + listTptr + r"""* index""" + listT + r"""List(""" + listT + r"""List* input, int index) {
 
-    struct """ + listT + r"""List* indexer = input;
+    """ + listT + r"""List* indexer = input;
     if (index == 0){
         return &indexer->val;
     }
@@ -60,10 +67,24 @@ struct """ + listT + r"""List {
     }
     return &indexer->val;
 }
+void append""" + listT + r"""List(""" + listT + r"""List* input, """ + listTptr + r""" new_val) {
+
+    """ + listT + r"""List* indexer = input;
+    while (indexer->terminator == 0){
+        indexer = indexer->next;
+    }
+    indexer->next = (""" + listT + r"""List*)malloc(sizeof(""" + listT + r"""List));
+    indexer->terminator = 0;
+    indexer = indexer->next;
+    indexer->val = new_val;
+    indexer->terminator = 1;
+
+}
 """
+            STRUCTS += "struct " + listT + "List; typedef struct " + listT + "List " + listT + "List;"
             DEFINES += out
             LIST_TYPES.append(listT)
-    return "struct " + listT + "List"
+    return listT + "List"
 
 def doRawTypesAgree(type1,type2):
     global INT_TYPES,UINT_TYPES,FLOAT_TYPES
@@ -188,7 +209,7 @@ class Program(Container):
             scope.find_variables(self)
 
     def eval(self):
-        global HEADERS,DEFINES
+        global HEADERS,DEFINES,STRUCTS
         generateArrayType("void")
         self.verify()
         self.find_classes()
@@ -198,7 +219,7 @@ class Program(Container):
         out = ""
         for scope in self.items:
             out += scope.eval(self)
-        return HEADERS + DEFINES + out + "\nint main() { return Mothmain();}\n"
+        return HEADERS + STRUCTS + DEFINES + out + "\nint main() { return Mothmain();}\n"
 
 class Scope(AstObj):
     def __init__(self,header,body,lineno=None):
@@ -263,7 +284,7 @@ class Scope(AstObj):
         out += self.header.eval(parent) + "{\n"
         out += "".join([self.declarations[i].get_c() + " " + i + ";" for i in self.declarations.keys() if not i in self.dont_declare]) + "\n"
         if isinstance(self.header,ClassHeader):
-            out += "\n};\n"
+            out += "\n}" + ";\n"
             out += self.body.eval(self,self.declarations)
         else:
             out += self.body.eval(self)
@@ -324,8 +345,10 @@ class ClassHeader(ScopeHeader):
         return self
 
     def eval(self,parent):
+        global STRUCTS
         out = ""
         out += "struct Moth" + self.name.value
+        STRUCTS += "struct Moth" + self.name.value + ";typedef struct Moth" + self.name.value + " Moth" + self.name.value + ";\n"
         return out
 
 class FunctionHeader(ScopeHeader):
@@ -502,14 +525,34 @@ class BaseType(AstObj):
         self.dimensions = 1
 
 class ListType(BaseType):
+    def __init__(self,name,lineno=None):
+        super().__init__(name,lineno)
+        generateListType("".join(self.name.get_c().split()))
+
     def get_c(self):
-        return "struct " + "".join(self.name.get_c().split()) + "List*"
+        return "".join(self.name.get_raw().split()) + "List*"
     
     def get_raw(self):
-        return self.get_c()
+        return self.get_c()[:-1]
 
 class ListLiteral(Container):
     pass
+
+class ListAppend(AstObj):
+    def __init__(self,list_name,val,lineno = None):
+        self.list_name = list_name
+        self.val = val
+        self.lineno = None
+    
+    def find_variables(self,parent):
+        self.list_name = self.list_name.find_variables(parent)
+        self.val = self.val.find_variables(parent)
+        return self
+    
+    def eval(self,parent):
+        val = self.val.eval(parent)
+        this_list = self.list_name.eval(parent)
+        return "append"+self.list_name.moth_type.get_raw() + "(" + this_list + "," + val + ")"
 
 class Type(BaseType):
     def get_c(self):
@@ -520,21 +563,25 @@ class Type(BaseType):
 
 class ObjectType(BaseType):
     def get_c(self):
-        return "struct Moth" + self.name.value + "*"
+        return "Moth" + self.name.value + "*"
     
     def get_raw(self):
         return "Moth" + self.name.value
 
 class ArrayType(BaseType):
+    def __init__(self,name, lineno = None):
+        super().__init__(name,lineno)
+        generateArrayType("".join(self.name.get_c().split()))
+
     def add_dim(self):
         self.dimensions += 1
         return self
     
     def get_c(self):
-        return "struct " + "".join(self.name.get_c().split()) + "Array*"
+        return "".join(self.name.get_raw().split()) + "Array*"
 
     def get_raw(self):
-        return self.name.get_c() + "Array"
+        return self.name.get_raw() + "Array"
     
 class ArrayReference(AstObj):
     def __init__(self,name,index,lineno=None):
@@ -545,6 +592,7 @@ class ArrayReference(AstObj):
     def find_variables(self,parent):
         self.name = self.name.find_variables(parent)
         index = []
+        self.moth_type = self.name.moth_type.name
         for i in self.index:
             index.append(i.find_variables(parent))
         self.index = index
@@ -558,7 +606,7 @@ class ArrayReference(AstObj):
         if isinstance(self.name.moth_type,ListType):
             if len(self.index) != 1:
                 throwError("LIST IS ONLY 1 DIMENSION",self.lineno)
-            return "*(index" + self.name.moth_type.get_c().split(" ")[1][:-1] + "(" + self.name.c_str + "," + self.index[0].eval(parent) + "))"
+            return "(*(index" + self.name.moth_type.get_raw() + "(" + self.name.c_str + "," + self.index[0].eval(parent) + ")))"
         else:
             index = [i.eval(parent) for idx,i in enumerate(self.index)]
             reverse = ["(" + self.name.eval(parent) + "->dims[" + str(i) + "])" for i in list(range(len(index)))]
@@ -601,7 +649,7 @@ class Assign(AstObj):
             if not isinstance(self.var.moth_type,ListType):
                 throwError("List type error",self.lineno)
             nitems = len(self.expression.items)
-            out = self.var.c_str + " = ("+self.var.moth_type.get_c()+")malloc(sizeof(" + self.var.moth_type.get_c()[:-1] + "));\n"
+            out = self.var.c_str + " = ("+self.var.moth_type.get_c()+")malloc(sizeof(" + self.var.moth_type.get_raw() + "));\n"
             out += self.var.c_str + "->terminator = 1"
             if nitems > 0:
                 temp_var = "Moth_tmp_" + "_".join(self.var.c_str.split("->"))
@@ -640,7 +688,7 @@ class AllocObject(AstObj):
     
     def eval(self,parent):
         out = ""
-        c_t = "struct "+self.objname.name.value
+        c_t = self.objname.name.value
         return "(" + c_t + "*)malloc(sizeof(" + c_t + "))"
 
 class AllocArray(Container):
@@ -650,13 +698,17 @@ class AllocArray(Container):
         vardims = var.moth_type.dimensions
         if ndims != vardims:
             throwError("Array Dims dont match",self.lineno)
-        c_t = var.moth_type.name.get_raw()
-        array_t = generateArrayType(var.moth_type.name.get_raw())
+        c_t = var.moth_type.name.get_c()
+        array_t = generateArrayType(var.moth_type.name.get_c())
         out = ""
-        out += var.c_str + " = (" + array_t + "*)malloc(" + "sizeof(" + array_t + "));\n"
-        out += var.c_str + "->dims = (int*)malloc(" + str(ndims) + "*sizeof(int));\n"
-        out += "".join([var.c_str + "->dims[" + str(idx) + "] = " + i + ";" for idx,i in enumerate(dims)]) + "\n"
-        out += var.c_str + "->raw = (" + c_t + "*" + ")malloc(" + "*".join(dims) + "*sizeof(" + c_t + "))"
+        try:
+            c_str = var.c_str
+        except:
+            c_str = var.eval(parent)
+        out += c_str + " = (" + array_t + "*)malloc(" + "sizeof(" + array_t + "));\n"
+        out += c_str + "->dims = (int*)malloc(" + str(ndims) + "*sizeof(int));\n"
+        out += "".join([c_str + "->dims[" + str(idx) + "] = " + i + ";" for idx,i in enumerate(dims)]) + "\n"
+        out += c_str + "->raw = (" + c_t + "*" + ")malloc(" + "*".join(dims) + "*sizeof(" + c_t + "))"
         return out 
 
 class Free(AstObj):

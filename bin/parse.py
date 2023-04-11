@@ -136,6 +136,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('line : print SEMI_COLON')
     @pg.production('line : free SEMI_COLON')
     @pg.production('line : c_call SEMI_COLON')
+    @pg.production('line : list_append SEMI_COLON')
     @pg.production('line : scope')
     def line(p):
         return p[0]
@@ -221,6 +222,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
         return p[0]
         
     @pg.production('open_array_type : type_name OPEN_SQUARE COLON')
+    @pg.production('open_array_type : array_type OPEN_SQUARE COLON')
     def open_array_type(p):
         return aster.ArrayType(p[0])
     
@@ -318,6 +320,12 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('cast : array_type OPEN_PAREN expression CLOSE_PAREN')
     def cast(p):
         return aster.Cast(p[0],p[2])
+    
+    @pg.production('list_append : identifier PERIOD APPEND OPEN_PAREN expression CLOSE_PAREN')
+    @pg.production('list_append : reference PERIOD APPEND OPEN_PAREN expression CLOSE_PAREN')
+    @pg.production('list_append : function_call PERIOD APPEND OPEN_PAREN expression CLOSE_PAREN')
+    def list_append(p):
+        return aster.ListAppend(p[0],p[4])
 
     @pg.production('function_call : identifier OPEN_PAREN CLOSE_PAREN')
     @pg.production('function_call : reference OPEN_PAREN CLOSE_PAREN')

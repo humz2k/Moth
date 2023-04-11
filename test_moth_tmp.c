@@ -2,13 +2,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+struct intArray; typedef struct intArray intArray;
+struct intList; typedef struct intList intList;struct voidArray; typedef struct voidArray voidArray;
 
 struct intArray {
     int initialized;
     int ndims;
     int* dims;
     int* raw;
-};
+}; 
 
 struct intList {
 
@@ -16,9 +18,9 @@ struct intList {
     int terminator;
     struct intList* next;
 };
-int* indexintList(struct intList* input, int index) {
+int* indexintList(intList* input, int index) {
 
-    struct intList* indexer = input;
+    intList* indexer = input;
     if (index == 0){
         return &indexer->val;
     }
@@ -31,45 +33,36 @@ int* indexintList(struct intList* input, int index) {
     }
     return &indexer->val;
 }
+void appendintList(intList* input, int new_val) {
+
+    intList* indexer = input;
+    while (indexer->terminator == 0){
+        indexer = indexer->next;
+    }
+    indexer->next = (intList*)malloc(sizeof(intList));
+    indexer->terminator = 0;
+    indexer = indexer->next;
+    indexer->val = new_val;
+    indexer->terminator = 1;
+
+}
 
 struct voidArray {
     int initialized;
     int ndims;
     int* dims;
     void* raw;
-};
+}; 
 int Mothmain(){
-struct intList* a;struct intArray* b;
-a = (struct intList*)malloc(sizeof(struct intList));
-a->terminator = 1;
-struct intList* Moth_tmp_a = a;
-Moth_tmp_a->val = 1;
-Moth_tmp_a->terminator = 0;
-Moth_tmp_a->next = (struct intList*)malloc(sizeof(struct intList));
-Moth_tmp_a = Moth_tmp_a->next;
-Moth_tmp_a->val = 2;
-Moth_tmp_a->terminator = 0;
-Moth_tmp_a->next = (struct intList*)malloc(sizeof(struct intList));
-Moth_tmp_a = Moth_tmp_a->next;
-Moth_tmp_a->val = 3;
-Moth_tmp_a->terminator = 0;
-Moth_tmp_a->next = (struct intList*)malloc(sizeof(struct intList));
-Moth_tmp_a = Moth_tmp_a->next;
-Moth_tmp_a->val = 4;
-Moth_tmp_a->terminator = 0;
-Moth_tmp_a->next = (struct intList*)malloc(sizeof(struct intList));
-Moth_tmp_a = Moth_tmp_a->next;
-Moth_tmp_a->val = 5;
-Moth_tmp_a->terminator = 1;
+intList* stack;
+stack = (intList*)malloc(sizeof(intList));
+stack->terminator = 1;
+intList* Moth_tmp_stack = stack;
+Moth_tmp_stack->val = 1;
+Moth_tmp_stack->terminator = 1;
 ;
-*(indexintList(a,3)) = (*(indexintList(a,1))) + (*(indexintList(a,4)));
-printf("%d",*(indexintList(a,3)));printf("%s",",");printf("%d",*(indexintList(a,1)));printf("%s",",");printf("%d",*(indexintList(a,4)));printf("%s","\n");
-b = (struct intArray*)malloc(sizeof(struct intArray));
-b->dims = (int*)malloc(2*sizeof(int));
-b->dims[0] = 1;b->dims[1] = 3;
-b->raw = (int*)malloc(1*3*sizeof(int));
-b->raw[(0*1*(b->dims[1]))+(0*1)] = ((*(indexintList(a,0))) + (*(indexintList(a,1)))) + (*(indexintList(a,2)));
-printf("%d",b->raw[(0*1*(b->dims[1]))+(0*1)]);printf("%s","\n");
+appendintList(stack,0);
+printf("%d",(*(indexintList(stack,1))));printf("%s","\n");
 return 0;
 
 }
