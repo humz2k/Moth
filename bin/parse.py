@@ -182,9 +182,13 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('assignment : reference MINUS_MINUS')
     def inc(p):
         return aster.Inc(p[0],p[1])
+    
+    @pg.production('array_type : open_array_type CLOSE_SQUARE')
+    def pass_array_type(p):
+        return p[0]
         
     @pg.production('type : type_name')
-    @pg.production('type : open_array_type CLOSE_SQUARE')
+    @pg.production('type : array_type')
     def pass_type(p):
         return p[0]
     
@@ -289,6 +293,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
             return aster.Number(Token("Number","0"))
     
     @pg.production('cast : type_name_base OPEN_PAREN expression CLOSE_PAREN')
+    @pg.production('cast : array_type OPEN_PAREN expression CLOSE_PAREN')
     def cast(p):
         return aster.Cast(p[0],p[2])
 
@@ -336,10 +341,19 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def c_call_close(p):
         return p[0]
     
+    @pg.production('c_raw : C_RAW OPEN_PAREN string COMMA c_val CLOSE_PAREN')
+    @pg.production('c_raw : C_RAW OPEN_PAREN string COMMA c_ptr CLOSE_PAREN')
+    @pg.production('c_raw : C_RAW OPEN_PAREN string COMMA c_call CLOSE_PAREN')
+    @pg.production('c_raw : C_RAW OPEN_PAREN string COMMA c_lit CLOSE_PAREN')
+    @pg.production('c_raw : C_RAW OPEN_PAREN string COMMA c_raw CLOSE_PAREN')
+    def c_raw(p):
+        return aster.Craw(p[2],p[4])
+    
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_val')
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_ptr')
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_call')
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_lit')
+    @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_raw')
     def c_call_open(p):
         tmp = aster.Ccall(p[2])
         return tmp.add(p[4])
@@ -348,6 +362,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('c_call_open : c_call_open COMMA c_ptr')
     @pg.production('c_call_open : c_call_open COMMA c_call')
     @pg.production('c_call_open : c_call_open COMMA c_lit')
+    @pg.production('c_call_open : c_call_open COMMA c_raw')
     def c_call_cont(p):
         return p[0].add(p[2])
     

@@ -1,12 +1,4 @@
-class abc(static):
-
-    def void test2():
-        print("YEET\n")
-
-    def void test(int a):
-        print(a,"\n")
-        abc.test2()
+include moth-libs/mpi
 
 def int main():
-    abc.test(5)
     return 0

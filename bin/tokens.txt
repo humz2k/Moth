@@ -53,6 +53,7 @@ C_PTR \b__c_ptr\b
 C_CALL \b__c_call\b
 C_LIT \b__c_lit\b
 C_TYPE \b__c_type\b
+C_RAW \b__c_raw\b
 
 CLASS \bclass\b
 DEF \bdef\b

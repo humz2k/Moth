@@ -16,13 +16,15 @@ def throwError(err,lineno):
 
 def generateArrayType(arrayT):
     global ARRAY_TYPES,DEFINES
+    arrayTptr = arrayT
+    arrayT = "".join(arrayT.split())
     if not arrayT in ARRAY_TYPES:
         out = r"""
 struct """ + arrayT + r"""Array {
     int initialized;
     int ndims;
     int* dims;
-    """ + arrayT + r"""* raw;
+    """ + arrayTptr + r"""* raw;
 };
         """
         DEFINES += out
@@ -153,6 +155,7 @@ class Program(Container):
 
     def eval(self):
         global HEADERS,DEFINES
+        generateArrayType("void")
         self.verify()
         self.find_classes()
         self.find_functions()
@@ -460,6 +463,7 @@ class BaseType(AstObj):
                 self.name.value = "int"
             if self.name.value[0] == "u":
                 self.name.value = "unsigned " + self.name.value[1:]
+            generateArrayType(self.name.value)
         self.dimensions = 1
 
 class Type(BaseType):
@@ -482,7 +486,7 @@ class ArrayType(BaseType):
         return self
     
     def get_c(self):
-        return "struct " + self.name.get_c() + "Array*"
+        return "struct " + "".join(self.name.get_c().split()) + "Array*"
 
     def get_raw(self):
         return self.name.get_c() + "Array"
@@ -717,6 +721,25 @@ class Break(AstObj):
 class Ctypes(AstObj):
     pass
 
+class Craw(Ctypes):
+    def __init__(self,string,val):
+        self.string = string
+        self.val = val
+
+    def find_variables(self,parent):
+        self.val = self.val.find_variables(parent)
+        return self
+
+    def get_c(self,parent=None):
+        try:
+            out_val = self.val.get_c(parent)
+        except:
+            out_val = self.val.eval(parent)
+        return self.string.value[1:-1] + out_val
+    
+    def eval(self,parent=None):
+        return self.get_c(parent)
+
 class Ctype(Ctypes):
     def __init__(self,val,lineno=None):
         self.lineno = lineno
@@ -767,9 +790,11 @@ class Cptr(Ctypes):
         return self
 
     def eval(self,parent):
-        if isinstance(self.var.moth_type,ArrayType):
+        if isinstance(self.var,Null):
+            return "NULL"
+        elif isinstance(self.var.moth_type,ArrayType):
             return self.var.c_str + "->raw"
-        if isinstance(self.var.moth_type,ObjectType):
+        elif isinstance(self.var.moth_type,ObjectType):
             return self.var.c_str
         else:
             return "&"+self.var.c_str
