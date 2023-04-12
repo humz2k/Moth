@@ -808,6 +808,186 @@ struct Mothmath{
 
 
 };
+float OBJECT_math_Mothacosf(float inp){
+
+return acosf(inp);
+
+}
+
+double OBJECT_math_Mothacos(double inp){
+
+return acos(inp);
+
+}
+
+float OBJECT_math_Mothasinf(float inp){
+
+return asinf(inp);
+
+}
+
+double OBJECT_math_Mothasin(double inp){
+
+return asin(inp);
+
+}
+
+float OBJECT_math_Mothatanf(float inp){
+
+return atanf(inp);
+
+}
+
+double OBJECT_math_Mothatan(double inp){
+
+return atan(inp);
+
+}
+
+float OBJECT_math_Mothatan2f(float inp1,float inp2){
+
+return atan2f(inp1,inp2);
+
+}
+
+double OBJECT_math_Mothatan2(double inp1,double inp2){
+
+return atan2(inp1,inp2);
+
+}
+
+float OBJECT_math_Mothcosf(float inp){
+
+return cosf(inp);
+
+}
+
+double OBJECT_math_Mothcos(double inp){
+
+return cos(inp);
+
+}
+
+float OBJECT_math_Mothcoshf(float inp){
+
+return coshf(inp);
+
+}
+
+double OBJECT_math_Mothcosh(double inp){
+
+return cosh(inp);
+
+}
+
+float OBJECT_math_Mothsinf(float inp){
+
+return sinf(inp);
+
+}
+
+double OBJECT_math_Mothsin(double inp){
+
+return sin(inp);
+
+}
+
+float OBJECT_math_Mothsinhf(float inp){
+
+return sinhf(inp);
+
+}
+
+double OBJECT_math_Mothsinh(double inp){
+
+return sinh(inp);
+
+}
+
+float OBJECT_math_Mothtanhf(float inp){
+
+return tanhf(inp);
+
+}
+
+double OBJECT_math_Mothtanh(double inp){
+
+return tanh(inp);
+
+}
+
+float OBJECT_math_Mothexpf(float inp){
+
+return expf(inp);
+
+}
+
+double OBJECT_math_Mothexp(double inp){
+
+return exp(inp);
+
+}
+
+float OBJECT_math_Mothlogf(float inp){
+
+return logf(inp);
+
+}
+
+double OBJECT_math_Mothlog(double inp){
+
+return log(inp);
+
+}
+
+float OBJECT_math_Mothlog10f(float inp){
+
+return log10f(inp);
+
+}
+
+double OBJECT_math_Mothlog10(double inp){
+
+return log10(inp);
+
+}
+
+float OBJECT_math_Mothpowf(float inp1,float inp2){
+
+return powf(inp1,inp2);
+
+}
+
+double OBJECT_math_Mothpow(double inp1,double inp2){
+
+return pow(inp1,inp2);
+
+}
+
+float OBJECT_math_Mothfabsf(float inp){
+
+return fabsf(inp);
+
+}
+
+double OBJECT_math_Mothfabs(double inp){
+
+return fabs(inp);
+
+}
+
+float OBJECT_math_Mothfmodf(float inp1,float inp2){
+
+return fmodf(inp1,inp2);
+
+}
+
+double OBJECT_math_Mothfmod(double inp1,double inp2){
+
+return fmod(inp1,inp2);
+
+}
+
 float OBJECT_math_Mothsqrtf(float inp){
 
 return sqrtf(inp);
@@ -820,9 +1000,27 @@ return sqrt(inp);
 
 }
 
+float OBJECT_math_Mothceilf(float inp){
+
+return ceilf(inp);
+
+}
+
 double OBJECT_math_Mothceil(double inp){
 
 return ceil(inp);
+
+}
+
+float OBJECT_math_Mothfloorf(float inp){
+
+return floorf(inp);
+
+}
+
+double OBJECT_math_Mothfloor(double inp){
+
+return floor(inp);
 
 }
 
@@ -915,9 +1113,8 @@ return cprojf(inp);
 }
 
 int Mothmain(){
-float complex g;
-g = OBJECT_complex_Mothcmplxf(1,1);
-printComplex(g);printf("%s","\n");
+
+printf("%lf",OBJECT_math_Mothfloor(1.03));
 return 0;
 
 }

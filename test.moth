@@ -2,6 +2,5 @@ include moth-libs/math
 include moth-libs/complex
 
 def int main():
-    complexf g = complex.cmplxf(1,1)
-    print(g,"\n")
+    print(math.floor(1.03))
     return 0
