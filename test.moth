@@ -1,6 +1,16 @@
+include moth-libs/string
+
 def int main():
-    list int stack = [1]
-    #print(stack[1],"\n")
-    stack.append(0)
-    print(stack[1],"\n")
+    string test = new string("test")
+    print(test,"\n")
+    string slice = test.get_slice(0,3)
+    print(slice,"\n")
+    test.slice(0,test.length)
+    print(test,"\n")
+    test.copy(slice)
+    print(test,"\n")
+    test.__addself__(slice)
+    print(test,"\n")
+    test.__mulself__(3)
+    print(test,"\n")
     return 0

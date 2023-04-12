@@ -50,17 +50,22 @@ struct """ + listT + r"""List {
 
     """ + listTptr + r""" val;
     int terminator;
+    int initialized;
     struct """ + listT + r"""List* next;
 }""" + r""";
 """ + listTptr + r"""* index""" + listT + r"""List(""" + listT + r"""List* input, int index) {
 
     """ + listT + r"""List* indexer = input;
+    if (indexer->initialized == 0){
+        printf("LIST INDEX ERROR: index out of range in list type""" + listT + r"""\n");
+        exit(1);
+    }
     if (index == 0){
         return &indexer->val;
     }
     for (int i = 0; i < index; i++){
         if (indexer->terminator == 1){
-            printf("LIST ERROR: index out of range in list type""" + listT + r"""\n");
+            printf("LIST INDEX ERROR: index out of range in list type""" + listT + r"""\n");
             exit(1);
         }
         indexer = indexer->next;
@@ -70,6 +75,11 @@ struct """ + listT + r"""List {
 void append""" + listT + r"""List(""" + listT + r"""List* input, """ + listTptr + r""" new_val) {
 
     """ + listT + r"""List* indexer = input;
+    if (indexer->initialized == 0){
+        indexer->val = new_val;
+        indexer->initialized = 1;
+        return;
+    }
     while (indexer->terminator == 0){
         indexer = indexer->next;
     }
@@ -78,6 +88,110 @@ void append""" + listT + r"""List(""" + listT + r"""List* input, """ + listTptr 
     indexer = indexer->next;
     indexer->val = new_val;
     indexer->terminator = 1;
+
+}
+
+void insert""" + listT + r"""List(""" + listT + r"""List* input, """ + listTptr + r""" new_val, int index) {
+
+    """ + listT + r"""List* indexer = input;
+    if (indexer->initialized == 0){
+        if (index != 0){
+            printf("LIST INSERT ERROR: index out of range in list type """ + listT + r"""\n");
+            exit(1);
+        }
+        indexer->val = new_val;
+        indexer->initialized = 1;
+        indexer->terminator = 1;
+        return;
+    }
+    int count = 0;
+    while (indexer->terminator == 0){
+        if (count == index){
+            break;
+        }
+        indexer = indexer->next;
+        count++;
+    }
+    if (count != index){
+        printf("LIST INSERT ERROR: index out of range in list type """ + listT + r"""\n");
+        exit(1);
+    }
+    """ + listT + r"""List* temp = (""" + listT + r"""List*)malloc(sizeof(""" + listT + r"""List));
+    temp->next = indexer->next;
+    temp->terminator = indexer->terminator;
+    temp->val = indexer->val;
+    indexer->next = temp;
+    indexer->terminator = 0;
+    indexer->val = new_val;
+    indexer->initialized = 1;
+
+}
+
+void remove""" + listT + r"""List(""" + listT + r"""List* input, int index) {
+
+    """ + listT + r"""List* indexer = input;
+    """ + listT + r"""List* temp;
+    if (indexer->initialized == 0){
+        printf("LIST REMOVE ERROR: index out of range in list type""" + listT + r"""\n");
+        exit(1);
+    }
+    if (index == 0){
+        if (indexer->terminator == 1){
+            indexer->initialized = 0;
+            return;
+        }
+        temp = indexer->next;
+        indexer->next = temp->next;
+        indexer->terminator = temp->terminator;
+        indexer->val = temp->val;
+        free(temp);
+        return;
+    }
+    int count = 1;
+    while (indexer->terminator == 0){
+        if (count == index){
+            break;
+        }
+        indexer = indexer->next;
+        count++;
+    }
+    if (count != index){
+        printf("LIST REMOVE ERROR: index out of range in list type""" + listT + r"""\n");
+        exit(1);
+    }
+    temp = indexer->next->next;
+    free(indexer->next);
+    indexer->next = temp;
+
+}
+
+int len""" + listT + r"""List(""" + listT + r"""List* input) {
+
+    """ + listT + r"""List* indexer = input;
+    if (indexer->initialized == 0){
+        return 0;
+    }
+    int count = 1;
+    while (indexer->terminator == 0){
+        indexer = indexer->next;
+        count++;
+    }
+    return count;
+
+}
+""" + listTptr + r""" pop""" + listT + r"""List(""" + listT + r"""List* input) {
+
+    """ + listT + r"""List* indexer = input;
+    if(indexer->terminator == 1){
+        return indexer->val;
+    }
+    while (indexer->next->terminator == 0){
+        indexer = indexer->next;
+    }
+    """ + listTptr + r""" out_val = indexer->next->val;
+    free(indexer->next);
+    indexer->terminator = 1;
+    return out_val;
 
 }
 """
@@ -144,6 +258,9 @@ class String(AstObj):
 
     def find_variables(self,parent):
         return self
+    
+    def eval(self,parent):
+        return self.value
 
 class Number(AstObj):
     def __init__(self,token):
@@ -553,6 +670,67 @@ class ListAppend(AstObj):
         val = self.val.eval(parent)
         this_list = self.list_name.eval(parent)
         return "append"+self.list_name.moth_type.get_raw() + "(" + this_list + "," + val + ")"
+    
+class ListPop(AstObj):
+    def __init__(self,list_name,lineno = None):
+        self.list_name = list_name
+        self.lineno = None
+    
+    def find_variables(self,parent):
+        self.list_name = self.list_name.find_variables(parent)
+        self.c_type = self.list_name.moth_type.name.get_raw()
+        return self
+    
+    def eval(self,parent):
+        this_list = self.list_name.eval(parent)
+        return "pop"+self.list_name.moth_type.get_raw() + "(" + this_list + ")"
+    
+class ListLen(AstObj):
+    def __init__(self,list_name,lineno = None):
+        self.list_name = list_name
+        self.lineno = None
+    
+    def find_variables(self,parent):
+        self.list_name = self.list_name.find_variables(parent)
+        self.c_type = self.list_name.moth_type.name.get_raw()
+        return self
+    
+    def eval(self,parent):
+        this_list = self.list_name.eval(parent)
+        return "len"+self.list_name.moth_type.get_raw() + "(" + this_list + ")"
+    
+class ListInsert(AstObj):
+    def __init__(self,list_name,index,val,lineno = None):
+        self.list_name = list_name
+        self.index = index
+        self.val = val
+        self.lineno = None
+    
+    def find_variables(self,parent):
+        self.list_name = self.list_name.find_variables(parent)
+        self.index = self.index.find_variables(parent)
+        self.val = self.val.find_variables(parent)
+        return self
+    
+    def eval(self,parent):
+        this_list = self.list_name.eval(parent)
+        return "insert"+self.list_name.moth_type.get_raw() + "(" + this_list + "," + self.val.eval(parent) + "," + self.index.eval(parent) + ")"
+
+class ListRemove(AstObj):
+    def __init__(self,list_name,index,lineno = None):
+        self.list_name = list_name
+        self.index = index
+        self.lineno = None
+    
+    def find_variables(self,parent):
+        self.list_name = self.list_name.find_variables(parent)
+        self.index = self.index.find_variables(parent)
+        return self
+    
+    def eval(self,parent):
+        this_list = self.list_name.eval(parent)
+        return "remove"+self.list_name.moth_type.get_raw() + "(" + this_list + "," + self.index.eval(parent) + ")"
+
 
 class Type(BaseType):
     def get_c(self):
@@ -650,18 +828,21 @@ class Assign(AstObj):
                 throwError("List type error",self.lineno)
             nitems = len(self.expression.items)
             out = self.var.c_str + " = ("+self.var.moth_type.get_c()+")malloc(sizeof(" + self.var.moth_type.get_raw() + "));\n"
-            out += self.var.c_str + "->terminator = 1"
+            out += self.var.c_str + "->terminator = 1;\n"
+            out += self.var.c_str + "->initialized = 0"
             if nitems > 0:
                 temp_var = "Moth_tmp_" + "_".join(self.var.c_str.split("->"))
                 
                 out += ";\n" + self.var.moth_type.get_c() + " " + temp_var + " = " + self.var.c_str + ";\n"
                 for i in range(nitems-1):
+                    out += temp_var + "->initialized = 1;\n"
                     out += temp_var + "->val = " + self.expression.items[i].eval(parent) + ";\n"
                     out += temp_var + "->terminator = 0;\n"
                     out += temp_var + "->next = " + "("+self.var.moth_type.get_c()+")malloc(sizeof(" + self.var.moth_type.get_c()[:-1] + "));\n"
                     out += temp_var + " = " + temp_var + "->next;\n"
                 out += temp_var + "->val = " + self.expression.items[-1].eval(parent) + ";\n"
                 out += temp_var + "->terminator = 1;\n"
+                out += temp_var + "->initialized = 1;\n"
             
             return out
 
@@ -825,7 +1006,16 @@ class Print(Container):
                 c_t = i.right.c_type
                 out.append(r'printf("' + formatters[c_t] + r'",' + i.eval(parent) + r')')
             else:
-                out.append(r'printf("' + formatters[i.c_type] + r'",' + i.eval(parent) + r')')
+                if isinstance(i,Variable):
+                    if isinstance(i.moth_type,ListType):
+                        #print("print" + i.moth_type.get_raw() + "(" + i.c_str + ")")
+                        throwError("Can't print LIST",self.lineno)
+                    elif isinstance(i.moth_type,ObjectType):
+                        out.append("OBJECT_" + i.moth_type.name.value + "_Moth__print__(" + i.c_str + ")")
+                    else:
+                        out.append(r'printf("' + formatters[i.c_type] + r'",' + i.eval(parent) + r')')
+                else:
+                    out.append(r'printf("' + formatters[i.c_type] + r'",' + i.eval(parent) + r')')
         return ";".join(out)
 
 class Pass(AstObj):
@@ -851,14 +1041,27 @@ class Craw(Ctypes):
 
     def find_variables(self,parent):
         self.val = self.val.find_variables(parent)
+        self.string = self.string.find_variables(parent)
         return self
 
     def get_c(self,parent=None):
-        try:
-            out_val = self.val.get_c(parent)
-        except:
-            out_val = self.val.eval(parent)
-        return self.string.value[1:-1] + out_val
+        f = ""
+        s = ""
+        if isinstance(self.string,String):
+            f = self.string.value[1:-1]
+        else:
+            try:
+                f = self.string.get_c(parent)
+            except:
+                f = self.string.eval(parent)
+        if isinstance(self.val,String):
+            s = self.val.value[1:-1]
+        else:
+            try:
+                s = self.val.get_c(parent)
+            except:
+                s = self.val.eval(parent)
+        return f + s
     
     def eval(self,parent=None):
         return self.get_c(parent)
@@ -872,7 +1075,10 @@ class Ctype(Ctypes):
         return self
     
     def get_c(self,parent=None):
-        return self.val.value
+        try:
+            return self.val.value
+        except:
+            return self.val.get_c()
     
     def get_raw(self,parent=None):
         return self.get_c()

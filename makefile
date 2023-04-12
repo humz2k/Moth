@@ -1,2 +1,2 @@
 main:
-	moth test.moth -o test -keep_temp -ccmpicc
+	moth test.moth -o test -keep_temp -ccgcc

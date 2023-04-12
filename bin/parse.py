@@ -137,6 +137,10 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('line : free SEMI_COLON')
     @pg.production('line : c_call SEMI_COLON')
     @pg.production('line : list_append SEMI_COLON')
+    @pg.production('line : list_pop SEMI_COLON')
+    @pg.production('line : list_len SEMI_COLON')
+    @pg.production('line : list_remove SEMI_COLON')
+    @pg.production('line : list_insert SEMI_COLON')
     @pg.production('line : scope')
     def line(p):
         return p[0]
@@ -301,7 +305,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def brackets(p):
         return p[1]
     
-    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null|c_lit|list_literal')
+    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null|c_lit|list_literal|list_pop|list_len|c_raw')
     def num_str_idn(p):
         return p[0]
     
@@ -326,6 +330,30 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('list_append : function_call PERIOD APPEND OPEN_PAREN expression CLOSE_PAREN')
     def list_append(p):
         return aster.ListAppend(p[0],p[4])
+    
+    @pg.production('list_pop : identifier PERIOD POP OPEN_PAREN CLOSE_PAREN')
+    @pg.production('list_pop : reference PERIOD POP OPEN_PAREN CLOSE_PAREN')
+    @pg.production('list_pop : function_call PERIOD POP OPEN_PAREN CLOSE_PAREN')
+    def list_append(p):
+        return aster.ListPop(p[0])
+    
+    @pg.production('list_len : identifier PERIOD LEN OPEN_PAREN CLOSE_PAREN')
+    @pg.production('list_len : reference PERIOD LEN OPEN_PAREN CLOSE_PAREN')
+    @pg.production('list_len : function_call PERIOD LEN OPEN_PAREN CLOSE_PAREN')
+    def list_append(p):
+        return aster.ListLen(p[0])
+    
+    @pg.production('list_insert : identifier PERIOD INSERT OPEN_PAREN expression COMMA expression CLOSE_PAREN')
+    @pg.production('list_insert : reference PERIOD INSERT OPEN_PAREN expression COMMA expression CLOSE_PAREN')
+    @pg.production('list_insert : function_call PERIOD INSERT OPEN_PAREN expression COMMA expression CLOSE_PAREN')
+    def list_append(p):
+        return aster.ListInsert(p[0],p[4],p[6])
+    
+    @pg.production('list_remove : identifier PERIOD REMOVE OPEN_PAREN expression CLOSE_PAREN')
+    @pg.production('list_remove : reference PERIOD REMOVE OPEN_PAREN expression CLOSE_PAREN')
+    @pg.production('list_remove : function_call PERIOD REMOVE OPEN_PAREN expression CLOSE_PAREN')
+    def list_append(p):
+        return aster.ListRemove(p[0],p[4])
 
     @pg.production('function_call : identifier OPEN_PAREN CLOSE_PAREN')
     @pg.production('function_call : reference OPEN_PAREN CLOSE_PAREN')
@@ -352,10 +380,12 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     
     @pg.production('c_lit : C_LIT OPEN_PAREN identifier CLOSE_PAREN')
     @pg.production('c_lit : C_LIT OPEN_PAREN null CLOSE_PAREN')
+    @pg.production('c_lit : C_LIT OPEN_PAREN string CLOSE_PAREN')
     def c_val(p):
         return aster.Clit(p[2])
     
     @pg.production('c_type : C_TYPE OPEN_PAREN identifier CLOSE_PAREN')
+    @pg.production('c_type : C_TYPE OPEN_PAREN c_raw CLOSE_PAREN')
     def c_val(p):
         return aster.Ctype(p[2])
     
@@ -376,7 +406,16 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('c_raw : C_RAW OPEN_PAREN string COMMA c_call CLOSE_PAREN')
     @pg.production('c_raw : C_RAW OPEN_PAREN string COMMA c_lit CLOSE_PAREN')
     @pg.production('c_raw : C_RAW OPEN_PAREN string COMMA c_raw CLOSE_PAREN')
+    @pg.production('c_raw : C_RAW OPEN_PAREN c_val COMMA string CLOSE_PAREN')
+    @pg.production('c_raw : C_RAW OPEN_PAREN c_ptr COMMA string CLOSE_PAREN')
+    @pg.production('c_raw : C_RAW OPEN_PAREN c_call COMMA string CLOSE_PAREN')
+    @pg.production('c_raw : C_RAW OPEN_PAREN c_lit COMMA string CLOSE_PAREN')
+    @pg.production('c_raw : C_RAW OPEN_PAREN c_raw COMMA string CLOSE_PAREN')
+    @pg.production('c_raw : C_RAW OPEN_PAREN c_raw COMMA c_raw CLOSE_PAREN')
+    @pg.production('c_raw : C_RAW OPEN_PAREN string CLOSE_PAREN')
     def c_raw(p):
+        if len(p) == 4:
+            return aster.Craw(p[2],aster.Clit(aster.Identifier(Token("",""))))
         return aster.Craw(p[2],p[4])
     
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_val')

@@ -53,6 +53,7 @@ APPEND \bappend\b
 INSERT \binsert\b
 LEN \blen\b
 POP \bpop\b
+REMOVE \bremove\b
 
 C_VAL \b__c_val\b
 C_PTR \b__c_ptr\b
