@@ -474,6 +474,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
         return aster.Reference(p[0],p[2])
     
     @pg.production('number : NUMBER')
+    @pg.production('number : IMAG')
     @pg.production('number : MINUS NUMBER')
     def number(p):
         if len(p) == 1:

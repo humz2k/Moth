@@ -1,16 +1,7 @@
-include moth-libs/string
+include moth-libs/math
+include moth-libs/complex
 
 def int main():
-    string test = new string("test")
-    print(test,"\n")
-    string slice = test.get_slice(0,3)
-    print(slice,"\n")
-    test.slice(0,test.length)
-    print(test,"\n")
-    test.copy(slice)
-    print(test,"\n")
-    test.__addself__(slice)
-    print(test,"\n")
-    test.__mulself__(3)
-    print(test,"\n")
+    complexf g = complex.cmplxf(1,1)
+    print(g,"\n")
     return 0

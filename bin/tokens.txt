@@ -45,7 +45,7 @@ CLOSE_PAREN \)
 OPEN_SQUARE \[
 CLOSE_SQUARE \]
 
-TYPE_NAME \bvoid\b|\bchar\b|\buchar\b|\bshort\b|\bushort\b|\bint\b|\buint\b|\blong\b|\bulong\b|\bfloat\b|\bdouble\b|\bbool\b
+TYPE_NAME \bvoid\b|\bchar\b|\buchar\b|\bshort\b|\bushort\b|\bint\b|\buint\b|\blong\b|\bulong\b|\bfloat\b|\bdouble\b|\bbool\b|\bcomplexf\b|\bcomplexd\b
 LIST \blist\b
 OBJECT \bobject\b|\bobj\b
 
@@ -81,6 +81,8 @@ ARRAY \barray\b
 FREE \bfree\b
 NEW \bnew\b
 NULL \bNULL\b
+
+IMAG \bI\b
 
 NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)
 

@@ -1,0 +1,10 @@
+
+class math(static):
+    def float sqrtf(float inp):
+        return __c_call(sqrtf,__c_val(inp))
+
+    def double sqrt(double inp):
+        return __c_call(sqrt,__c_val(inp))
+    
+    def double ceil(double inp):
+        return __c_call(ceil,__c_val(inp))

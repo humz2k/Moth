@@ -1,7 +1,11 @@
 from rply.token import Token
 
-HEADERS = "#include <stdlib.h>\n#include <stdio.h>\n#include <math.h>\n"
-DEFINES = ""
+HEADERS = "#include <stdlib.h>\n#include <stdio.h>\n#include <math.h>\n#include <complex.h>\n"
+DEFINES = r"""
+
+#define printComplex(a) printf("%f + %fi",creal(a),cimag(a))
+
+"""
 
 ARRAY_TYPES = []
 LIST_TYPES = []
@@ -635,6 +639,10 @@ class BaseType(AstObj):
         if isinstance(self.name,Token):
             if self.name.value == "bool":
                 self.name.value = "int"
+            if self.name.value == "complexf":
+                self.name.value = "float complex"
+            if self.name.value == "complexd":
+                self.name.value = "double complex"
             if self.name.value[0] == "u":
                 self.name.value = "unsigned " + self.name.value[1:]
             generateArrayType(self.name.value)
@@ -992,19 +1000,31 @@ class Return(AstObj):
 class Print(Container):
     def eval(self,parent):
         out = []
-        formatters = {"int" : r"%d", "float": r"%f"}
+        formatters = {"int" : r"%d", "float": r"%f", "double": r"%lf","char":r"%c"}
         for i in self.items:
             if isinstance(i,String):
                 out.append(r'printf("%s",' + i.value + r')')
             elif isinstance(i,ArrayReference):
                 c_t = i.name.moth_type.name.get_c()
-                out.append(r'printf("' + formatters[c_t] + r'",' + i.eval(parent) + r')')
+                if "complex" in c_t.split():
+                    out.append(r'printComplex(' + i.eval(parent) + r')')
+                else:
+                    out.append(r'printf("' + formatters[c_t] + r'",' + i.eval(parent) + r')')
             elif isinstance(i,FunctionCall):
-                c_t = parent.functions[i.name.value].name.value
-                out.append(r'printf("' + formatters[c_t] + r'",' + i.eval(parent) + r')')
+                if isinstance(i.name,StaticFunction):
+                    c_t = parent.classes[i.name.class_name.value].functions["Moth" + i.name.function_name.value].name.value
+                else:
+                    c_t = parent.functions[i.name.value].name.value
+                if "complex" in c_t.split():
+                    out.append(r'printComplex(' + i.eval(parent) + r')')
+                else:
+                    out.append(r'printf("' + formatters[c_t] + r'",' + i.eval(parent) + r')')
             elif isinstance(i,BinOp):
                 c_t = i.right.c_type
-                out.append(r'printf("' + formatters[c_t] + r'",' + i.eval(parent) + r')')
+                if "complex" in c_t.split():
+                    out.append(r'printComplex(' + i.eval(parent) + r')')
+                else:
+                    out.append(r'printf("' + formatters[c_t] + r'",' + i.eval(parent) + r')')
             else:
                 if isinstance(i,Variable):
                     if isinstance(i.moth_type,ListType):
@@ -1013,9 +1033,15 @@ class Print(Container):
                     elif isinstance(i.moth_type,ObjectType):
                         out.append("OBJECT_" + i.moth_type.name.value + "_Moth__print__(" + i.c_str + ")")
                     else:
-                        out.append(r'printf("' + formatters[i.c_type] + r'",' + i.eval(parent) + r')')
+                        if "complex" in i.c_type.split():
+                            out.append(r'printComplex(' + i.eval(parent) + r')')
+                        else:
+                            out.append(r'printf("' + formatters[i.c_type] + r'",' + i.eval(parent) + r')')
                 else:
-                    out.append(r'printf("' + formatters[i.c_type] + r'",' + i.eval(parent) + r')')
+                    if "complex" in i.c_type.split():
+                        out.append(r'printComplex(' + i.eval(parent) + r')')
+                    else:
+                        out.append(r'printf("' + formatters[i.c_type] + r'",' + i.eval(parent) + r')')
         return ";".join(out)
 
 class Pass(AstObj):
