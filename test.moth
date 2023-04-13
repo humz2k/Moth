@@ -1,6 +1,17 @@
-include moth-libs/math
-include moth-libs/complex
+#include moth-libs/math
+#include moth-libs/complex
 
 def int main():
-    print(math.floor(1.03))
+    #print(math.floor(1.03))
+    int[:] a = array(12)
+    for int i in range(12):
+        a[i] = i
+    print(a)
+    a.reshape(3,4)
+    print(a)
+    a.reshape(3,4,1)
+    print(a)
+    a.reshape(3,2,2,1)
+    print(a)
+    free(a)
     return 0
