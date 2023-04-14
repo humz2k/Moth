@@ -5,7 +5,7 @@
 //#undef complex
 #include <stdarg.h>
 
-#define MothRuntimeError(err,...) fprintf(stderr, "MothRuntimeError:\n\t"); fprintf(stderr, err, __VA_ARGS__)
+#define MothRuntimeError(err,...) fprintf(stderr, "MothRuntimeError:\n\t"); exit(1); //fprintf(stderr, err, __VA_ARGS__);
 
 typedef void __Mothvoid;
 typedef char __Mothchar;
@@ -193,7 +193,7 @@ class __MothArray {
             }
             for (int i = 0; i < ndims; i++){
                 if (idx[i] >= dims[i]){
-                    printf("ARRAY INDEX BOUNDS ERROR\n");
+                    MothRuntimeError("ARRAY INDEX BOUNDS ERROR\n");
                     exit(1);
                 }
                 int dimidx = (idx[i] % dims[i] + dims[i]) % dims[i];
@@ -212,7 +212,7 @@ class __MothArray {
             }
             for (int i = 0; i < ndims; i++){
                 if (idx[i] >= dims[i]){
-                    printf("ARRAY INDEX BOUNDS ERROR\n");
+                    MothRuntimeError("ARRAY INDEX BOUNDS ERROR\n");
                     exit(1);
                 }
                 int dimidx = (idx[i] % dims[i] + dims[i]) % dims[i];
