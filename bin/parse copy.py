@@ -48,13 +48,10 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
             return aster.ClassHeader(p[1])
         return aster.ClassHeader(p[1],p[3])
     
-    @pg.production('class_header : CLASS static_object OPEN_PAREN identifier CLOSE_PAREN COLON')
-    def class_header_type_static(p):
-        return aster.ClassHeader(p[1],"STATIC")
-    
     @pg.production('class_header : CLASS user_type OPEN_PAREN identifier CLOSE_PAREN COLON')
-    def class_header_type_user_t(p):
-        return aster.ClassHeader(p[1],"USER_T")
+    @pg.production('class_header : CLASS static_object OPEN_PAREN identifier CLOSE_PAREN COLON')
+    def class_header_type(p):
+        return aster.ClassHeader(p[1])
     
     @pg.production('function_header : DEF type identifier OPEN_PAREN CLOSE_PAREN COLON')
     @pg.production('function_header : DEF type identifier func_def_inputs COLON')
@@ -137,7 +134,13 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('line : break SEMI_COLON')
     @pg.production('line : return SEMI_COLON')
     @pg.production('line : print SEMI_COLON')
+    @pg.production('line : free SEMI_COLON')
     @pg.production('line : c_call SEMI_COLON')
+    @pg.production('line : list_append SEMI_COLON')
+    @pg.production('line : list_pop SEMI_COLON')
+    @pg.production('line : list_len SEMI_COLON')
+    @pg.production('line : list_remove SEMI_COLON')
+    @pg.production('line : list_insert SEMI_COLON')
     @pg.production('line : scope')
     def line(p):
         return p[0]
@@ -302,7 +305,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def brackets(p):
         return p[1]
     
-    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null|c_lit|list_literal|c_raw')
+    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null|c_lit|list_literal|list_pop|list_len|c_raw')
     def num_str_idn(p):
         return p[0]
     
@@ -321,6 +324,36 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('cast : array_type OPEN_PAREN expression CLOSE_PAREN')
     def cast(p):
         return aster.Cast(p[0],p[2])
+    
+    @pg.production('list_append : identifier PERIOD APPEND OPEN_PAREN expression CLOSE_PAREN')
+    @pg.production('list_append : reference PERIOD APPEND OPEN_PAREN expression CLOSE_PAREN')
+    @pg.production('list_append : function_call PERIOD APPEND OPEN_PAREN expression CLOSE_PAREN')
+    def list_append(p):
+        return aster.ListAppend(p[0],p[4])
+    
+    @pg.production('list_pop : identifier PERIOD POP OPEN_PAREN CLOSE_PAREN')
+    @pg.production('list_pop : reference PERIOD POP OPEN_PAREN CLOSE_PAREN')
+    @pg.production('list_pop : function_call PERIOD POP OPEN_PAREN CLOSE_PAREN')
+    def list_append(p):
+        return aster.ListPop(p[0])
+    
+    @pg.production('list_len : identifier PERIOD LEN OPEN_PAREN CLOSE_PAREN')
+    @pg.production('list_len : reference PERIOD LEN OPEN_PAREN CLOSE_PAREN')
+    @pg.production('list_len : function_call PERIOD LEN OPEN_PAREN CLOSE_PAREN')
+    def list_append(p):
+        return aster.ListLen(p[0])
+    
+    @pg.production('list_insert : identifier PERIOD INSERT OPEN_PAREN expression COMMA expression CLOSE_PAREN')
+    @pg.production('list_insert : reference PERIOD INSERT OPEN_PAREN expression COMMA expression CLOSE_PAREN')
+    @pg.production('list_insert : function_call PERIOD INSERT OPEN_PAREN expression COMMA expression CLOSE_PAREN')
+    def list_append(p):
+        return aster.ListInsert(p[0],p[4],p[6])
+    
+    @pg.production('list_remove : identifier PERIOD REMOVE OPEN_PAREN expression CLOSE_PAREN')
+    @pg.production('list_remove : reference PERIOD REMOVE OPEN_PAREN expression CLOSE_PAREN')
+    @pg.production('list_remove : function_call PERIOD REMOVE OPEN_PAREN expression CLOSE_PAREN')
+    def list_append(p):
+        return aster.ListRemove(p[0],p[4])
 
     @pg.production('function_call : identifier OPEN_PAREN CLOSE_PAREN')
     @pg.production('function_call : reference OPEN_PAREN CLOSE_PAREN')
@@ -425,6 +458,11 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('break : BREAK')
     def pass_break(p):
         return aster.Break()
+    
+    @pg.production('free : FREE OPEN_PAREN identifier CLOSE_PAREN')
+    @pg.production('free : FREE OPEN_PAREN reference CLOSE_PAREN')
+    def free(p):
+        return aster.Free(p[2])
     
     @pg.production('reference : static_object PERIOD identifier')
     def reference2(p):

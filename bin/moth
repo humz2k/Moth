@@ -11,7 +11,7 @@ def parse_flags(args):
     i = 0
     to_compile = ""
     output_file = "a.out"
-    cc = "gcc"
+    cc = "g++-12"
     keep_temp = False
     flags = ["-o","-keep_temp","-cc","-I","-L","-l"]
     includes = []
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     f = flags["filename"]
 
-    tmp_file = f.split(".")[0] + "_moth_tmp.c"
+    tmp_file = f.split(".")[0] + "_moth_tmp.cpp"
 
     out_file = flags["output"]
 

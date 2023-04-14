@@ -1,10 +1,10 @@
 class complex(static):
 
     def complexd cmplx(double real, double imag):
-        return __c_call(CMPLX,__c_val(real),__c_val(imag))
+        return real + I*imag
 
     def complexf cmplxf(float real, float imag):
-        return __c_call(CMPLXF,__c_val(real),__c_val(imag))
+        return real + I*imag
 
     def double real(complexd inp):
         return __c_call(creal,__c_val(inp))

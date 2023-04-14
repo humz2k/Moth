@@ -49,6 +49,12 @@ TYPE_NAME \bvoid\b|\bchar\b|\buchar\b|\bshort\b|\bushort\b|\bint\b|\buint\b|\blo
 LIST \blist\b
 OBJECT \bobject\b|\bobj\b
 
+APPEND \bappend\b
+INSERT \binsert\b
+LEN \blen\b
+POP \bpop\b
+REMOVE \bremove\b
+
 C_VAL \b__c_val\b
 C_PTR \b__c_ptr\b
 C_CALL \b__c_call\b
@@ -72,6 +78,7 @@ PASS \bpass\b
 TRUE \bTrue\b
 FALSE \bFalse\b
 ARRAY \barray\b
+FREE \bfree\b
 NEW \bnew\b
 NULL \bNULL\b
 

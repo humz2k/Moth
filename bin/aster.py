@@ -1,347 +1,11 @@
 from rply.token import Token
 
-HEADERS = "#include <stdlib.h>\n#include <stdio.h>\n#include <math.h>\n#include <complex.h>\n#include <stdarg.h>\n"
-DEFINES = r"""
-
-#define __MothprintComplex(a) printf("%f + %fi",creal(a),cimag(a))
-
-void get_index(int idx1d, int ndims, int* dims, int* out){
-    int* muls = (int*)malloc(ndims*sizeof(int));
-    int dim;
-    for (dim = 0; dim < ndims; dim++){
-        muls[dim] = 1;
-        int start = dim+1;
-        for (int i = start; i < ndims; i++){
-            muls[dim] = muls[dim] * dims[i];
-        }
-    }
-    for (dim = 0; dim < ndims; dim++){
-        int start = dim - 1;
-        int idx = idx1d;
-        for (int i = start; i > 0; i--){
-            idx -= out[i]*muls[i];
-        }
-        idx = idx / muls[dim];
-        out[dim] = idx;
-    }
-    free(muls);
-}
-
-"""
-
-ARRAY_TYPES = []
-LIST_TYPES = []
-
-INT_TYPES = ["char","short","int","long","bool","flint"]
-UINT_TYPES = ["unsigned char","unsigned short","unsigned int","unsigned long","bool","flint"]
-FLOAT_TYPES = ["float","double","flint"]
-
-STRUCTS = ""
+HEADERS = '#include "moth_lib.hpp"\n\n'
 
 def throwError(err,lineno):
     print("CODE GEN ERROR @ line " + str(lineno) + ":")
     print("   " + err)
     exit()
-
-def generateArrayType(arrayT):
-    global ARRAY_TYPES,DEFINES,STRUCTS
-    formatters = {"int" : r'printf("%3d",', "float": r'printf("%f",', "double": r'printf("%lf",',"char":r'printf("%c,',"double complex":r'__MothprintComplex(',"float complex":r'__MothprintComplex('}
-    arrayTptr = arrayT
-    doPrint = False
-    if arrayTptr in formatters.keys():
-        formatter = formatters[arrayTptr]
-        doPrint = True
-    arrayT = "".join(arrayT.split())
-    if arrayT.endswith("*"):
-        arrayT = arrayT[:-1]
-    if not arrayT in ARRAY_TYPES:
-        out = r"""
-struct """ + arrayT + r"""Array {
-    int initialized;
-    int ndims;
-    int* dims;
-    """ + arrayTptr + r"""* raw;
-}""" + r"""; 
-
-""" + arrayT + r"""Array* reshape""" + arrayT + r"""Array(""" + arrayT + r"""Array* input, int new_ndims, ...){
-    int* new_dims = (int*)malloc(new_ndims*sizeof(int));
-    int new_tot = 1;
-    va_list argp;
-    va_start(argp, new_ndims);
-    int i;
-    for (i = 0; i < new_ndims; i++){
-        new_dims[i] = va_arg(argp,int);
-        new_tot = new_tot * new_dims[i];
-    }
-    va_end(argp);
-    int current_tot = 1;
-    for (i = 0; i < input->ndims; i++){
-        current_tot = current_tot*(input->dims[i]);
-    }
-    if (current_tot != new_tot){
-        printf("ARRAY ERROR: Can't reshape array of shape [");
-        for (i = 0; i < (input->ndims - 1); i++){
-            printf("%d,",input->dims[i]);
-        }
-        printf("%d] to array of shape [",input->dims[input->ndims - 1]);
-        for (i = 0; i < (new_ndims - 1); i++){
-            printf("%d,",new_dims[i]);
-        }
-        printf("%d]\n",new_dims[new_ndims-1]);
-        exit(1);
-    }
-    input->ndims = new_ndims;
-    free(input->dims);
-    input->dims = new_dims;
-    return input;
-
-}
-
-"""
-        if doPrint:
-            out += r"""
-void print""" + arrayT + r"""Array(""" + arrayT + r"""Array* input){
-    int i; int j;
-    int tot = 1;
-    int* indexes = (int*)malloc((input->ndims)*sizeof(int));
-    int* last = (int*)malloc((input->ndims)*sizeof(int));
-    for (i = 0; i < input->ndims; i++){
-        tot = tot*(input->dims[i]);
-        last[i] = 0;
-    }
-    for (i = 0; i < input->ndims; i++){
-        printf("[");
-    }
-    for (i = 0; i < tot; i++){
-        get_index(i,input->ndims,input->dims,indexes);
-        for (j = 0; j < (input->ndims -1); j++){
-            if (last[j] != indexes[j]){
-                printf("]");
-            }
-        }
-        for (j = 0; j < (input->ndims -1); j++){
-            if (last[j] != indexes[j]){
-                if (j == 0){
-                    printf("\n [");
-                }else{
-                    printf("[");
-                }
-            }
-            else{
-                if (i != 0){
-                    printf(" ");
-                }
-            }
-            last[j] = indexes[j];
-        }
-        """ + formatter + r"""input->raw[i]);
-        //for (j = 0; j < input->ndims; j++){
-        //    if ((indexes[j] == (input->dims[j]-1)) && (last[j] != indexes[j])){
-        //        printf("]");
-        //    }
-        //    last[j] = indexes[j];
-            //else{
-            //    if (last[j] != indexes[j]){
-            //        printf(",");
-            //        last[j] = indexes[j];
-            //    }
-            //}
-        //}
-    }
-    for (i = 0; i < input->ndims; i++){
-        printf("]");
-    }
-    printf("\n");
-    free(last);
-    free(indexes);
-}
-"""
-        STRUCTS += "struct " + arrayT + "Array; typedef struct " + arrayT + "Array " + arrayT + "Array;\n"
-        DEFINES += out
-        ARRAY_TYPES.append(arrayT)
-    return arrayT + "Array"
-
-def generateListType(listT):
-    if listT != "void":
-        global LIST_TYPES,DEFINES,STRUCTS
-        listTptr = listT.strip()
-        listT = "".join(listT.split())
-        if listT.endswith("*"):
-            listT = listT[:-1]
-        if not listT in LIST_TYPES:
-            out = r"""
-struct """ + listT + r"""List {
-
-    """ + listTptr + r""" val;
-    int terminator;
-    int initialized;
-    struct """ + listT + r"""List* next;
-}""" + r""";
-""" + listTptr + r"""* index""" + listT + r"""List(""" + listT + r"""List* input, int index) {
-
-    """ + listT + r"""List* indexer = input;
-    if (indexer->initialized == 0){
-        printf("LIST INDEX ERROR: index out of range in list type""" + listT + r"""\n");
-        exit(1);
-    }
-    if (index == 0){
-        return &indexer->val;
-    }
-    for (int i = 0; i < index; i++){
-        if (indexer->terminator == 1){
-            printf("LIST INDEX ERROR: index out of range in list type""" + listT + r"""\n");
-            exit(1);
-        }
-        indexer = indexer->next;
-    }
-    return &indexer->val;
-}
-void append""" + listT + r"""List(""" + listT + r"""List* input, """ + listTptr + r""" new_val) {
-
-    """ + listT + r"""List* indexer = input;
-    if (indexer->initialized == 0){
-        indexer->val = new_val;
-        indexer->initialized = 1;
-        return;
-    }
-    while (indexer->terminator == 0){
-        indexer = indexer->next;
-    }
-    indexer->next = (""" + listT + r"""List*)malloc(sizeof(""" + listT + r"""List));
-    indexer->terminator = 0;
-    indexer = indexer->next;
-    indexer->val = new_val;
-    indexer->terminator = 1;
-
-}
-
-void insert""" + listT + r"""List(""" + listT + r"""List* input, """ + listTptr + r""" new_val, int index) {
-
-    """ + listT + r"""List* indexer = input;
-    if (indexer->initialized == 0){
-        if (index != 0){
-            printf("LIST INSERT ERROR: index out of range in list type """ + listT + r"""\n");
-            exit(1);
-        }
-        indexer->val = new_val;
-        indexer->initialized = 1;
-        indexer->terminator = 1;
-        return;
-    }
-    int count = 0;
-    while (indexer->terminator == 0){
-        if (count == index){
-            break;
-        }
-        indexer = indexer->next;
-        count++;
-    }
-    if (count != index){
-        printf("LIST INSERT ERROR: index out of range in list type """ + listT + r"""\n");
-        exit(1);
-    }
-    """ + listT + r"""List* temp = (""" + listT + r"""List*)malloc(sizeof(""" + listT + r"""List));
-    temp->next = indexer->next;
-    temp->terminator = indexer->terminator;
-    temp->val = indexer->val;
-    indexer->next = temp;
-    indexer->terminator = 0;
-    indexer->val = new_val;
-    indexer->initialized = 1;
-
-}
-
-void remove""" + listT + r"""List(""" + listT + r"""List* input, int index) {
-
-    """ + listT + r"""List* indexer = input;
-    """ + listT + r"""List* temp;
-    if (indexer->initialized == 0){
-        printf("LIST REMOVE ERROR: index out of range in list type""" + listT + r"""\n");
-        exit(1);
-    }
-    if (index == 0){
-        if (indexer->terminator == 1){
-            indexer->initialized = 0;
-            return;
-        }
-        temp = indexer->next;
-        indexer->next = temp->next;
-        indexer->terminator = temp->terminator;
-        indexer->val = temp->val;
-        free(temp);
-        return;
-    }
-    int count = 1;
-    while (indexer->terminator == 0){
-        if (count == index){
-            break;
-        }
-        indexer = indexer->next;
-        count++;
-    }
-    if (count != index){
-        printf("LIST REMOVE ERROR: index out of range in list type""" + listT + r"""\n");
-        exit(1);
-    }
-    temp = indexer->next->next;
-    free(indexer->next);
-    indexer->next = temp;
-
-}
-
-int len""" + listT + r"""List(""" + listT + r"""List* input) {
-
-    """ + listT + r"""List* indexer = input;
-    if (indexer->initialized == 0){
-        return 0;
-    }
-    int count = 1;
-    while (indexer->terminator == 0){
-        indexer = indexer->next;
-        count++;
-    }
-    return count;
-
-}
-""" + listTptr + r""" pop""" + listT + r"""List(""" + listT + r"""List* input) {
-
-    """ + listT + r"""List* indexer = input;
-    if(indexer->terminator == 1){
-        return indexer->val;
-    }
-    while (indexer->next->terminator == 0){
-        indexer = indexer->next;
-    }
-    """ + listTptr + r""" out_val = indexer->next->val;
-    free(indexer->next);
-    indexer->terminator = 1;
-    return out_val;
-
-}
-"""
-            STRUCTS += "struct " + listT + "List; typedef struct " + listT + "List " + listT + "List;"
-            DEFINES += out
-            LIST_TYPES.append(listT)
-    return listT + "List"
-
-def doRawTypesAgree(type1,type2):
-    global INT_TYPES,UINT_TYPES,FLOAT_TYPES
-    if (type1 in INT_TYPES) and (type2 in INT_TYPES):
-        return True
-    if (type1 in UINT_TYPES) and (type2 in UINT_TYPES):
-        return True
-    if (type1 in FLOAT_TYPES) and (type2 in FLOAT_TYPES):
-        return True
-    if (type1 in (INT_TYPES + UINT_TYPES)) and (type2 in (INT_TYPES + UINT_TYPES)):
-        return True
-    return False
-
-def isidentifier(val):
-    try:
-        float(val)
-        return False
-    except:
-        return True
 
 class Constant:
     def __init__(self,c_str,c_type):
@@ -374,6 +38,9 @@ class Identifier(AstObj):
         moth_type = parent.declarations[c_str]
         return Variable(raw,c_str,c_type,moth_type)
 
+    def eval(self,parent=None):
+        return "Moth" + self.value
+
 class String(AstObj):
     def __init__(self,token):
         self.token = token
@@ -392,9 +59,9 @@ class Number(AstObj):
         self.value = self.token.value
         self.name = self.token.name
         if "." in self.value:
-            self.c_type = "float"
+            self.moth_type = Type(Token("TYPE_NAME","float"))
         else:
-            self.c_type = "int"
+            self.moth_type = Type(Token("TYPE_NAME","int"))
         self.c_str = self.value
     
     def find_variables(self,parent):
@@ -450,8 +117,7 @@ class Program(Container):
             scope.find_variables(self)
 
     def eval(self):
-        global HEADERS,DEFINES,STRUCTS
-        generateArrayType("void")
+        global HEADERS
         self.verify()
         self.find_classes()
         self.find_functions()
@@ -460,14 +126,13 @@ class Program(Container):
         out = ""
         for scope in self.items:
             out += scope.eval(self)
-        return HEADERS + STRUCTS + DEFINES + out + "\nint main() { return Mothmain();}\n"
+        return HEADERS + out + "\nint main() { return Mothmain();}\n"
 
 class Scope(AstObj):
     def __init__(self,header,body,lineno=None):
         self.lineno = lineno
         self.header = header
         self.body = body
-        self.type = "scope"
         self.functions = {}
         self.variables = {}
         self.declarations = {}
@@ -522,11 +187,18 @@ class Scope(AstObj):
         self.functions = parent.functions
         self.classes = parent.classes
         out = ""
-        out += self.header.eval(parent) + "{\n"
-        out += "".join([self.declarations[i].get_c() + " " + i + ";" for i in self.declarations.keys() if not i in self.dont_declare]) + "\n"
+        out += self.header.eval(parent) 
         if isinstance(self.header,ClassHeader):
-            out += "\n}" + ";\n"
+            pass
+        else:
+            out += "{\n"
+        out += "".join([self.declarations[i].get_c() + " " + i + self.declarations[i].get_special() + ";" for i in self.declarations.keys() if not i in self.dont_declare]) + "\n"
+        if isinstance(self.header,ClassHeader):
             out += self.body.eval(self,self.declarations)
+            if self.header.inherits == "STATIC":
+                pass
+            else:
+                out += "\n}" + ";\n"
         else:
             out += self.body.eval(self)
             out += "\n}\n"
@@ -563,7 +235,7 @@ class ScopeBody(AstObj):
             if not (isinstance(line,Variable) or isinstance(line,Pass)):
                 if isinstance(line,Scope):
                     if isinstance(line.header,FunctionHeader):
-                        line.header.name.value = "OBJECT_" + parent.header.name.value+"_"+line.header.name.value
+                        #line.header.name.value = "OBJECT_" + parent.header.name.value+"_"+line.header.name.value
                         out += line.eval(parent,dont_declare) + "\n"
                     else:
                         out += line.eval(parent) + "\n"
@@ -579,7 +251,7 @@ class ClassHeader(ScopeHeader):
     def __init__(self,name,inherits=None,lineno = None):
         self.lineno = lineno
         self.name = name
-        self.inherits = inherits
+        self.inherits = str(inherits)
         self.type = "class"
     
     def find_variables(self,parent):
@@ -588,8 +260,11 @@ class ClassHeader(ScopeHeader):
     def eval(self,parent):
         global STRUCTS
         out = ""
-        out += "struct Moth" + self.name.value
-        STRUCTS += "struct Moth" + self.name.value + ";typedef struct Moth" + self.name.value + " Moth" + self.name.value + ";\n"
+        if self.inherits == "STATIC":
+            pass
+        else:
+            out += "class __MothObject" + self.name.value + "{\npublic:\n"
+        #STRUCTS += "struct Moth" + self.name.value + ";typedef struct Moth" + self.name.value + " Moth" + self.name.value + ";\n"
         return out
 
 class FunctionHeader(ScopeHeader):
@@ -607,7 +282,16 @@ class FunctionHeader(ScopeHeader):
         self.inputs.find_declarations(declarations,dont_declare)
     
     def eval(self,parent):
-        c_header = self.return_type.get_c() + " " + self.name.value
+        if isinstance(parent,Scope):
+            if isinstance(parent.header,ClassHeader):
+                if parent.header.inherits == "STATIC":
+                    self.name.value = "__" + parent.header.name.eval() + self.name.value
+        return_type = self.return_type.get_c() + " "
+        #if isinstance(parent,Scope):
+        #    if isinstance(parent.header,ClassHeader) and (self.name.value == "Moth__init__"):
+        #        self.name.value = "__MothObject" + parent.header.name.value
+        #        return_type = ""
+        c_header = return_type + self.name.value
         c_header += "(" + ",".join([i[0].get_c() + " " + i[1].c_str for i in self.inputs.items]) + ")"
         return c_header
 
@@ -740,21 +424,10 @@ class FunctionCall(AstObj):
         return self
     
     def eval(self,parent):
-        special = ["reshape"]
         if isinstance(self.name,Reference):
-            if self.name.child.value in special:
-                if self.name.child.value == "reshape":
-                    name = "reshape" + self.name.parent.moth_type.get_raw()
-                    new_dims = ",".join([i.eval(parent) for i in self.inputs])
-                    new_ndims = str(len(self.inputs))
-                    input_array = self.name.parent.eval(parent)
-                    inputs = "(" + input_array + "," + new_ndims + "," + new_dims + ")"
-                    return name + inputs
-            else:
-                name = "OBJECT_"+self.name.parent.moth_type.name.value+"_Moth"+self.name.child.value
-                self.inputs.insert(0,self.name.parent)
+            name = self.name.eval(parent)
         elif isinstance(self.name,StaticFunction):
-            name = "OBJECT_"+self.name.class_name.value+"_Moth"+self.name.function_name.value
+            name = "__Moth"+self.name.class_name.value+"Moth"+self.name.function_name.value
         else:
             name = self.name.value
         return name + "(" + ",".join([i.eval(parent) for i in self.inputs]) + ")"
@@ -766,138 +439,53 @@ class BaseType(AstObj):
     def __init__(self,name,lineno = None):
         self.lineno = lineno
         self.name = name
-        if isinstance(self.name,Token):
-            if self.name.value == "bool":
-                self.name.value = "int"
-            if self.name.value == "complexf":
-                self.name.value = "float complex"
-            if self.name.value == "complexd":
-                self.name.value = "double complex"
-            if self.name.value[0] == "u":
-                self.name.value = "unsigned " + self.name.value[1:]
-            generateArrayType(self.name.value)
-            generateListType(self.name.value)
-        self.dimensions = 1
-
-class ListType(BaseType):
-    def __init__(self,name,lineno=None):
-        super().__init__(name,lineno)
-        generateListType("".join(self.name.get_c().split()))
-
+    
     def get_c(self):
-        return "".join(self.name.get_raw().split()) + "List*"
+        return "__Moth" + self.name.value
     
     def get_raw(self):
-        return self.get_c()[:-1]
+        return "Base"
+
+    def get_special(self):
+        return ""
+
+#class ListType(BaseType):
+#    def get_c(self):
+#        return "".join(self.name.get_raw().split()) + "List*"
+#    
+#    def get_raw(self):
+#        return self.get_c()[:-1]
 
 class ListLiteral(Container):
     pass
 
-class ListAppend(AstObj):
-    def __init__(self,list_name,val,lineno = None):
-        self.list_name = list_name
-        self.val = val
-        self.lineno = None
-    
-    def find_variables(self,parent):
-        self.list_name = self.list_name.find_variables(parent)
-        self.val = self.val.find_variables(parent)
-        return self
-    
-    def eval(self,parent):
-        val = self.val.eval(parent)
-        this_list = self.list_name.eval(parent)
-        return "append"+self.list_name.moth_type.get_raw() + "(" + this_list + "," + val + ")"
-    
-class ListPop(AstObj):
-    def __init__(self,list_name,lineno = None):
-        self.list_name = list_name
-        self.lineno = None
-    
-    def find_variables(self,parent):
-        self.list_name = self.list_name.find_variables(parent)
-        self.c_type = self.list_name.moth_type.name.get_raw()
-        return self
-    
-    def eval(self,parent):
-        this_list = self.list_name.eval(parent)
-        return "pop"+self.list_name.moth_type.get_raw() + "(" + this_list + ")"
-    
-class ListLen(AstObj):
-    def __init__(self,list_name,lineno = None):
-        self.list_name = list_name
-        self.lineno = None
-    
-    def find_variables(self,parent):
-        self.list_name = self.list_name.find_variables(parent)
-        self.c_type = self.list_name.moth_type.name.get_raw()
-        return self
-    
-    def eval(self,parent):
-        this_list = self.list_name.eval(parent)
-        return "len"+self.list_name.moth_type.get_raw() + "(" + this_list + ")"
-    
-class ListInsert(AstObj):
-    def __init__(self,list_name,index,val,lineno = None):
-        self.list_name = list_name
-        self.index = index
-        self.val = val
-        self.lineno = None
-    
-    def find_variables(self,parent):
-        self.list_name = self.list_name.find_variables(parent)
-        self.index = self.index.find_variables(parent)
-        self.val = self.val.find_variables(parent)
-        return self
-    
-    def eval(self,parent):
-        this_list = self.list_name.eval(parent)
-        return "insert"+self.list_name.moth_type.get_raw() + "(" + this_list + "," + self.val.eval(parent) + "," + self.index.eval(parent) + ")"
-
-class ListRemove(AstObj):
-    def __init__(self,list_name,index,lineno = None):
-        self.list_name = list_name
-        self.index = index
-        self.lineno = None
-    
-    def find_variables(self,parent):
-        self.list_name = self.list_name.find_variables(parent)
-        self.index = self.index.find_variables(parent)
-        return self
-    
-    def eval(self,parent):
-        this_list = self.list_name.eval(parent)
-        return "remove"+self.list_name.moth_type.get_raw() + "(" + this_list + "," + self.index.eval(parent) + ")"
-
-
 class Type(BaseType):
-    def get_c(self):
-        return self.name.value
-    
-    def get_raw(self):
-        return self.get_c()
+    pass
 
 class ObjectType(BaseType):
     def get_c(self):
-        return "Moth" + self.name.value + "*"
+        return "__MothObject" + self.name.value
     
     def get_raw(self):
-        return "Moth" + self.name.value
+        return "Object"
 
 class ArrayType(BaseType):
     def __init__(self,name, lineno = None):
         super().__init__(name,lineno)
-        generateArrayType("".join(self.name.get_c().split()))
+        self.dimensions = 1
 
     def add_dim(self):
         self.dimensions += 1
         return self
     
     def get_c(self):
-        return "".join(self.name.get_raw().split()) + "Array*"
+        return "__MothArray<" + self.name.get_c() + ">"
 
     def get_raw(self):
-        return self.name.get_raw() + "Array"
+        return "Array"
+    
+    def get_special(self):
+        return "(" + str(self.dimensions) + ")"
     
 class ArrayReference(AstObj):
     def __init__(self,name,index,lineno=None):
@@ -919,22 +507,9 @@ class ArrayReference(AstObj):
         return self
 
     def eval(self,parent):
-        if isinstance(self.name.moth_type,ListType):
-            if len(self.index) != 1:
-                throwError("LIST IS ONLY 1 DIMENSION",self.lineno)
-            return "(*(index" + self.name.moth_type.get_raw() + "(" + self.name.c_str + "," + self.index[0].eval(parent) + ")))"
-        else:
-            index = [i.eval(parent) for idx,i in enumerate(self.index)]
-            reverse = ["(" + self.name.eval(parent) + "->dims[" + str(i) + "])" for i in list(range(len(index)))]
-            #if parent.declarations[self.name.c_str].dimensions != len(self.index):
-            #    throwError("Array index error",self.lineno)
-            reverse.pop(0)
-            reverse.append(str(1))
-            reverse = reverse[::-1]
-            c_index = []
-            for i in range(len(index)):
-                c_index.append("(" + index[i] + "*" + "*".join(reverse[:len(index)-i]) + ")")
-            return self.name.eval(parent) + "->raw[" + "+".join(c_index) + "]"
+        index = ",".join([i.eval(parent) for idx,i in enumerate(self.index)])
+        return "__Moth" + self.name.moth_type.get_raw() + "INDEX(" + self.name.eval(parent) + "," + index + ")"
+
 
 class Declaration(AstObj):
     def __init__(self,type_name,name,lineno=None):
@@ -961,42 +536,12 @@ class Assign(AstObj):
         return self
     
     def eval(self,parent):
-        if isinstance(self.expression,ListLiteral):
-            if not isinstance(self.var.moth_type,ListType):
-                throwError("List type error",self.lineno)
-            nitems = len(self.expression.items)
-            out = self.var.c_str + " = ("+self.var.moth_type.get_c()+")malloc(sizeof(" + self.var.moth_type.get_raw() + "));\n"
-            out += self.var.c_str + "->terminator = 1;\n"
-            out += self.var.c_str + "->initialized = 0"
-            if nitems > 0:
-                temp_var = "Moth_tmp_" + "_".join(self.var.c_str.split("->"))
-                
-                out += ";\n" + self.var.moth_type.get_c() + " " + temp_var + " = " + self.var.c_str + ";\n"
-                for i in range(nitems-1):
-                    out += temp_var + "->initialized = 1;\n"
-                    out += temp_var + "->val = " + self.expression.items[i].eval(parent) + ";\n"
-                    out += temp_var + "->terminator = 0;\n"
-                    out += temp_var + "->next = " + "("+self.var.moth_type.get_c()+")malloc(sizeof(" + self.var.moth_type.get_c()[:-1] + "));\n"
-                    out += temp_var + " = " + temp_var + "->next;\n"
-                out += temp_var + "->val = " + self.expression.items[-1].eval(parent) + ";\n"
-                out += temp_var + "->terminator = 1;\n"
-                out += temp_var + "->initialized = 1;\n"
-            
-            return out
-
         if isinstance(self.expression,AllocArray):
-            return self.expression.get_c(self.var,parent)
-        if isinstance(self.expression,AllocObject):
-            out = self.var.eval(parent) + " = " + self.expression.eval(parent) + ";"
-            self.expression.objname.name = Reference(self.var,Identifier(Token("","__init__")))
-            out += self.expression.objname.eval(parent)
-            #out += FunctionCall(Reference(self.var,Identifier(Token("","__init__"))),).eval(parent)
-            return out
-        if isinstance(self.var,ArrayReference):
+            return self.expression.eval(self.var,parent)
+        elif isinstance(self.expression,AllocObject):
+            return self.expression.eval(self.var,parent)
+        else:
             return self.var.eval(parent) + " = " + self.expression.eval(parent)
-        if isinstance(self.var,Reference):
-            return self.var.eval(parent) + " = " + self.expression.eval(parent)
-        return self.var.c_str + " = " + self.expression.eval(parent)
     
 class AllocObject(AstObj):
     def __init__(self,objname):
@@ -1005,47 +550,14 @@ class AllocObject(AstObj):
     def find_variables(self,parent):
         return self
     
-    def eval(self,parent):
-        out = ""
-        c_t = self.objname.name.value
-        return "(" + c_t + "*)malloc(sizeof(" + c_t + "))"
+    def eval(self,var,parent):
+        self.objname.name.value = var.eval(parent) + ".Moth__init__"
+        return self.objname.eval(parent)
+        return ""
 
 class AllocArray(Container):
-    def get_c(self,var,parent):
-        dims = [i.eval(parent) for i in self.items]
-        ndims = len(dims)
-        vardims = var.moth_type.dimensions
-        if ndims != vardims:
-            throwError("Array Dims dont match",self.lineno)
-        c_t = var.moth_type.name.get_c()
-        array_t = generateArrayType(var.moth_type.name.get_c())
-        out = ""
-        try:
-            c_str = var.c_str
-        except:
-            c_str = var.eval(parent)
-        out += c_str + " = (" + array_t + "*)malloc(" + "sizeof(" + array_t + "));\n"
-        out += c_str + "->dims = (int*)malloc(" + str(ndims) + "*sizeof(int));\n"
-        out += "".join([c_str + "->dims[" + str(idx) + "] = " + i + ";" for idx,i in enumerate(dims)]) + "\n"
-        out += c_str + "->ndims = " + str(len(dims)) + ";\n"
-        out += c_str + "->raw = (" + c_t + "*" + ")malloc(" + "*".join(dims) + "*sizeof(" + c_t + "))"
-        return out 
-
-class Free(AstObj):
-    def __init__(self,var,lineno=None):
-        self.lineno = lineno
-        self.var = var
-    
-    def find_variables(self,parent):
-        self.var = self.var.find_variables(parent)
-        return self
-    
-    def eval(self,parent):
-        out = ""
-        if isinstance(self.var.moth_type,ObjectType):
-            return FunctionCall(Reference(self.var,Identifier(Token("","__free__")))).eval(parent) + ";" + "free(" + self.var.c_str + ")"
-        out += "free(" + self.var.c_str + "->dims);free(" + self.var.c_str + "->raw);free(" + self.var.c_str + ")"
-        return out
+    def eval(self,var,parent):
+        return var.eval(parent) + "." + "init(" + ",".join([i.eval(parent) for i in self.items]) + ")"
  
 class AssignInc(AstObj):
     def __init__(self,var,expression,op,lineno=None):
@@ -1080,28 +592,19 @@ class BinOp(AstObj):
         self.lineno = lineno
         self.left = left
         self.op = op
-        if self.op.value == "and":
-            self.op.value = "&&"
-        elif self.op.value == "or":
-            self.op.value = "||"
         self.right = right
     
     def find_variables(self,parent):
         self.left = self.left.find_variables(parent)
         self.right = self.right.find_variables(parent)
+        self.moth_type = self.left.moth_type
+        if self.right.moth_type.get_raw() == "Base":
+            if self.right.moth_type.name.value == "float":
+                self.moth_type = self.right.moth_type
         return self
 
     def eval(self,parent):
-        out = ""
-        op = self.op.value
-        if op in ["+","-","*","/","%","&&","||","&","|","==","!=",">","<",">=","<="]:
-            out += "(" + self.left.eval(parent) + ") " + op + " (" + self.right.eval(parent) + ")"
-        elif op == "**":
-            out += "pow(" + self.left.eval(parent) + "," + self.right.eval(parent) + ")"
-        else:
-            print("OP",op,"not implemented")
-            exit()
-        return out
+        return "__Moth" + self.right.moth_type.get_raw() + self.op.name + "(" + self.left.eval(parent) + "," + self.right.eval(parent) + ")"
 
 class Not(AstObj):
     def __init__(self,val,lineno=None):
@@ -1111,6 +614,9 @@ class Not(AstObj):
     def find_variables(self,parent):
         self.val = self.val.find_variables(parent)
         return self
+    
+    def eval(self,parent):
+        return "__Moth" + self.val.moth_type.get_raw() + "NOT(" + self.val.eval(parent) + ")"
 
 class Return(AstObj):
     def __init__(self,val=None,lineno=None):
@@ -1133,49 +639,7 @@ class Print(Container):
         out = []
         formatters = {"int" : r"%d", "float": r"%f", "double": r"%lf","char":r"%c"}
         for i in self.items:
-            if isinstance(i,String):
-                out.append(r'printf("%s",' + i.value + r')')
-            elif isinstance(i,ArrayReference):
-                c_t = i.name.moth_type.name.get_c()
-                if "complex" in c_t.split():
-                    out.append(r'__MothprintComplex(' + i.eval(parent) + r')')
-                else:
-                    out.append(r'printf("' + formatters[c_t] + r'",' + i.eval(parent) + r')')
-            elif isinstance(i,FunctionCall):
-                if isinstance(i.name,StaticFunction):
-                    c_t = parent.classes[i.name.class_name.value].functions["Moth" + i.name.function_name.value].name.value
-                else:
-                    c_t = parent.functions[i.name.value].name.value
-                if "complex" in c_t.split():
-                    out.append(r'__MothprintComplex(' + i.eval(parent) + r')')
-                else:
-                    out.append(r'printf("' + formatters[c_t] + r'",' + i.eval(parent) + r')')
-            elif isinstance(i,BinOp):
-                c_t = i.right.c_type
-                if "complex" in c_t.split():
-                    out.append(r'__MothprintComplex(' + i.eval(parent) + r')')
-                else:
-                    out.append(r'printf("' + formatters[c_t] + r'",' + i.eval(parent) + r')')
-            else:
-                if isinstance(i,Variable):
-                    if isinstance(i.moth_type,ListType):
-                        #print("print" + i.moth_type.get_raw() + "(" + i.c_str + ")")
-                        throwError("Can't print LIST",self.lineno)
-                    if isinstance(i.moth_type,ArrayType):
-                        name = "print" + i.moth_type.get_raw() + "(" + i.c_str + ")"
-                        out.append(name)
-                    elif isinstance(i.moth_type,ObjectType):
-                        out.append("OBJECT_" + i.moth_type.name.value + "_Moth__print__(" + i.c_str + ")")
-                    else:
-                        if "complex" in i.c_type.split():
-                            out.append(r'__MothprintComplex(' + i.eval(parent) + r')')
-                        else:
-                            out.append(r'printf("' + formatters[i.c_type] + r'",' + i.eval(parent) + r')')
-                else:
-                    if "complex" in i.c_type.split():
-                        out.append(r'__MothprintComplex(' + i.eval(parent) + r')')
-                    else:
-                        out.append(r'printf("' + formatters[i.c_type] + r'",' + i.eval(parent) + r')')
+            out.append(r'__MothPrint(' + i.eval(parent) + r')')
         return ";".join(out)
 
 class Pass(AstObj):
@@ -1282,7 +746,7 @@ class Cptr(Ctypes):
         if isinstance(self.var,Null):
             return "NULL"
         elif isinstance(self.var.moth_type,ArrayType):
-            return self.var.c_str + "->raw"
+            return self.var.c_str + ".raw"
         elif isinstance(self.var.moth_type,ObjectType):
             return self.var.c_str
         else:
@@ -1320,11 +784,11 @@ class Reference(AstObj):
             self.child = self.child.find_variables(parent.classes[self.parent.moth_type.name.value])
             self.c_type = self.child.c_type
             self.moth_type = self.child.moth_type
-            self.c_str = self.parent.eval(parent) + "->" + self.child.eval(parent)
+            self.c_str = self.parent.eval(parent) + "." + self.child.eval(parent)
         return self
 
     def eval(self,parent):
-        return self.parent.eval(parent) + "->" + self.child.eval(parent)
+        return self.parent.eval(parent) + "." + self.child.eval(parent)
 
 class Cast(AstObj):
     def __init__(self,new_type,expression,lineno=None):
