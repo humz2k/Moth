@@ -2,9 +2,9 @@ include moth-libs/math
 
 def int main():
     #int[:,:] c = array(10,10)
-    int [:,:] d = array(10,10)
-    d[0,1] = 10
-    print(d[0,1],"\n")
-    
+    int[:,:] d = array(2,2)
+    int[:,:] c = d
     #print(b)
+    d[0,0] = 10
+    print(c)
     return 0
