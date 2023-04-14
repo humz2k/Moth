@@ -2,8 +2,8 @@ from rply.token import Token
 
 HEADERS = '#include "moth_lib.hpp"\n\n'
 
-def throwError(err,lineno):
-    print("CODE GEN ERROR @ line " + str(lineno) + ":")
+def throwError(err,err_t,lineno):
+    print("\033[1;33mMothCodeGenError\033[0;0m(\033[1;31m" + err_t + "\033[0;0m) @ line \033[1;31m" + str(lineno) + "\033[0;0m:")
     print("   " + err)
     exit()
 
@@ -26,15 +26,19 @@ class AstObj:
     pass
 
 class Identifier(AstObj):
-    def __init__(self,token):
+    def __init__(self,token,lineno = None):
         self.token = token
         self.value = self.token.value
         self.name = self.token.name
+        self.lineno = lineno
     
     def find_variables(self,parent):
         raw = self
         c_str = self.value
-        c_type = parent.declarations[c_str].get_c()
+        try:
+            c_type = parent.declarations[c_str].get_c()
+        except:
+            throwError("Name " + c_str + " not found in scope [" + parent.header.name.value[4:] + "]","VarNotFound",self.lineno)
         moth_type = parent.declarations[c_str]
         return Variable(raw,c_str,c_type,moth_type)
 
@@ -42,10 +46,11 @@ class Identifier(AstObj):
         return "Moth" + self.value
 
 class String(AstObj):
-    def __init__(self,token):
+    def __init__(self,token,lineno=None):
         self.token = token
         self.value = self.token.value
         self.name = self.token.name
+        self.lineno = lineno
 
     def find_variables(self,parent):
         return self
@@ -54,10 +59,11 @@ class String(AstObj):
         return self.value
 
 class Number(AstObj):
-    def __init__(self,token):
+    def __init__(self,token,lineno=None):
         self.token = token
         self.value = self.token.value
         self.name = self.token.name
+        self.lineno = lineno
         if "." in self.value:
             self.moth_type = Type(Token("TYPE_NAME","float"))
         else:
@@ -94,7 +100,7 @@ class Program(Container):
     def verify(self):
         for scope in self.items:
             if not (isinstance(scope.header,FunctionHeader) or isinstance(scope.header,ClassHeader)):
-                throwError("Found non-function or non-class on top level",self.lineno)
+                throwError("Found non-function or non-class on top level","TopLevel",self.lineno)
 
     def find_classes(self):
         self.classes = {}
@@ -142,13 +148,13 @@ class Scope(AstObj):
         self.classes = out
         if isinstance(self.header,ClassHeader):
             if self.header.name.value in out:
-                throwError("Redefined class " + self.header.name.value,self.lineno)
+                throwError("Redefined class " + self.header.name.value,"RedefineClass",self.lineno)
             out[self.header.name.value] = self
     
     def find_functions(self,out):
         if isinstance(self.header,FunctionHeader):
             if self.header.name.value in out.keys():
-                throwError("Redefined function " + self.header.name.value,self.lineno)
+                throwError("Redefined function " + self.header.name.value,"RedefineFunc",self.lineno)
             out[self.header.name.value] = self.header.return_type
             return
         
@@ -159,7 +165,7 @@ class Scope(AstObj):
                     i.classes = self.classes
                     if isinstance(i.header,FunctionHeader):
                         if i.header.name.value in self.functions:
-                            throwError("Redefined function " + self.header.name.value + "." + i.header.name.value,self.lineno)
+                            throwError("Redefined function " + self.header.name.value + "." + i.header.name.value,"RedefineMemFunc",self.lineno)
                         self.functions[i.header.name.value] = i.header.return_type
                         out[i.header.name.value] = i.header.return_type
             return
@@ -188,11 +194,12 @@ class Scope(AstObj):
         self.classes = parent.classes
         out = ""
         out += self.header.eval(parent) 
+        is_class = False
         if isinstance(self.header,ClassHeader):
-            pass
+            is_class = True
         else:
             out += "{\n"
-        out += "".join([self.declarations[i].get_c() + " " + i + self.declarations[i].get_special() + ";" for i in self.declarations.keys() if not i in self.dont_declare]) + "\n"
+        out += "".join([self.declarations[i].get_c() + " " + i + self.declarations[i].get_special(is_class) + ";" for i in self.declarations.keys() if not i in self.dont_declare]) + "\n"
         if isinstance(self.header,ClassHeader):
             out += self.body.eval(self,self.declarations)
             if self.header.inherits == "STATIC":
@@ -446,7 +453,7 @@ class BaseType(AstObj):
     def get_raw(self):
         return "Base"
 
-    def get_special(self):
+    def get_special(self,is_class=False):
         return ""
 
 #class ListType(BaseType):
@@ -484,7 +491,9 @@ class ArrayType(BaseType):
     def get_raw(self):
         return "Array"
     
-    def get_special(self):
+    def get_special(self,is_class=False):
+        if is_class:
+            return "{" + str(self.dimensions) + "}"
         return "(" + str(self.dimensions) + ")"
     
 class ArrayReference(AstObj):

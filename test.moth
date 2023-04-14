@@ -1,10 +1,19 @@
 include moth-libs/math
 
+class container:
+    int[:] my_array
+    def void __init__():
+        my_array = array(10)
+    
+    def void modify():
+        my_array[0] = 100
+
 def int main():
-    #int[:,:] c = array(10,10)
-    int[:,:] d = array(2,2)
-    int[:,:] c = d
-    #print(b)
-    d[0,0] = 10
-    print(c)
+    int[:] arr = array(10)
+    int[:] arr2 = arr.copy()
+    arr2[1] = 100
+    arr1[0] = 10
+    print(arr)
+    print(arr2)
+    #print(my_container.my_array.reshape(1,10))
     return 0

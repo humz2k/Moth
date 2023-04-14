@@ -188,8 +188,8 @@ class __MothArray {
             for (i = 0; i < ndims; i++){
                 muls.get()[i] = 1;
                 int start = i+1;
-                for (int i = start; i < ndims; i++){
-                    muls.get()[i] = muls.get()[i] * dims.get()[i];
+                for (int j = start; j < ndims; j++){
+                    muls.get()[i] = muls.get()[i] * dims.get()[j];
             }
     }       std::shared_ptr<int> tmp_raw (static_cast<T*>(malloc(size*sizeof(T))),free);
             raw = tmp_raw;
@@ -211,8 +211,8 @@ class __MothArray {
             for (i = 0; i < ndims; i++){
                 muls.get()[i] = 1;
                 int start = i+1;
-                for (int i = start; i < ndims; i++){
-                    muls.get()[i] = muls.get()[i] * dims.get()[i];
+                for (int j = start; j < ndims; j++){
+                    muls.get()[i] = muls.get()[i] * dims.get()[j];
             }
     }
             //raw = (T*)malloc(size * sizeof(T));
@@ -220,7 +220,7 @@ class __MothArray {
             raw = tmp_raw;
         }
 
-        int get_index(int nargs, int idx[]){
+        int get_index(int nargs, int idx[]) const {
             int out = 0;
             if (nargs != ndims){
                 //MothRuntimeError("ArrayIndexError: Tried to index %d dimensional array with %d dimensional index\n",ndims, nargs);
@@ -249,6 +249,18 @@ class __MothArray {
                 int dimidx = (idx[i] % dims.get()[i] + dims.get()[i]) % dims.get()[i];
                 out = out + dimidx * muls.get()[i];
             }
+            //printf("GET IDX OUT %d\n",out);
+            //printf("MULS %d %d\n",muls.get()[0],muls.get()[1]);
+            //printf("DIMS %d %d\n",dims.get()[0],dims.get()[1]);
+            return out;
+        }
+
+        __MothArray<T> Mothcopy(){
+            __MothArray<T> out(ndims);
+            out.init(dims.get());
+            for (int i = 0; i < size; i++){
+                out.raw.get()[i] = raw.get()[i];
+            }
             return out;
         }
 
@@ -274,7 +286,7 @@ class __MothArray {
             return out;
         }
 
-        void recursive_print(int* indexes){
+        void recursive_print(int* indexes) const {
             //printf("CALL %d %d\n",indexes[0],indexes[1]);
             int start = 1;
             for (int i = 0; i < ndims; i++){
@@ -337,7 +349,7 @@ class __MothArray {
             return recursive_print(indexes);
         }
 
-        void __print__(){
+        void __print__() const {
             int* indexes = (int*)malloc(ndims * sizeof(int));
             for (int i = 0; i < ndims; i++){
                 indexes[i] = 0;
@@ -357,7 +369,7 @@ class __MothArray {
 };
 
 template<class T>
-void __MothPrint(__MothArray<T>& arr){
+void __MothPrint(const __MothArray<T>& arr){
     arr.__print__();
 }
 

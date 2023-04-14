@@ -219,12 +219,31 @@ return floor(inp);
 
 }
 
+class __MothObjectcontainer{
+public:
+__MothArray<__Mothint> my_array{1};
+__Mothvoid Moth__init__(){
+
+my_array.init(10);
+
+}
+
+__Mothvoid Mothmodify(){
+
+__MothArrayINDEX(my_array,1,0) = 100;
+
+}
+
+
+};
 __Mothint Mothmain(){
-__MothArray<__Mothint> d(2);__MothArray<__Mothint> c(2);
-d.init(2,2);
-c = d;
-__MothArrayINDEX(d,2,0,0) = 10;
-__MothPrint(c);
+__MothArray<__Mothint> arr(1);__MothArray<__Mothint> arr2(1);
+arr.init(10);
+arr2 = arr.Mothcopy();
+__MothArrayINDEX(arr2,1,1) = 100;
+__MothArrayINDEX(arr,1,0) = 10;
+__MothPrint(arr);
+__MothPrint(arr2);
 return 0;
 
 }
