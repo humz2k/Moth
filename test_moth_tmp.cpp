@@ -222,8 +222,7 @@ return floor(inp);
 __Mothint Mothmain(){
 __Mothcomplexf a;
 a = __MothBasePLUS(__MothBaseMINUS(10,1),I);
-__MothPrint(a);
-__MothPrint("\n");__MothPrint(I);
+__MothPrint(a.imag);
 return 0;
 
 }

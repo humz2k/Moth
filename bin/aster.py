@@ -781,14 +781,19 @@ class Reference(AstObj):
     def find_variables(self,parent,function=False):
         self.parent = self.parent.find_variables(parent)
         if not function:
-            self.child = self.child.find_variables(parent.classes[self.parent.moth_type.name.value])
-            self.c_type = self.child.c_type
-            self.moth_type = self.child.moth_type
-            self.c_str = self.parent.eval(parent) + "." + self.child.eval(parent)
+            if not "complex" in self.parent.moth_type.name.value:
+                self.child = self.child.find_variables(parent.classes[self.parent.moth_type.name.value])
+                self.c_type = self.child.c_type
+                self.moth_type = self.child.moth_type
+                self.c_str = self.parent.eval(parent) + "." + self.child.eval(parent)
+            else:
+                self.c_type = "__Mothcomplexf"
+                self.moth_type = BaseType(Token("",self.parent.moth_type.name.value))
+                self.c_str = self.parent.eval(parent) + "." + self.child.eval(parent)[4:]
         return self
 
     def eval(self,parent):
-        return self.parent.eval(parent) + "." + self.child.eval(parent)
+        return self.c_str #self.parent.eval(parent) + "." + self.child.eval(parent)
 
 class Cast(AstObj):
     def __init__(self,new_type,expression,lineno=None):

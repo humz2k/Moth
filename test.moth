@@ -2,6 +2,5 @@ include moth-libs/math
 
 def int main():
     complexf a = 10 - 1 + I
-    print(a)
-    print("\n",I)
+    print(a.imag)
     return 0
