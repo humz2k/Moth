@@ -220,9 +220,10 @@ return floor(inp);
 }
 
 __Mothint Mothmain(){
-__MothArray<__Mothint> a(2);
-a.init(2,2);
-__MothPrint(a);
+__MothArray<__Mothint> d(2);
+d.init(10,10);
+__MothArrayINDEX(d,2,0,1) = 10;
+__MothPrint(__MothArrayINDEX(d,2,0,1));__MothPrint("\n");
 return 0;
 
 }

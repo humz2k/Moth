@@ -4,8 +4,9 @@
 //#include <complex.h>
 //#undef complex
 #include <stdarg.h>
+#include <memory>
 
-#define MothRuntimeError(err,...) fprintf(stderr, "MothRuntimeError:\n\t"); exit(1); //fprintf(stderr, err, __VA_ARGS__);
+#define MothRuntimeError(err_t,...) fprintf(stderr, "\033[1;33mMothRuntimeError\033[0;0m(\033[1;31m%s\033[0;0m):\n\t",err_t); fprintf(stderr, __VA_ARGS__); exit(1);
 
 typedef void __Mothvoid;
 typedef char __Mothchar;
@@ -154,50 +155,82 @@ class __MothArray {
     public:
         int ndims;
         int size;
-        int* dims;
-        int* muls;
-        T* raw;
+        std::shared_ptr<int> dims;
+        std::shared_ptr<int> muls;
+        std::shared_ptr<T> raw;
         int initialized;
+        int freed;
         __MothArray(int in_ndims){
+            //printf("INIT!!\n");
             ndims = in_ndims;
-            dims = (int*)malloc(ndims * sizeof(int));
-            muls = (int*)malloc(ndims * sizeof(int));
+            //dims = (int*)malloc(ndims * sizeof(int));
+            //muls = (int*)malloc(ndims * sizeof(int));
+            std::shared_ptr<int> tmp_dims (static_cast<int*>(malloc(ndims*sizeof(int))),free);
+            std::shared_ptr<int> tmp_muls (static_cast<int*>(malloc(ndims*sizeof(int))),free);
+            dims = tmp_dims;
+            muls = tmp_muls;
+
             initialized = 0;
+            freed = 0;
+        }
+
+        void init(int in_dims[]){
+            if (initialized){
+                MothRuntimeError("ArrayReallocError","Array reallocated by Moth. This should not happen...\n")
+            }
+            initialized = 1;
+            size = 1;
+            int i;
+            for (i = 0; i < ndims; i++){
+                dims.get()[i] = in_dims[i];
+                size = size * in_dims[i];
+            }
+            for (i = 0; i < ndims; i++){
+                muls.get()[i] = 1;
+                int start = i+1;
+                for (int i = start; i < ndims; i++){
+                    muls.get()[i] = muls.get()[i] * dims.get()[i];
+            }
+    }       std::shared_ptr<int> tmp_raw (static_cast<T*>(malloc(size*sizeof(T))),free);
+            raw = tmp_raw;
         }
 
         template <class... Args>
         void init(Args&&... args){
-            initialized = 1;
             int in_dims[] = {args...};
+            if (initialized){
+                MothRuntimeError("ArrayReallocError","Array reallocated. array(...) is a special constructor and does not return an array type.\n")
+            }
+            initialized = 1;
             size = 1;
             int i;
             for (i = 0; i < ndims; i++){
-                dims[i] = in_dims[i];
+                dims.get()[i] = in_dims[i];
                 size = size * in_dims[i];
             }
             for (i = 0; i < ndims; i++){
-                muls[i] = 1;
+                muls.get()[i] = 1;
                 int start = i+1;
                 for (int i = start; i < ndims; i++){
-                    muls[i] = muls[i] * dims[i];
+                    muls.get()[i] = muls.get()[i] * dims.get()[i];
             }
     }
-            raw = (T*)malloc(size * sizeof(T));
+            //raw = (T*)malloc(size * sizeof(T));
+            std::shared_ptr<int> tmp_raw (static_cast<T*>(malloc(size*sizeof(T))),free);
+            raw = tmp_raw;
         }
 
         int get_index(int nargs, int idx[]){
             int out = 0;
             if (nargs != ndims){
-                printf("ARRAY INDEX DIMENSION ERROR\n");
-                exit(1);
+                //MothRuntimeError("ArrayIndexError: Tried to index %d dimensional array with %d dimensional index\n",ndims, nargs);
             }
             for (int i = 0; i < ndims; i++){
-                if (idx[i] >= dims[i]){
-                    MothRuntimeError("ARRAY INDEX BOUNDS ERROR\n");
-                    exit(1);
+                if (idx[i] >= dims.get()[i]){
+                    //MothRuntimeError("ArrayIndexError: Index %d in dimension %d is out of bounds for dimension with size %d\n",idx[i],i,dims[i]);
                 }
-                int dimidx = (idx[i] % dims[i] + dims[i]) % dims[i];
-                out = out + dimidx * muls[i];
+                int dimidx = (idx[i] % dims.get()[i] + dims.get()[i]) % dims.get()[i];
+                out = out + dimidx * muls.get()[i];
             }
             return out;
         }
@@ -207,30 +240,99 @@ class __MothArray {
             int idx[] = {args...};
             int out = 0;
             if (nargs != ndims){
-                printf("ARRAY INDEX DIMENSION ERROR\n");
-                exit(1);
+                MothRuntimeError("ArrayIndexError","Tried to index %d dimensional array with %d dimensional index\n",ndims, nargs);
             }
             for (int i = 0; i < ndims; i++){
-                if (idx[i] >= dims[i]){
-                    MothRuntimeError("ARRAY INDEX BOUNDS ERROR\n");
-                    exit(1);
+                if (idx[i] >= dims.get()[i]){
+                    MothRuntimeError("ArrayIndexError","Index %d in dimension %d is out of bounds for dimension with size %d\n",idx[i],i,dims.get()[i]);
                 }
-                int dimidx = (idx[i] % dims[i] + dims[i]) % dims[i];
-                out = out + dimidx * muls[i];
+                int dimidx = (idx[i] % dims.get()[i] + dims.get()[i]) % dims.get()[i];
+                out = out + dimidx * muls.get()[i];
             }
             return out;
         }
 
+        template <class... Args>
+        __MothArray<T> Mothreshape(Args&&... args){
+            int new_shape[] = {args...};
+            int new_ndims = sizeof(new_shape)/sizeof(int);
+            int new_size = 1;
+            for (int i = 0; i < new_ndims; i++){
+                new_size = new_size * new_shape[i];
+            }
+            if (new_size != size){
+                MothRuntimeError("ArrayReshapeError","Can't reshape array (trying to resize from %d to %d)\n",size,new_size);
+            }
+
+            //printf("size: %d\n",size);
+            __MothArray<T> out(new_ndims);
+            out.init(new_shape);
+            for (int i = 0; i < size; i++){
+                out.raw.get()[i] = raw.get()[i];
+            }
+            //printf("dims %d\n",out.ndims);
+            return out;
+        }
+
         void recursive_print(int* indexes){
-            __MothPrint(raw[get_index(ndims,indexes)]); printf(" ");
+            //printf("CALL %d %d\n",indexes[0],indexes[1]);
+            int start = 1;
+            for (int i = 0; i < ndims; i++){
+                if (indexes[i] != 0){
+                    start = 0;
+                    break;
+                }
+            }
+            int count = 0;
+            for (int i = ndims-1; i >= 0; i--){
+                if (i != ndims-1){
+                    //printf("index[i] %d\n",indexes[i]);
+                    //printf("index[i+1] %d\n",indexes[ndims-1]);
+                    int good = 1;
+                    for (int j = i+1; j < ndims; j++){
+                        if (indexes[j] != 0){
+                            good = 0;
+                            break;
+                        }
+                    }
+                    if (good){
+                        count++;
+                    }
+                }
+            }
+            if (start){
+                count++;
+            }
+            if (count > 0){
+                for (int i = 0; i < (ndims-count); i++){
+                    printf(" ");
+                }
+            }
+            for (int i = 0; i < count; i++){
+                printf("[");
+            }
+            __MothPrint(raw.get()[get_index(ndims,indexes)]);
             indexes[ndims-1]++;
             for (int i = ndims-1; i >= 0; i--){
-                if (indexes[i] == dims[i]){
+                if (indexes[i] == dims.get()[i]){
+                    printf("]");
                     if (i == 0){
                         return;
                     }
+                    indexes[i] = 0;
                     indexes[i-1]++;
                 }
+            }
+            if (ndims > 1){
+                if (indexes[ndims-1] == 0){
+                    printf("\n");
+                    for (int i = 0; i < ndims-1; i++){
+                        //printf(" ");
+                    }
+                }
+            }
+            if (indexes[ndims-1] != 0){
+                printf(" ");
             }
             return recursive_print(indexes);
         }
@@ -241,19 +343,16 @@ class __MothArray {
                 indexes[i] = 0;
             }
             recursive_print(indexes);
+            printf("\n");
             free(indexes);
         }
 
         T& operator[](int idx){
-            return raw[idx];
+            return raw.get()[idx];
         }
 
         ~__MothArray(){
-            free(dims);
-            free(muls);
-            if (initialized == 1){
-                free(raw);
-            }
+            //printf("FREE\n");
         }
 };
 

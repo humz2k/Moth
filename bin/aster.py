@@ -791,6 +791,8 @@ class Reference(AstObj):
                 self.c_type = "__Mothcomplexf"
                 self.moth_type = BaseType(Token("",self.parent.moth_type.name.value))
                 self.c_str = self.parent.eval(parent) + "." + self.child.eval(parent)[4:]
+        else:
+            self.c_str = self.parent.eval(parent) + "." + self.child.eval(parent)
         return self
 
     def eval(self,parent):

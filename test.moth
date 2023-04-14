@@ -1,7 +1,10 @@
 include moth-libs/math
 
 def int main():
-    int[:,:] a = array(2,2)
-    #print(a[0,0])
-    print(a)
+    #int[:,:] c = array(10,10)
+    int [:,:] d = array(10,10)
+    d[0,1] = 10
+    print(d[0,1],"\n")
+    
+    #print(b)
     return 0
