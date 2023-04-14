@@ -1,6 +1,7 @@
 include moth-libs/math
 
 def int main():
-    complexf a = 10 - 1 + I
-    print(a.imag)
+    int[:,:] a = array(2,2)
+    #print(a[0,0])
+    print(a)
     return 0

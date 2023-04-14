@@ -220,9 +220,9 @@ return floor(inp);
 }
 
 __Mothint Mothmain(){
-__Mothcomplexf a;
-a = __MothBasePLUS(__MothBaseMINUS(10,1),I);
-__MothPrint(a.imag);
+__MothArray<__Mothint> a(2);
+a.init(2,2);
+__MothPrint(a);
 return 0;
 
 }

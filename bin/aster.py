@@ -507,8 +507,9 @@ class ArrayReference(AstObj):
         return self
 
     def eval(self,parent):
+        size = str(len(self.index))
         index = ",".join([i.eval(parent) for idx,i in enumerate(self.index)])
-        return "__Moth" + self.name.moth_type.get_raw() + "INDEX(" + self.name.eval(parent) + "," + index + ")"
+        return "__Moth" + self.name.moth_type.get_raw() + "INDEX(" + self.name.eval(parent) + "," + size + "," + index + ")"
 
 
 class Declaration(AstObj):

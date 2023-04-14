@@ -5,6 +5,8 @@
 //#undef complex
 #include <stdarg.h>
 
+#define MothRuntimeError(err,...) fprintf(stderr, "MothRuntimeError:\n\t"); fprintf(stderr, err, __VA_ARGS__)
+
 typedef void __Mothvoid;
 typedef char __Mothchar;
 typedef unsigned char __Mothuchar;
@@ -61,30 +63,14 @@ inline __Mothcomplex<C_t> operator+(T other, const __Mothcomplex<C_t>& first){
     out.imag = first.imag;
     return out;
 }
-/*
-template <typename T>
-inline __Mothcomplexf operator+(const __Mothcomplexf& first, T other){
-    __Mothcomplexf out;
-    out.real = first.real + other;
-    out.imag = first.imag;
-    return out;
-}
-
-template <typename T>
-inline __Mothcomplexf operator+(T other, const __Mothcomplexf& first){
-    __Mothcomplexf out;
-    out.real = first.real + other;
-    out.imag = first.imag;
-    return out;
-}*/
 
 typedef __Mothcomplex<float> __Mothcomplexf;
 typedef __Mothcomplex<double> __Mothcomplexd;
 
 __Mothcomplexf I;
 
-#define NUMARGS(...)  (sizeof((int[]){__VA_ARGS__})/sizeof(int))
-#define __MothArrayINDEX(arr,...) arr[arr.get_index(NUMARGS(__VA_ARGS__),__VA_ARGS__)]
+//#define NUMARGS(...)  (sizeof((int[]){__VA_ARGS__})/sizeof(int))
+#define __MothArrayINDEX(arr,n,...) arr[arr.get_index(n,__VA_ARGS__)]
 /*
 inline __Mothchar __MothBasePLUS(__Mothchar f, __Mothchar s){return (f+s);}
 inline __Mothchar __MothBasePLUS(__Mothchar f, __Mothuchar s){return (f+s);}
@@ -163,10 +149,6 @@ void __MothPrint(__Mothcomplexd f){
     printf("%f %fi",f.real,f.imag);
 }
 
-//void __MothPrint(__Mothcomplexf f){
-//    printf("%d %di",creal(f),cimag(f));
-//}
-
 template <class T>
 class __MothArray {
     public:
@@ -203,6 +185,23 @@ class __MothArray {
             raw = (T*)malloc(size * sizeof(T));
         }
 
+        int get_index(int nargs, int idx[]){
+            int out = 0;
+            if (nargs != ndims){
+                printf("ARRAY INDEX DIMENSION ERROR\n");
+                exit(1);
+            }
+            for (int i = 0; i < ndims; i++){
+                if (idx[i] >= dims[i]){
+                    printf("ARRAY INDEX BOUNDS ERROR\n");
+                    exit(1);
+                }
+                int dimidx = (idx[i] % dims[i] + dims[i]) % dims[i];
+                out = out + dimidx * muls[i];
+            }
+            return out;
+        }
+
         template <class... Args>
         int get_index(int nargs, Args&&... args){
             int idx[] = {args...};
@@ -222,6 +221,29 @@ class __MothArray {
             return out;
         }
 
+        void recursive_print(int* indexes){
+            __MothPrint(raw[get_index(ndims,indexes)]); printf(" ");
+            indexes[ndims-1]++;
+            for (int i = ndims-1; i >= 0; i--){
+                if (indexes[i] == dims[i]){
+                    if (i == 0){
+                        return;
+                    }
+                    indexes[i-1]++;
+                }
+            }
+            return recursive_print(indexes);
+        }
+
+        void __print__(){
+            int* indexes = (int*)malloc(ndims * sizeof(int));
+            for (int i = 0; i < ndims; i++){
+                indexes[i] = 0;
+            }
+            recursive_print(indexes);
+            free(indexes);
+        }
+
         T& operator[](int idx){
             return raw[idx];
         }
@@ -234,6 +256,11 @@ class __MothArray {
             }
         }
 };
+
+template<class T>
+void __MothPrint(__MothArray<T>& arr){
+    arr.__print__();
+}
 
 //int main(){
     //printf("RUNNING\n");
