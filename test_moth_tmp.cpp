@@ -1,6 +1,5 @@
 
 
-
 #include "moth_lib.hpp"
 
 
@@ -220,97 +219,13 @@ return floor(inp);
 
 }
 
-
-__Mothcomplexd __MothcomplexMothcmplx(__Mothdouble real,__Mothdouble imag){
-
-return __MothBasePLUS(real,__MothBaseSTAR(I,imag));
-
-}
-
-__Mothcomplexf __MothcomplexMothcmplxf(__Mothfloat real,__Mothfloat imag){
-
-return __MothBasePLUS(real,__MothBaseSTAR(I,imag));
-
-}
-
-__Mothdouble __MothcomplexMothreal(__Mothcomplexd inp){
-
-return creal(inp);
-
-}
-
-__Mothfloat __MothcomplexMothrealf(__Mothcomplexf inp){
-
-return crealf(inp);
-
-}
-
-__Mothdouble __MothcomplexMothimag(__Mothcomplexd inp){
-
-return cimag(inp);
-
-}
-
-__Mothfloat __MothcomplexMothimagf(__Mothcomplexf inp){
-
-return cimagf(inp);
-
-}
-
-__Mothdouble __MothcomplexMothabs(__Mothcomplexd inp){
-
-return cabs(inp);
-
-}
-
-__Mothfloat __MothcomplexMothabsf(__Mothcomplexf inp){
-
-return cabsf(inp);
-
-}
-
-__Mothdouble __MothcomplexMotharg(__Mothcomplexd inp){
-
-return carg(inp);
-
-}
-
-__Mothfloat __MothcomplexMothargf(__Mothcomplexf inp){
-
-return cargf(inp);
-
-}
-
-__Mothcomplexd __MothcomplexMothconj(__Mothcomplexd inp){
-
-return conj(inp);
-
-}
-
-__Mothcomplexf __MothcomplexMothconjf(__Mothcomplexf inp){
-
-return conjf(inp);
-
-}
-
-__Mothcomplexd __MothcomplexMothproj(__Mothcomplexd inp){
-
-return cproj(inp);
-
-}
-
-__Mothcomplexf __MothcomplexMothprojf(__Mothcomplexf inp){
-
-return cprojf(inp);
-
-}
-
 __Mothint Mothmain(){
-__Mothcomplexf b;
-b = I;
-__MothPrint(b);
+__Mothcomplexf a;
+a = __MothBasePLUS(__MothBaseMINUS(10,1),I);
+__MothPrint(a);
+__MothPrint("\n");__MothPrint(I);
 return 0;
 
 }
 
-int main() { return Mothmain();}
+int main() {I.real = 0; I.imag = 1; return Mothmain();}

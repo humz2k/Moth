@@ -313,9 +313,9 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('bool : TRUE|FALSE')
     def ret_bool(p):
         if p[0].name == "TRUE":
-            return aster.Number(Token("Number","1"))
+            return aster.Number(Token("Number","true"))
         else:
-            return aster.Number(Token("Number","0"))
+            return aster.Number(Token("Number","false"))
     
     @pg.production('cast : type_name_base OPEN_PAREN expression CLOSE_PAREN')
     @pg.production('cast : array_type OPEN_PAREN expression CLOSE_PAREN')

@@ -126,7 +126,7 @@ class Program(Container):
         out = ""
         for scope in self.items:
             out += scope.eval(self)
-        return HEADERS + out + "\nint main() { return Mothmain();}\n"
+        return HEADERS + out + "\nint main() {I.real = 0; I.imag = 1; return Mothmain();}\n"
 
 class Scope(AstObj):
     def __init__(self,header,body,lineno=None):

@@ -1,28 +1,102 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <complex.h>
-#undef complex
+//#include <complex.h>
+//#undef complex
 #include <stdarg.h>
 
-#define __Mothvoid void
-#define __Mothchar char
-#define __Mothuchar unsigned char
-#define __Mothshort short
-#define __Mothushort unsigned short
-#define __Mothint int
-#define __Mothuint unsigned int
-#define __Mothlong long int
-#define __Mothulong unsigned long int
-#define __Mothfloat float
-#define __Mothdouble double
-#define __Mothbool int
-#define __Mothcomplexf float _Complex
-#define __Mothcomplexd double _Complex
+typedef void __Mothvoid;
+typedef char __Mothchar;
+typedef unsigned char __Mothuchar;
+typedef short __Mothshort;
+typedef unsigned short __Mothushort;
+typedef int __Mothint;
+typedef unsigned int __Mothuint;
+typedef long int __Mothlong;
+typedef unsigned long int __Mothulong;
+typedef float __Mothfloat;
+typedef double __Mothdouble;
+typedef bool __Mothbool;
+//typedef float __Mothcomplexf[2];
+//typedef double __Mothcomplexd[2];
+
+template <typename C_t>
+struct __Mothcomplex{
+    C_t real;
+    C_t imag;
+
+    __Mothcomplex& operator=(const __Mothcomplex& other){
+        real = other.real;
+        imag = other.imag;
+        return *this;
+    }
+
+    template <typename T>
+    __Mothcomplex& operator=(T other){
+        real = other;
+        imag = 0;
+        return *this;
+    }
+    
+};
+
+template <typename C_t, typename C2_t>
+inline __Mothcomplex<C_t> operator+(const __Mothcomplex<C_t>& first, const __Mothcomplex<C2_t>& other){
+    __Mothcomplex<C_t> out;
+    out.real = first.real + other.real;
+    out.imag = first.imag + other.imag;
+    return out;
+}
+template <typename C_t, typename T>
+inline __Mothcomplex<C_t> operator+(const __Mothcomplex<C_t>& first, T other){
+    __Mothcomplex<C_t> out;
+    out.real = first.real + other;
+    out.imag = first.imag;
+    return out;
+}
+template <typename C_t, typename T>
+inline __Mothcomplex<C_t> operator+(T other, const __Mothcomplex<C_t>& first){
+    __Mothcomplex<C_t> out;
+    out.real = first.real + other;
+    out.imag = first.imag;
+    return out;
+}
+/*
+template <typename T>
+inline __Mothcomplexf operator+(const __Mothcomplexf& first, T other){
+    __Mothcomplexf out;
+    out.real = first.real + other;
+    out.imag = first.imag;
+    return out;
+}
+
+template <typename T>
+inline __Mothcomplexf operator+(T other, const __Mothcomplexf& first){
+    __Mothcomplexf out;
+    out.real = first.real + other;
+    out.imag = first.imag;
+    return out;
+}*/
+
+typedef __Mothcomplex<float> __Mothcomplexf;
+typedef __Mothcomplex<double> __Mothcomplexd;
+
+__Mothcomplexf I;
 
 #define NUMARGS(...)  (sizeof((int[]){__VA_ARGS__})/sizeof(int))
 #define __MothArrayINDEX(arr,...) arr[arr.get_index(NUMARGS(__VA_ARGS__),__VA_ARGS__)]
-
+/*
+inline __Mothchar __MothBasePLUS(__Mothchar f, __Mothchar s){return (f+s);}
+inline __Mothchar __MothBasePLUS(__Mothchar f, __Mothuchar s){return (f+s);}
+inline __Mothchar __MothBasePLUS(__Mothchar f, __Mothshort s){return (f+s);}
+inline __Mothchar __MothBasePLUS(__Mothchar f, __Mothushort s){return (f+s);}
+inline __Mothint __MothBasePLUS(__Mothchar f, __Mothint s){return (f+s);}
+inline __Mothint __MothBasePLUS(__Mothchar f, __Mothuint s){return (f+s);}
+inline __Mothlong __MothBasePLUS(__Mothchar f, __Mothlong s){return (f+s);}
+inline __Mothlong __MothBasePLUS(__Mothchar f, __Mothulong s){return (f+s);}
+inline __Mothfloat __MothBasePLUS(__Mothchar f, __Mothfloat s){return (f+s);}
+inline __Mothdouble __MothBasePLUS(__Mothchar f, __Mothdouble s){return (f+s);}
+*/
 #define __MothBasePLUS(f,s) (f+s)
 #define __MothBaseMINUS(f,s) (f-s)
 #define __MothBaseSTARSTAR(f,s) pow(f,s)
@@ -75,10 +149,23 @@ void __MothPrint(__Mothfloat f){
 void __MothPrint(__Mothdouble f){
     printf("%lf",f);
 }
-
-void __MothPrint(__Mothcomplexf f){
-    printf("%d %di",creal(f),cimag(f));
+void __MothPrint(__Mothbool f){
+    if (f){
+        printf("True");
+    }else{
+        printf("False");
+    }
 }
+void __MothPrint(__Mothcomplexf f){
+    printf("%f %fi",f.real,f.imag);
+}
+void __MothPrint(__Mothcomplexd f){
+    printf("%f %fi",f.real,f.imag);
+}
+
+//void __MothPrint(__Mothcomplexf f){
+//    printf("%d %di",creal(f),cimag(f));
+//}
 
 template <class T>
 class __MothArray {
