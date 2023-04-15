@@ -244,6 +244,7 @@ __MothArrayINDEX(arr2,1,1) = 100;
 __MothArrayINDEX(arr,1,0) = 10;
 __MothPrint(arr);
 __MothPrint(arr2);
+;
 return 0;
 
 }

@@ -1,9 +1,11 @@
 from rply.token import Token
 
 HEADERS = '#include "moth_lib.hpp"\n\n'
+LINEOFFSET = 0
 
 def throwError(err,err_t,lineno):
-    print("\033[1;33mMothCodeGenError\033[0;0m(\033[1;31m" + err_t + "\033[0;0m) @ line \033[1;31m" + str(lineno) + "\033[0;0m:")
+    global LINEOFFSET
+    print("\033[1;33mMothCodeGenError\033[0;0m(\033[1;31m" + err_t + "\033[0;0m) @ \033[1;32mline " + str(lineno.lineno - LINEOFFSET) + "\033[0;0m:")
     print("   " + err)
     exit()
 
@@ -23,7 +25,8 @@ class Variable:
         return self.c_str
 
 class AstObj:
-    pass
+    def __init__(self,lineno=None):
+        self.lineno = lineno
 
 class Identifier(AstObj):
     def __init__(self,token,lineno = None):
@@ -38,7 +41,7 @@ class Identifier(AstObj):
         try:
             c_type = parent.declarations[c_str].get_c()
         except:
-            throwError("Name " + c_str + " not found in scope [" + parent.header.name.value[4:] + "]","VarNotFound",self.lineno)
+            throwError("Name \033[1;34m" + c_str + "\033[0;0m not found in scope [\033[1;34m" + parent.header.name.value[4:] + "\033[0;0m]","VarNotFound",self.lineno)
         moth_type = parent.declarations[c_str]
         return Variable(raw,c_str,c_type,moth_type)
 
@@ -122,8 +125,9 @@ class Program(Container):
         for scope in self.items:
             scope.find_variables(self)
 
-    def eval(self):
-        global HEADERS
+    def eval(self, line_offset = 0):
+        global HEADERS,LINEOFFSET
+        LINEOFFSET = line_offset
         self.verify()
         self.find_classes()
         self.find_functions()
@@ -148,13 +152,13 @@ class Scope(AstObj):
         self.classes = out
         if isinstance(self.header,ClassHeader):
             if self.header.name.value in out:
-                throwError("Redefined class " + self.header.name.value,"RedefineClass",self.lineno)
+                throwError("Class [\033[1;34m" + self.header.name.value + "\033[0;0m] is already defined","RedefinedClass",self.lineno)
             out[self.header.name.value] = self
     
     def find_functions(self,out):
         if isinstance(self.header,FunctionHeader):
             if self.header.name.value in out.keys():
-                throwError("Redefined function " + self.header.name.value,"RedefineFunc",self.lineno)
+                throwError("Function [\033[1;34m" + self.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedFunc",self.lineno)
             out[self.header.name.value] = self.header.return_type
             return
         
@@ -165,7 +169,8 @@ class Scope(AstObj):
                     i.classes = self.classes
                     if isinstance(i.header,FunctionHeader):
                         if i.header.name.value in self.functions:
-                            throwError("Redefined function " + self.header.name.value + "." + i.header.name.value,"RedefineMemFunc",self.lineno)
+                            throwError("Function [\033[1;34m" + self.header.name.value + "." + i.header.name.value + "\033[0;0m] is already defined","RedefinedMemFunc",self.lineno)
+                            #throwError("Redefined function " + self.header.name.value + "." + i.header.name.value,"RedefineMemFunc",self.lineno)
                         self.functions[i.header.name.value] = i.header.return_type
                         out[i.header.name.value] = i.header.return_type
             return
@@ -280,6 +285,8 @@ class FunctionHeader(ScopeHeader):
         self.return_type = return_type
         self.name = Token("IDENTIFIER","Moth" + name.value)
         self.inputs = inputs
+        if self.name.value == "Mothmain" and self.return_type.get_c() != "__Mothint":
+            throwError("Function [\033[1;34mmain\033[0;0m] returns \033[1;34m" + self.return_type.get_c()[6:] + "\033[0;0m instead of \033[1;34mint\033[0;0m","MainReturnType",self.lineno)
     
     def find_variables(self,parent):
         self.inputs = self.inputs.find_variables(parent)
@@ -669,9 +676,10 @@ class Ctypes(AstObj):
     pass
 
 class Craw(Ctypes):
-    def __init__(self,string,val):
+    def __init__(self,string,val,lineno=None):
         self.string = string
         self.val = val
+        self.lineno = lineno
 
     def find_variables(self,parent):
         self.val = self.val.find_variables(parent)

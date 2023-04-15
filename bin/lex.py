@@ -1,6 +1,7 @@
 from rply import LexerGenerator
 
-def get_lexer(filename = "tokens.txt",user_types = [], statics = []):
+def get_lexer(filename = "tokens.txt",user_types = [], statics = [], line_offset = 0):
+    
     lexer = LexerGenerator()
     with open(filename,"r") as f:
         raw = [i.split() for i in f.read().splitlines() if (not i.startswith("//")) and (not len(i) == 0)]

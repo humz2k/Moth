@@ -67,25 +67,31 @@ if __name__ == "__main__":
 
     with open(f,"r") as f:
         raw = f.read()
-
+    original_len = len(raw.split("\n"))
+    #print(original_len)
     raw,headers,tmp = resolve_imports.resolve(raw)
+    new_len = len(raw.split("\n"))
 
     raw = lex.remove_comments(raw)
 
     raw = lex.convert(raw)
 
+    after_all = len(raw.split("\n")) - 2
+
+    line_offset = after_all - original_len
+
     user_types = find_user_types.find_types(raw)
     statics = find_user_types.find_static(raw)
 
-    lexer = lex.get_lexer(token_file,user_types,statics)
+    lexer = lex.get_lexer(token_file,user_types,statics,line_offset=line_offset)
 
     tokens = lexer.lex(raw)
 
-    parser = parse.get_parser(token_file)
+    parser = parse.get_parser(token_file,line_offset=line_offset)
 
     base = parser.parse(tokens)
 
-    out = headers + base.eval()
+    out = headers + base.eval(line_offset=line_offset)
 
     with open(tmp_file,"w") as f:
         f.write(out)

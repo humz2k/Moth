@@ -2,7 +2,11 @@ import aster
 from rply import ParserGenerator
 from rply.token import Token
 
-def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STATIC_OBJECT"]):
+LINEOFFSET = 0
+
+def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STATIC_OBJECT"], line_offset = 0):
+    global LINEOFFSET
+    LINEOFFSET = line_offset
     with open(filename,"r") as f:
         tokens = [i.split()[0] for i in f.read().splitlines() if (not i.startswith("//")) and (not len(i) == 0)] + user_types + statics
     if "IGNORE" in tokens:
@@ -21,7 +25,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
 
     @pg.production('program : scope')
     def program(p):
-        return aster.Program(p[0])
+        return aster.Program(p[0],lineno=p[0].lineno)
     
     @pg.production('program : program scope')
     def add_program(p):
@@ -29,7 +33,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     
     @pg.production('scope : scope_header scope_body')
     def scope(p):
-        return aster.Scope(p[0],p[1])
+        return aster.Scope(p[0],p[1],lineno=p[0].lineno)
     
     @pg.production('scope_header : function_header')
     @pg.production('scope_header : for_header')
@@ -45,44 +49,44 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('class_header : CLASS identifier OPEN_PAREN identifier CLOSE_PAREN COLON')
     def class_header(p):
         if len(p) == 3:
-            return aster.ClassHeader(p[1])
-        return aster.ClassHeader(p[1],p[3])
+            return aster.ClassHeader(p[1],lineno=p[0].source_pos)
+        return aster.ClassHeader(p[1],p[3],lineno=p[0].source_pos)
     
     @pg.production('class_header : CLASS static_object OPEN_PAREN identifier CLOSE_PAREN COLON')
     def class_header_type_static(p):
-        return aster.ClassHeader(p[1],"STATIC")
+        return aster.ClassHeader(p[1],"STATIC",lineno=p[0].source_pos)
     
     @pg.production('class_header : CLASS user_type OPEN_PAREN identifier CLOSE_PAREN COLON')
     def class_header_type_user_t(p):
-        return aster.ClassHeader(p[1],"USER_T")
+        return aster.ClassHeader(p[1],"USER_T",lineno=p[0].source_pos)
     
     @pg.production('function_header : DEF type identifier OPEN_PAREN CLOSE_PAREN COLON')
     @pg.production('function_header : DEF type identifier func_def_inputs COLON')
     def function_header(p):
         if len(p) == 5:
-            return aster.FunctionHeader(p[1],p[2],p[3])
+            return aster.FunctionHeader(p[1],p[2],p[3],lineno=p[0].source_pos)
         else:
-            return aster.FunctionHeader(p[1],p[2],aster.FunctionDefInputs())
+            return aster.FunctionHeader(p[1],p[2],aster.FunctionDefInputs(),lineno=p[0].source_pos)
         
     @pg.production('if_header : IF expression COLON')
     def if_header(p):
-        return aster.IfHeader(p[1])
+        return aster.IfHeader(p[1],lineno=p[0].source_pos)
     
     @pg.production('elif_header : ELIF expression COLON')
     def elif_header(p):
-        return aster.ElifHeader(p[1])
+        return aster.ElifHeader(p[1],lineno=p[0].source_pos)
     
     @pg.production('else_header : ELSE COLON')
     def else_header(p):
-        return aster.ElseHeader()
+        return aster.ElseHeader(lineno=p[0].source_pos)
     
     @pg.production('for_header : FOR identifier IN range_obj COLON')
     @pg.production('for_header : FOR type_name identifier IN range_obj COLON')
     def for_header(p):
         if len(p) == 5:
-            return aster.ForHeader(p[1],p[3])
+            return aster.ForHeader(p[1],p[3],lineno=p[0].source_pos)
         else:
-            return aster.ForHeader(p[2],p[4],p[1])
+            return aster.ForHeader(p[2],p[4],p[1],lineno=p[0].source_pos)
     
     @pg.production('range_obj : RANGE OPEN_PAREN expression CLOSE_PAREN')
     @pg.production('range_obj : RANGE OPEN_PAREN expression COMMA expression CLOSE_PAREN')
@@ -100,15 +104,15 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
             start = p[2]
             end = p[4]
             step = p[6]
-        return aster.RangeObj(start,end,step)
+        return aster.RangeObj(start,end,step,lineno=p[0].source_pos)
 
     @pg.production('while_header : WHILE expression COLON')
     def while_header(p):
-        return aster.WhileHeader(p[1])
+        return aster.WhileHeader(p[1],lineno=p[0].source_pos)
     
     @pg.production('func_def_inputs_open : OPEN_PAREN type identifier')
     def func_def_inputs_open(p):
-        return aster.FunctionDefInputs((p[1],p[2]))
+        return aster.FunctionDefInputs((p[1],p[2]),lineno=p[0].source_pos)
 
     @pg.production('func_def_inputs_open : func_def_inputs_open COMMA type identifier')
     def func_def_inputs_cont(p):
@@ -120,13 +124,13 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     
     @pg.production('scope_body : OPEN_CURL lines CLOSE_CURL')
     def scope_body(p):
-        return aster.ScopeBody(p[1])
+        return aster.ScopeBody(p[1],lineno=p[0].source_pos)
     
     @pg.production('lines : line')
     @pg.production('lines : lines line')
     def lines(p):
         if len(p) == 1:
-            return aster.Lines(p[0])
+            return aster.Lines(p[0],lineno=p[0].lineno)
         else:
             return p[0].add(p[1])
         
@@ -146,13 +150,13 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('return : RETURN')
     def return_val(p):
         if len(p) == 2:
-            return aster.Return(p[1])
+            return aster.Return(p[1],lineno=p[0].source_pos)
         else:
-            return aster.Return()
+            return aster.Return(lineno=p[0].source_pos)
         
     @pg.production('declaration : type identifier')
     def declaration(p):
-        return aster.Declaration(p[0],p[1])
+        return aster.Declaration(p[0],p[1],lineno=p[0].lineno)
     
     @pg.production('assignment : declaration ASSIGN expression')
     @pg.production('assignment : identifier ASSIGN expression')
@@ -161,7 +165,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('assignment : identifier ASSIGN allocobj')
     @pg.production('assignment : reference ASSIGN allocobj')
     def assignment(p):
-        return aster.Assign(p[0],p[2])
+        return aster.Assign(p[0],p[2],lineno=p[1].source_pos)
     
     @pg.production('assignment : identifier PLUS_EQUAL expression')
     @pg.production('assignment : reference PLUS_EQUAL expression')
@@ -176,14 +180,14 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('assignment : identifier PERCENT_EQUAL expression')
     @pg.production('assignment : reference PERCENT_EQUAL expression')
     def assignment2(p):
-        return aster.AssignInc(p[0],p[2],p[1])
+        return aster.AssignInc(p[0],p[2],p[1],lineno=p[1].source_pos)
     
     @pg.production('assignment : identifier PLUS_PLUS')
     @pg.production('assignment : reference PLUS_PLUS')
     @pg.production('assignment : identifier MINUS_MINUS')
     @pg.production('assignment : reference MINUS_MINUS')
     def inc(p):
-        return aster.Inc(p[0],p[1])
+        return aster.Inc(p[0],p[1],lineno=p[1].source_pos)
     
     @pg.production('array_type : open_array_type CLOSE_SQUARE')
     def pass_array_type(p):
@@ -203,7 +207,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('array_reference_open : identifier OPEN_SQUARE expression')
     @pg.production('array_reference_open : identifier OPEN_SQUARE COLON')
     def array_reference_open(p):
-        return aster.ArrayReference(p[0],p[2])
+        return aster.ArrayReference(p[0],p[2],lineno=p[1].source_pos)
 
     @pg.production('array_reference_open : array_reference_open COMMA expression')
     @pg.production('array_reference_open : array_reference_open COMMA COLON')
@@ -212,7 +216,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     
     @pg.production('alloc_array_open : ARRAY OPEN_PAREN expression')
     def alloc_array_open(p):
-        return aster.AllocArray(p[2])
+        return aster.AllocArray(p[2],lineno=p[0].source_pos)
 
     @pg.production('alloc_array_open : alloc_array_open COMMA expression')
     def alloc_array_cont(p):
@@ -225,7 +229,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('open_array_type : type_name OPEN_SQUARE COLON')
     @pg.production('open_array_type : array_type OPEN_SQUARE COLON')
     def open_array_type(p):
-        return aster.ArrayType(p[0])
+        return aster.ArrayType(p[0],lineno=p[1].source_pos)
     
     @pg.production('open_array_type : open_array_type COMMA COLON')
     def cont_array_type(p):
@@ -233,11 +237,11 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     
     @pg.production('allocobj : NEW function_call')
     def allocobj(p):
-        return aster.AllocObject(p[1])
+        return aster.AllocObject(p[1],lineno=p[0].source_pos)
     
     @pg.production('list_literal : OPEN_SQUARE CLOSE_SQUARE')
     def empty_list(p):
-        return aster.ListLiteral()
+        return aster.ListLiteral(lineno=p[0].source_pos)
     
     @pg.production('list_literal : list_literal_open CLOSE_SQUARE')
     def close_list(p):
@@ -245,7 +249,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     
     @pg.production('list_literal_open : OPEN_SQUARE expression')
     def open_list(p):
-        return aster.ListLiteral(p[1])
+        return aster.ListLiteral(p[1],lineno=p[0].source_pos)
 
     @pg.production('list_literal_open : list_literal_open COMMA expression')
     def cont_list(p):
@@ -257,15 +261,15 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     
     @pg.production('type_name_base : LIST type_name')
     def list_type_name(p):
-        return aster.ListType(p[1])
+        return aster.ListType(p[1],lineno=p[0].source_pos)
         
     @pg.production('type_name_base : TYPE_NAME')
     @pg.production('type_name_base : OBJECT identifier')
     def type_name(p):
         if len(p) == 1:
-            return aster.Type(p[0])
+            return aster.Type(p[0],lineno=p[0].source_pos)
         if len(p) == 2:
-            return aster.ObjectType(p[1])
+            return aster.ObjectType(p[1],lineno=p[0].source_pos)
         
     @pg.production('type_name : type_name_base')
     def type_name_base(p):
@@ -273,7 +277,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
         
     @pg.production('type_name : user_type')
     def user_type_name(p):
-        return aster.ObjectType(p[0])
+        return aster.ObjectType(p[0],lineno=p[0].lineno)
         
     @pg.production('expression : expression PLUS expression')
     @pg.production('expression : expression MINUS expression')
@@ -292,11 +296,11 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('expression : expression AMP expression')
     @pg.production('expression : expression VERT expression')
     def binop(p):
-        return aster.BinOp(p[0],p[1],p[2])
+        return aster.BinOp(p[0],p[1],p[2],lineno=p[1].source_pos)
     
     @pg.production('expression : NOT expression')
     def pass_not(p):
-        return aster.Not(p[1])
+        return aster.Not(p[1],lineno=p[0].source_pos)
         
     @pg.production('expression : OPEN_PAREN expression CLOSE_PAREN')
     def brackets(p):
@@ -313,14 +317,14 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('bool : TRUE|FALSE')
     def ret_bool(p):
         if p[0].name == "TRUE":
-            return aster.Number(Token("Number","true"))
+            return aster.Number(Token("Number","true"),lineno=p[0].source_pos)
         else:
-            return aster.Number(Token("Number","false"))
+            return aster.Number(Token("Number","false"),lineno=p[0].source_pos)
     
     @pg.production('cast : type_name_base OPEN_PAREN expression CLOSE_PAREN')
     @pg.production('cast : array_type OPEN_PAREN expression CLOSE_PAREN')
     def cast(p):
-        return aster.Cast(p[0],p[2])
+        return aster.Cast(p[0],p[2],lineno=p[1].source_pos)
 
     @pg.production('function_call : identifier OPEN_PAREN CLOSE_PAREN')
     @pg.production('function_call : reference OPEN_PAREN CLOSE_PAREN')
@@ -328,7 +332,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('function_call : function_call_open CLOSE_PAREN')
     def function_call(p):
         if len(p) == 3:
-            return aster.FunctionCall(p[0])
+            return aster.FunctionCall(p[0],lineno=p[1].source_pos)
         return p[0]
     
     @pg.production('function_call_open : function_call_open COMMA expression')
@@ -339,30 +343,30 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('function_call_open : reference OPEN_PAREN expression')
     @pg.production('function_call_open : user_type OPEN_PAREN expression')
     def function_call_open(p):
-        return aster.FunctionCall(p[0],p[2])
+        return aster.FunctionCall(p[0],p[2],lineno=p[1].source_pos)
     
     @pg.production('c_val : C_VAL OPEN_PAREN expression CLOSE_PAREN')
     def c_val(p):
-        return aster.Cval(p[2])
+        return aster.Cval(p[2],lineno=p[0].source_pos)
     
     @pg.production('c_lit : C_LIT OPEN_PAREN identifier CLOSE_PAREN')
     @pg.production('c_lit : C_LIT OPEN_PAREN null CLOSE_PAREN')
     @pg.production('c_lit : C_LIT OPEN_PAREN string CLOSE_PAREN')
     def c_val(p):
-        return aster.Clit(p[2])
+        return aster.Clit(p[2],lineno=p[0].source_pos)
     
     @pg.production('c_type : C_TYPE OPEN_PAREN identifier CLOSE_PAREN')
     @pg.production('c_type : C_TYPE OPEN_PAREN c_raw CLOSE_PAREN')
     def c_val(p):
-        return aster.Ctype(p[2])
+        return aster.Ctype(p[2],lineno=p[0].source_pos)
     
     @pg.production('c_ptr : C_PTR OPEN_PAREN expression CLOSE_PAREN')
     def c_ptr(p):
-        return aster.Cptr(p[2])
+        return aster.Cptr(p[2],lineno=p[0].source_pos)
     
     @pg.production('c_call : C_CALL OPEN_PAREN identifier CLOSE_PAREN')
     def c_call(p):
-        return aster.Ccall(p[2])
+        return aster.Ccall(p[2],lineno=p[0].source_pos)
     
     @pg.production('c_call : c_call_open CLOSE_PAREN')
     def c_call_close(p):
@@ -382,8 +386,8 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('c_raw : C_RAW OPEN_PAREN string CLOSE_PAREN')
     def c_raw(p):
         if len(p) == 4:
-            return aster.Craw(p[2],aster.Clit(aster.Identifier(Token("",""))))
-        return aster.Craw(p[2],p[4])
+            return aster.Craw(p[2],aster.Clit(aster.Identifier(Token("",""))),lineno=p[0].source_pos)
+        return aster.Craw(p[2],p[4],lineno=p[0].source_pos)
     
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_val')
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_ptr')
@@ -391,7 +395,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_lit')
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_raw')
     def c_call_open(p):
-        tmp = aster.Ccall(p[2])
+        tmp = aster.Ccall(p[2],lineno=p[0].source_pos)
         return tmp.add(p[4])
     
     @pg.production('c_call_open : c_call_open COMMA c_val')
@@ -404,7 +408,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     
     @pg.production('print : PRINT OPEN_PAREN CLOSE_PAREN')
     def pass_print(p):
-        return aster.Print()
+        return aster.Print(lineno=p[0].source_pos)
     
     @pg.production('print : print_open CLOSE_PAREN')
     def pass_print2(p):
@@ -412,7 +416,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     
     @pg.production('print_open : PRINT OPEN_PAREN expression')
     def print_open(p):
-        return aster.Print(p[2])
+        return aster.Print(p[2],lineno=p[0].source_pos)
     
     @pg.production('print_open : print_open COMMA expression')
     def print_cont(p):
@@ -420,53 +424,56 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     
     @pg.production('pass : PASS')
     def pass_pass(p):
-        return aster.Pass()
+        return aster.Pass(lineno=p[0].source_pos)
     
     @pg.production('break : BREAK')
     def pass_break(p):
-        return aster.Break()
+        return aster.Break(lineno=p[0].source_pos)
     
     @pg.production('reference : static_object PERIOD identifier')
     def reference2(p):
-        return aster.StaticFunction(p[0],p[2])
+        return aster.StaticFunction(p[0],p[2],lineno=p[1].source_pos)
     
     @pg.production('reference : identifier PERIOD identifier')
     @pg.production('reference : reference PERIOD identifier')
     def reference(p):
-        return aster.Reference(p[0],p[2])
+        return aster.Reference(p[0],p[2],lineno=p[1].source_pos)
     
     @pg.production('number : NUMBER')
     @pg.production('number : IMAG')
     @pg.production('number : MINUS NUMBER')
     def number(p):
         if len(p) == 1:
-            return aster.Number(p[0])
+            return aster.Number(p[0],lineno=p[0].source_pos)
         else:
-            return aster.Number(Token("NUMBER","-"+p[1].value))
+            return aster.Number(Token("NUMBER","-"+p[1].value),lineno=p[0].source_pos)
         
     @pg.production('static_object : STATIC_OBJECT')
     def user_type(p):
-        return aster.Identifier(p[0])
+        return aster.Identifier(p[0],lineno=p[0].source_pos)
     
     @pg.production('user_type : USER_TYPE')
     def user_type(p):
-        return aster.Identifier(p[0])
+        return aster.Identifier(p[0],lineno=p[0].source_pos)
 
     @pg.production('identifier : IDENTIFIER')
     def identifier(p):
-        return aster.Identifier(p[0])
+        return aster.Identifier(p[0],lineno=p[0].source_pos)
     
     @pg.production('string : STRING')
     def string(p):
-        return aster.String(p[0])
+        return aster.String(p[0],lineno=p[0].source_pos)
     
     @pg.production('null : NULL')
     def null(p):
-        return aster.Null()
+        return aster.Null(lineno=p[0].source_pos)
 
     @pg.error
     def error_handler(token):
-        raise ValueError("Ran into a %s where it wasn't expected" % token.gettokentype())
+        global LINEOFFSET
+        print("\033[1;33mMothParseError\033[0;0m(\033[1;31mUnexpectedToken\033[0;0m) @ \033[1;32mline " + str(token.source_pos.lineno - LINEOFFSET) + "\033[0;0m:")
+        print("   Token [\033[1;34m" + token.name + "\033[0;0m] (\033[1;34m" + token.value + "\033[0;0m) not expected")
+        exit()
 
     return pg.build()
 
