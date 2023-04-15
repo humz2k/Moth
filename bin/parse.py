@@ -1,6 +1,7 @@
 import aster
 from rply import ParserGenerator
 from rply.token import Token
+import sys
 
 LINEOFFSET = 0
 
@@ -248,9 +249,11 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
         return p[0]
     
     @pg.production('list_literal_open : OPEN_SQUARE expression')
+    @pg.production('list_literal_open : OPEN_SQUARE allocobj')
     def open_list(p):
         return aster.ListLiteral(p[1],lineno=p[0].source_pos)
 
+    @pg.production('list_literal_open : list_literal_open COMMA allocobj')
     @pg.production('list_literal_open : list_literal_open COMMA expression')
     def cont_list(p):
         return p[0].add(p[2])
@@ -306,7 +309,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def brackets(p):
         return p[1]
     
-    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null|c_lit|list_literal|c_raw')
+    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null|c_lit|list_literal|c_raw|char')
     def num_str_idn(p):
         return p[0]
     
@@ -463,6 +466,10 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('string : STRING')
     def string(p):
         return aster.String(p[0],lineno=p[0].source_pos)
+
+    @pg.production('char : CHAR')
+    def string(p):
+        return aster.Char(p[0],lineno=p[0].source_pos)
     
     @pg.production('null : NULL')
     def null(p):
@@ -471,8 +478,11 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.error
     def error_handler(token):
         global LINEOFFSET
-        print("\033[1;33mMothParseError\033[0;0m(\033[1;31mUnexpectedToken\033[0;0m) @ \033[1;32mline " + str(token.source_pos.lineno - LINEOFFSET) + "\033[0;0m:")
-        print("   Token [\033[1;34m" + token.name + "\033[0;0m] (\033[1;34m" + token.value + "\033[0;0m) not expected")
+        if token.name == "SEMI_COLON":
+            token.name = "LINEBREAK"
+            token.value = r"\n"
+        print("\033[1;33mMothParseError\033[0;0m(\033[1;31mUnexpectedToken\033[0;0m) @ \033[1;32mline " + str(token.source_pos.lineno - LINEOFFSET) + "\033[0;0m:",file=sys.stderr)
+        print("   Token [\033[1;34m" + token.name + "\033[0;0m] (\033[1;34m" + token.value + "\033[0;0m) not expected",file=sys.stderr)
         exit()
 
     return pg.build()

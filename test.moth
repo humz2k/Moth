@@ -1,9 +1,7 @@
 def int main():
-    list int test = [1,2]
-    list int test2 = test
-    print(test,"\n")
-    test.append(3)
-    print(test2,"\n")
-    test2.pop(0)
-    print(test2,"\n")
+
+    str a = "Hello World!"
+    a = a + "1"
+    a[0] = 'T'
+    print(a)
     return 0

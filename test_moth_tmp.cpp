@@ -2,14 +2,11 @@
 #include "moth_lib.hpp"
 
 __Mothint Mothmain(){
-__MothList<__Mothint> test;__MothList<__Mothint> test2;
-test.Mothappend(1);test.Mothappend(2);
-test2 = test;
-__MothPrint(test);__MothPrint("\n");
-test.Mothappend(3);
-__MothPrint(test2);__MothPrint("\n");
-test2.Mothpop(0);
-__MothPrint(test2);__MothPrint("\n");
+__Mothstr a;
+a = "Hello World!";
+a = __MothBasePLUS(a,"1");
+__MothBaseINDEX(a,1,0) = 'T';
+__MothPrint(a);
 return 0;
 
 }

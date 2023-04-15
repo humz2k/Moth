@@ -1,12 +1,13 @@
 from rply.token import Token
+import sys
 
 HEADERS = '#include "moth_lib.hpp"\n\n'
 LINEOFFSET = 0
 
 def throwError(err,err_t,lineno):
     global LINEOFFSET
-    print("\033[1;33mMothCodeGenError\033[0;0m(\033[1;31m" + err_t + "\033[0;0m) @ \033[1;32mline " + str(lineno.lineno - LINEOFFSET) + "\033[0;0m:")
-    print("   " + err)
+    print("\033[1;33mMothCodeGenError\033[0;0m(\033[1;31m" + err_t + "\033[0;0m) @ \033[1;32mline " + str(lineno.lineno - LINEOFFSET) + "\033[0;0m:",file=sys.stderr)
+    print("   " + err,file=sys.stderr)
     exit()
 
 class Constant:
@@ -54,12 +55,28 @@ class String(AstObj):
         self.value = self.token.value
         self.name = self.token.name
         self.lineno = lineno
+        self.moth_type = BaseType(Token("TYPE_NAME","str"))
 
     def find_variables(self,parent):
         return self
     
     def eval(self,parent):
         return self.value
+    
+class Char(AstObj):
+    def __init__(self,token,lineno=None):
+        self.token = token
+        self.value = self.token.value
+        self.name = self.token.name
+        self.lineno = lineno
+        self.moth_type = BaseType(Token("TYPE_NAME","char"))
+
+    def find_variables(self,parent):
+        return self
+    
+    def eval(self,parent):
+        return self.value
+
 
 class Number(AstObj):
     def __init__(self,token,lineno=None):
@@ -465,10 +482,10 @@ class BaseType(AstObj):
 
 class ListType(BaseType):
     def get_c(self):
-        return "__MothList<" + self.name.get_c() + ">"
+        return "__MothListContainer<" + self.name.get_c() + ">"
     
     def get_raw(self):
-        return "List"
+        return "ListContainer"
 
     def get_special(self,is_class=False):
         if is_class:
@@ -569,8 +586,9 @@ class Assign(AstObj):
             return self.var.eval(parent) + " = " + self.expression.eval(parent)
     
 class AllocObject(AstObj):
-    def __init__(self,objname):
+    def __init__(self,objname,lineno=None):
         self.objname = objname
+        self.lineno = lineno
     
     def find_variables(self,parent):
         return self

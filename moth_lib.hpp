@@ -5,6 +5,7 @@
 //#undef complex
 #include <stdarg.h>
 #include <memory>
+#include <string>
 
 #define MothRuntimeError(err_t,...) fprintf(stderr, "\033[1;33mMothRuntimeError\033[0;0m(\033[1;31m%s\033[0;0m):\n\t",err_t); fprintf(stderr, __VA_ARGS__); exit(1);
 
@@ -20,6 +21,7 @@ typedef unsigned long int __Mothulong;
 typedef float __Mothfloat;
 typedef double __Mothdouble;
 typedef bool __Mothbool;
+typedef std::string __Mothstr;
 //typedef float __Mothcomplexf[2];
 //typedef double __Mothcomplexd[2];
 
@@ -72,7 +74,8 @@ __Mothcomplexf I;
 
 //#define NUMARGS(...)  (sizeof((int[]){__VA_ARGS__})/sizeof(int))
 #define __MothArrayINDEX(arr,n,...) arr[arr.get_index(n,__VA_ARGS__)]
-#define __MothListINDEX(list,n,idx) list.findIndex(idx,0)
+#define __MothListContainerINDEX(list,n,idx) list.findIndex(idx,0)
+#define __MothBaseINDEX(base,n,idx) base[idx]
 /*
 inline __Mothchar __MothBasePLUS(__Mothchar f, __Mothchar s){return (f+s);}
 inline __Mothchar __MothBasePLUS(__Mothchar f, __Mothuchar s){return (f+s);}
@@ -172,6 +175,7 @@ class __MothList {
                 terminator = 0;
                 __MothList<T> new_next;
                 new_next.Mothappend(new_val);
+                new_next.terminator = 1;
                 next_item = std::make_shared<__MothList<T>>(std::move(new_next));
                 return;
             }
@@ -193,7 +197,7 @@ class __MothList {
                 std::shared_ptr<__MothList<T>> new_next = next_item->next_item;
                 T new_val = next_item->val;
                 int new_terminator = next_item->terminator;
-                int new_initialize = next_item->initialized;
+                int new_initialize = 1;
                 T out_val = val;
                 val = new_val;
                 terminator = new_terminator;
@@ -201,7 +205,20 @@ class __MothList {
                 next_item = new_next;
                 return out_val;
             }
-            return next_item->Mothpop(idx-1);
+            T out = next_item->Mothpop(idx-1);
+            if (next_item->initialized == 0){
+                terminator = 1;
+            }
+            return out;
+        }
+        int Mothlen(){
+            if ((terminator == 1) && (initialized == 0)){
+                return 0;
+            }
+            if (terminator == 1){
+                return 1;
+            }
+            return 1 + next_item->Mothlen();
         }
         void __print__() const{
             if ((terminator == 1) && (initialized == 0)){
@@ -233,6 +250,48 @@ class __MothList {
         //T& operator[](int idx){
         //    return val;
         //}
+};
+
+template <class T>
+class __MothListContainer {
+    public:
+        std::shared_ptr<__MothList<T>> first_item;
+        __MothListContainer(){
+            __MothList<T> new_item;
+            first_item = std::make_shared<__MothList<T>>(std::move(new_item));
+        }
+        void Mothappend(T var){
+            first_item->Mothappend(var);
+        }
+        T Mothpop(int idx = 0){
+            if (idx < 0){
+                int len = first_item->Mothlen();
+                int new_idx = len + idx;
+                if (new_idx < 0){
+                    MothRuntimeError("ListPopError","Index \033[1;34m%d\033[0;0m out of range.\n",idx);
+                }
+                return first_item->Mothpop(new_idx);
+            }
+            return first_item->Mothpop(idx);
+        }
+        int Mothlen(){
+            return first_item->Mothlen();
+        }
+        void __print__() const{
+            first_item->__print__();
+        }
+        T& findIndex(int idx, int count){
+            if (idx < 0){
+                int len = first_item->Mothlen();
+                int new_idx = len + idx;
+                if (new_idx < 0){
+                    MothRuntimeError("ListIndexError","Index \033[1;34m%d\033[0;0m out of range.\n",idx);
+                }
+                return first_item->findIndex(new_idx,count);
+            }
+            return first_item->findIndex(idx,count);
+        }
+
 };
 
 template <class T>
@@ -276,7 +335,7 @@ class __MothArray {
                 for (int j = start; j < ndims; j++){
                     muls.get()[i] = muls.get()[i] * dims.get()[j];
             }
-    }       std::shared_ptr<int> tmp_raw (static_cast<T*>(malloc(size*sizeof(T))),free);
+    }       std::shared_ptr<T> tmp_raw (static_cast<T*>(malloc(size*sizeof(T))),free);
             raw = tmp_raw;
         }
 
@@ -301,7 +360,7 @@ class __MothArray {
             }
     }
             //raw = (T*)malloc(size * sizeof(T));
-            std::shared_ptr<int> tmp_raw (static_cast<T*>(malloc(size*sizeof(T))),free);
+            std::shared_ptr<T> tmp_raw (static_cast<T*>(malloc(size*sizeof(T))),free);
             raw = tmp_raw;
         }
 
@@ -459,9 +518,13 @@ void __MothPrint(const __MothArray<T>& arr){
 }
 
 template<class T>
-void __MothPrint(const __MothList<T>& list){
+void __MothPrint(const __MothListContainer<T>& list){
     printf("[");
     list.__print__();
+}
+
+void __MothPrint(__Mothstr input){
+    printf("%s",input.c_str());
 }
 
 //int main(){
