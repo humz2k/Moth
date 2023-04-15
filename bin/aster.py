@@ -169,7 +169,7 @@ class Scope(AstObj):
                     i.classes = self.classes
                     if isinstance(i.header,FunctionHeader):
                         if i.header.name.value in self.functions:
-                            throwError("Function [\033[1;34m" + self.header.name.value + "." + i.header.name.value + "\033[0;0m] is already defined","RedefinedMemFunc",self.lineno)
+                            throwError("Function [\033[1;34m" + self.header.name.value + "." + i.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedMemFunc",i.lineno)
                             #throwError("Redefined function " + self.header.name.value + "." + i.header.name.value,"RedefineMemFunc",self.lineno)
                         self.functions[i.header.name.value] = i.header.return_type
                         out[i.header.name.value] = i.header.return_type
@@ -463,15 +463,21 @@ class BaseType(AstObj):
     def get_special(self,is_class=False):
         return ""
 
-#class ListType(BaseType):
-#    def get_c(self):
-#        return "".join(self.name.get_raw().split()) + "List*"
-#    
-#    def get_raw(self):
-#        return self.get_c()[:-1]
+class ListType(BaseType):
+    def get_c(self):
+        return "__MothList<" + self.name.get_c() + ">"
+    
+    def get_raw(self):
+        return "List"
+
+    def get_special(self,is_class=False):
+        if is_class:
+            return ""
+        return ""
 
 class ListLiteral(Container):
-    pass
+    def eval(self,var,parent):
+        return ";".join([var.eval(parent) + "." + "Mothappend(" + i.eval(parent) + ")" for i in self.items])
 
 class Type(BaseType):
     pass
@@ -556,6 +562,8 @@ class Assign(AstObj):
         if isinstance(self.expression,AllocArray):
             return self.expression.eval(self.var,parent)
         elif isinstance(self.expression,AllocObject):
+            return self.expression.eval(self.var,parent)
+        elif isinstance(self.expression,ListLiteral):
             return self.expression.eval(self.var,parent)
         else:
             return self.var.eval(parent) + " = " + self.expression.eval(parent)

@@ -72,6 +72,7 @@ __Mothcomplexf I;
 
 //#define NUMARGS(...)  (sizeof((int[]){__VA_ARGS__})/sizeof(int))
 #define __MothArrayINDEX(arr,n,...) arr[arr.get_index(n,__VA_ARGS__)]
+#define __MothListINDEX(list,n,idx) list.findIndex(idx,0)
 /*
 inline __Mothchar __MothBasePLUS(__Mothchar f, __Mothchar s){return (f+s);}
 inline __Mothchar __MothBasePLUS(__Mothchar f, __Mothuchar s){return (f+s);}
@@ -149,6 +150,90 @@ void __MothPrint(__Mothcomplexf f){
 void __MothPrint(__Mothcomplexd f){
     printf("%f %fi",f.real,f.imag);
 }
+
+template <class T>
+class __MothList {
+    public:
+        std::shared_ptr<__MothList<T>> next_item;
+        int terminator;
+        int initialized;
+        T val;
+        __MothList(){
+            terminator = 1;
+            initialized = 0;
+        }
+        void Mothappend(T new_val){
+            if ((terminator==1) && (initialized == 0)){
+                val = new_val;
+                initialized = 1;
+                return;
+            }
+            if (terminator == 1){
+                terminator = 0;
+                __MothList<T> new_next;
+                new_next.Mothappend(new_val);
+                next_item = std::make_shared<__MothList<T>>(std::move(new_next));
+                return;
+            }
+            next_item->Mothappend(new_val);
+        }
+        T Mothpop(int idx = 0){
+            if ((terminator == 1) && (initialized == 0)){
+                MothRuntimeError("ListPopError","List index \033[1;34m%d\033[0;0m out of range.\n",idx);
+            }
+            if ((terminator == 1) && (initialized == 1)){
+                if (idx == 0){
+                    initialized = 0;
+                    return val;
+                }else{
+                    MothRuntimeError("ListPopError","List index \033[1;34m%d\033[0;0m out of range.\n",idx);
+                }
+            }
+            if (idx == 0){
+                std::shared_ptr<__MothList<T>> new_next = next_item->next_item;
+                T new_val = next_item->val;
+                int new_terminator = next_item->terminator;
+                int new_initialize = next_item->initialized;
+                T out_val = val;
+                val = new_val;
+                terminator = new_terminator;
+                initialized = new_initialize;
+                next_item = new_next;
+                return out_val;
+            }
+            return next_item->Mothpop(idx-1);
+        }
+        void __print__() const{
+            if ((terminator == 1) && (initialized == 0)){
+                printf("]");
+                return;
+            }
+            if ((terminator == 1) && (initialized == 1)){
+                __MothPrint(val);
+                printf("]");
+                return;
+            }
+            __MothPrint(val);
+            printf(",");
+            next_item->__print__();
+        }
+        T& findIndex(int idx, int count){
+            if (initialized == 0){
+                MothRuntimeError("ListIndexError","Index \033[1;34m%d\033[0;0m out of range.\n",idx);
+            }
+            if (count == idx){
+                return val;
+            }else{
+                if (terminator == 1){
+                    MothRuntimeError("ListIndexError","Index \033[1;34m%d\033[0;0m out of range.\n",idx);
+                }
+                return next_item->findIndex(idx,count+1);
+            }
+        }
+        //T& operator[](int idx){
+        //    return val;
+        //}
+};
 
 template <class T>
 class __MothArray {
@@ -371,6 +456,12 @@ class __MothArray {
 template<class T>
 void __MothPrint(const __MothArray<T>& arr){
     arr.__print__();
+}
+
+template<class T>
+void __MothPrint(const __MothList<T>& list){
+    printf("[");
+    list.__print__();
 }
 
 //int main(){

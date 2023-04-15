@@ -1,23 +1,9 @@
-include moth-libs/math
-
-class container:
-    int[:] my_array
-    def void __init__():
-        my_array = array(10)
-    
-    def void modify():
-        my_array[0] = 100
-
-    def void modify():
-        pass
-
 def int main():
-    int[:] arr = array(10)
-    int[:] arr2 = arr.copy()
-    arr2[1] = 100
-    arr[0] = 10
-    print(arr)
-    print(arr2)
-    print()
-    #print(my_container.my_array.reshape(1,10))
+    list int test = [1,2]
+    list int test2 = test
+    print(test,"\n")
+    test.append(3)
+    print(test2,"\n")
+    test2.pop(0)
+    print(test2,"\n")
     return 0
