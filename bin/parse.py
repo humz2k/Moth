@@ -215,9 +215,9 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def array_reference_cont(p):
         return p[0].add(p[2])
     
-    @pg.production('alloc_array_open : ARRAY OPEN_PAREN expression')
+    @pg.production('alloc_array_open : type_name ARRAY OPEN_PAREN expression')
     def alloc_array_open(p):
-        return aster.AllocArray(p[2],lineno=p[0].source_pos)
+        return aster.AllocArray(p[0],p[3],lineno=p[1].source_pos)
 
     @pg.production('alloc_array_open : alloc_array_open COMMA expression')
     def alloc_array_cont(p):
@@ -267,6 +267,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
         return aster.ListType(p[1],lineno=p[0].source_pos)
         
     @pg.production('type_name_base : TYPE_NAME')
+    @pg.production('type_name_base : DTYPE')
     @pg.production('type_name_base : OBJECT identifier')
     def type_name(p):
         if len(p) == 1:

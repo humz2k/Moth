@@ -260,6 +260,10 @@ class __MothListContainer {
             __MothList<T> new_item;
             first_item = std::make_shared<__MothList<T>>(std::move(new_item));
         }
+        void Mothreset(){
+            __MothList<T> new_item;
+            first_item = std::make_shared<__MothList<T>>(std::move(new_item));
+        }
         void Mothappend(T var){
             first_item->Mothappend(var);
         }
@@ -304,6 +308,11 @@ class __MothArray {
         std::shared_ptr<T> raw;
         int initialized;
         int freed;
+
+        __MothArray(){
+
+        }
+
         __MothArray(int in_ndims){
             //printf("INIT!!\n");
             ndims = in_ndims;
@@ -511,6 +520,24 @@ class __MothArray {
             //printf("FREE\n");
         }
 };
+
+template <class T, class ...Args>
+__MothArray<T> newArray(int ndims, Args&&... args){
+    int dims[] = {args...};
+    __MothArray<T> out(ndims);
+    out.init(dims);
+    return out;
+}
+
+template <class T, class ...Args>
+__MothList<T> newList(int nitems, Args&&... args){
+    T items[] = {args...};
+    __MothList<T> out;
+    for (int i = 0; i < nitems; i++){
+        out.append(items[i]);
+    }
+    return out;
+}
 
 template<class T>
 void __MothPrint(const __MothArray<T>& arr){

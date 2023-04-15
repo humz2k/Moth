@@ -323,7 +323,11 @@ class FunctionHeader(ScopeHeader):
         #        self.name.value = "__MothObject" + parent.header.name.value
         #        return_type = ""
         c_header = return_type + self.name.value
-        c_header += "(" + ",".join([i[0].get_c() + " " + i[1].c_str for i in self.inputs.items]) + ")"
+        inputs = [i for i in self.inputs.items if i[0].get_c() != "__Mothdtype"]
+        templates = [i for i in self.inputs.items if i[0].get_c() == "__Mothdtype"]
+        if len(templates) != 0:
+            c_header = "template <class " + ",".join([i[1].c_str for i in templates]) + ">\n" + c_header
+        c_header += "(" + ",".join([i[0].get_c() + " " + i[1].c_str for i in inputs]) + ")"
         return c_header
 
 class FunctionDefInputs(Container):
@@ -494,7 +498,8 @@ class ListType(BaseType):
 
 class ListLiteral(Container):
     def eval(self,var,parent):
-        return ";".join([var.eval(parent) + "." + "Mothappend(" + i.eval(parent) + ")" for i in self.items])
+        out = ""
+        return var.eval(parent) + ".Mothreset();" + ";".join([var.eval(parent) + "." + "Mothappend(" + i.eval(parent) + ")" for i in self.items])
 
 class Type(BaseType):
     pass
@@ -522,9 +527,10 @@ class ArrayType(BaseType):
         return "Array"
     
     def get_special(self,is_class=False):
-        if is_class:
-            return "{" + str(self.dimensions) + "}"
-        return "(" + str(self.dimensions) + ")"
+        return ""
+        #if is_class:
+        #    return "{" + str(self.dimensions) + "}"
+        #return "(" + str(self.dimensions) + ")"
     
 class ArrayReference(AstObj):
     def __init__(self,name,index,lineno=None):
@@ -576,9 +582,9 @@ class Assign(AstObj):
         return self
     
     def eval(self,parent):
-        if isinstance(self.expression,AllocArray):
-            return self.expression.eval(self.var,parent)
-        elif isinstance(self.expression,AllocObject):
+        #if isinstance(self.expression,AllocArray):
+        #    return self.expression.eval(self.var,parent)
+        if isinstance(self.expression,AllocObject):
             return self.expression.eval(self.var,parent)
         elif isinstance(self.expression,ListLiteral):
             return self.expression.eval(self.var,parent)
@@ -599,8 +605,11 @@ class AllocObject(AstObj):
         return ""
 
 class AllocArray(Container):
-    def eval(self,var,parent):
-        return var.eval(parent) + "." + "init(" + ",".join([i.eval(parent) for i in self.items]) + ")"
+    def __init__(self,dtype,item,lineno=None):
+        super().__init__(item,lineno)
+        self.dtype = dtype
+    def eval(self,parent):
+        return "newArray<" + self.dtype.get_c() + ">(" + str(len(self.items)) + "," + ",".join([i.eval(parent) for i in self.items]) + ")" #var.eval(parent) + "." + "init(" + ",".join([i.eval(parent) for i in self.items]) + ")"
  
 class AssignInc(AstObj):
     def __init__(self,var,expression,op,lineno=None):

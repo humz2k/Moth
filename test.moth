@@ -1,5 +1,5 @@
+def void myFunc(int a, dtype T):
+    pass
+
 def int main():
-    int[:,:] a = array(2,2)
-    a[0,0] = 1
-    a[1,1] = 1
     return 0
