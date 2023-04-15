@@ -1,7 +1,5 @@
 def int main():
-
-    str a = "Hello World!"
-    a = a + "1"
-    a[0] = 'T'
-    print(a)
+    int[:,:] a = array(2,2)
+    a[0,0] = 1
+    a[1,1] = 1
     return 0
