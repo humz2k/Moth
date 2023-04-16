@@ -1,9 +1,15 @@
 
 #include "moth_lib.hpp"
 
-__Mothint Mothmain(){
+template <class test>
+__Mothvoid Motht(){
+test a;
+a = 10;
 
-__MothPrint(newArray<__Mothint>(1,10));
+}
+__Mothint Mothmain(){
+test a;
+a = 10;
 return 0;
 
 }
