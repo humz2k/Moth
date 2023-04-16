@@ -1,13 +1,12 @@
 
 #include "moth_lib.hpp"
 
-template <class T>
-__Mothvoid MothmyFunc(__Mothint a){
-
-
-}
 __Mothint Mothmain(){
-
+__MothArray<__Mothint> fuckyou;
+fuckyou = newArray<__Mothint>(1,10);
+__MothArrayINDEX(fuckyou,1,0) = 69;
+__MothArrayINDEX(fuckyou,1,1) = 420;
+__MothPrint(fuckyou);
 return 0;
 
 }

@@ -1,5 +1,6 @@
-def void myFunc(int a, dtype T):
-    pass
-
 def int main():
+    int[:] fuckyou = int array(10)
+    fuckyou[0] = 69
+    fuckyou[1] = 420
+    print(fuckyou)
     return 0
