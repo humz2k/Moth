@@ -1,6 +1,6 @@
 from rply import LexerGenerator
 
-def get_lexer(filename = "tokens.txt",user_types = [], statics = [], line_offset = 0):
+def get_lexer(filename = "tokens.txt",user_types = [], statics = [], templates = [], line_offset = 0):
     
     lexer = LexerGenerator()
     with open(filename,"r") as f:
@@ -10,6 +10,8 @@ def get_lexer(filename = "tokens.txt",user_types = [], statics = [], line_offset
         lexer.add("USER_TYPE",i)
     for i in statics:
         lexer.add("STATIC_OBJECT",i)
+    #for i in templates:
+    #    lexer.add("TEMPLATE_T",i)
 
     for i in raw:
         if i[0] == "IGNORE":

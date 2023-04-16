@@ -1,12 +1,19 @@
 
 #include "moth_lib.hpp"
 
+template <class test,class test2>
+__Mothvoid Mothtest(__Mothint a){
+test ab;test2 abc;
+ab = a;
+abc = 100.5;
+__MothPrint(ab);
+__MothPrint("\n");__MothPrint(abc);
+
+}
 __Mothint Mothmain(){
 __MothArray<__Mothint> fuckyou;
 fuckyou = newArray<__Mothint>(1,10);
-__MothArrayINDEX(fuckyou,1,0) = 69;
-__MothArrayINDEX(fuckyou,1,1) = 420;
-__MothPrint(fuckyou);
+Mothtest<__Mothint,__Mothfloat>(5);
 return 0;
 
 }

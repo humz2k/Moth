@@ -82,10 +82,15 @@ if __name__ == "__main__":
 
     user_types = find_user_types.find_types(raw)
     statics = find_user_types.find_static(raw)
+    dtypes = find_user_types.find_dtype(raw)
 
-    lexer = lex.get_lexer(token_file,user_types,statics,line_offset=line_offset)
+    lexer = lex.get_lexer(token_file,user_types,statics,dtypes,line_offset=line_offset)
 
     tokens = lexer.lex(raw)
+
+    #for token in tokens:
+    #    print(token)
+    #exit()
 
     parser = parse.get_parser(token_file,line_offset=line_offset)
 

@@ -1,6 +1,11 @@
+def void test(dtype test, int a, dtype test2):
+    test ab
+    ab = a
+    test2 abc = 100.5
+    print(ab)
+    print("\n",abc)
+
 def int main():
     int[:] fuckyou = int array(10)
-    fuckyou[0] = 69
-    fuckyou[1] = 420
-    print(fuckyou)
+    test(int,5,float)
     return 0

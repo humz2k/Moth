@@ -326,7 +326,7 @@ class FunctionHeader(ScopeHeader):
         inputs = [i for i in self.inputs.items if i[0].get_c() != "__Mothdtype"]
         templates = [i for i in self.inputs.items if i[0].get_c() == "__Mothdtype"]
         if len(templates) != 0:
-            c_header = "template <class " + ",".join([i[1].c_str for i in templates]) + ">\n" + c_header
+            c_header = "template <" + ",".join(["class " + i[1].c_str for i in templates]) + ">\n" + c_header
         c_header += "(" + ",".join([i[0].get_c() + " " + i[1].c_str for i in inputs]) + ")"
         return c_header
 
@@ -465,7 +465,15 @@ class FunctionCall(AstObj):
             name = "__Moth"+self.name.class_name.value+"Moth"+self.name.function_name.value
         else:
             name = self.name.value
-        return name + "(" + ",".join([i.eval(parent) for i in self.inputs]) + ")"
+        #print(self.inputs)
+        #exit()
+        inputs = [i for i in self.inputs if not isinstance(i,BaseType)]
+        templates = [i for i in self.inputs if isinstance(i,BaseType)]
+        out = name
+        if len(templates) != 0:
+            out += "<" + ",".join([i.eval(parent) for i in templates]) + ">"
+        out += "(" + ",".join([i.eval(parent) for i in inputs]) + ")"
+        return out
 
 class Lines(Container):
     pass
@@ -474,6 +482,12 @@ class BaseType(AstObj):
     def __init__(self,name,lineno = None):
         self.lineno = lineno
         self.name = name
+
+    def find_variables(self,parent=None):
+        return self
+    
+    def eval(self,parent=None):
+        return self.get_c()
     
     def get_c(self):
         return "__Moth" + self.name.value
@@ -481,6 +495,16 @@ class BaseType(AstObj):
     def get_raw(self):
         return "Base"
 
+    def get_special(self,is_class=False):
+        return ""
+
+class Template(BaseType):
+    def get_c(self):
+        return self.name.value
+    
+    def get_raw(self):
+        return "Base"
+    
     def get_special(self,is_class=False):
         return ""
 
