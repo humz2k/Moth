@@ -1,6 +1,13 @@
-def void t(dtype test):
-    test a = 10
+def arr_t[:] zeros(tuple int shape, dtype arr_t):
+    print(shape.len(),"\n")
+    int size = 1
+    for int i in range(shape.len()):
+        size *= shape[i]
+    print(size,"\n")
+    arr_t[:] out = arr_t array(10)
+    return out
 
 def int main():
-    test a = 10
+    #print(test().a)
+    int[:] a = zeros(int (10,),int)
     return 0

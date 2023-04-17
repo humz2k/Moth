@@ -42,7 +42,13 @@ class Identifier(AstObj):
         try:
             c_type = parent.declarations[c_str].get_c()
         except:
-            throwError("Name \033[1;34m" + c_str + "\033[0;0m not found in scope [\033[1;34m" + parent.header.name.value[4:] + "\033[0;0m]","VarNotFound",self.lineno)
+            if isinstance(parent.header,ClassHeader):
+                scope_t = "class [\033[1;33m" + parent.header.name.value + "\033[0;0m]"
+            elif isinstance(parent.header,FunctionHeader):
+                scope_t = "function [\033[1;33m" + parent.header.name.value[4:] + "\033[0;0m]"
+            else:
+                scope_t = "scope"
+            throwError("Name \033[1;34m" + c_str + "\033[0;0m not found in " + scope_t,"VarNotFound",self.lineno)
         moth_type = parent.declarations[c_str]
         return Variable(raw,c_str,c_type,moth_type)
 
@@ -177,6 +183,7 @@ class Scope(AstObj):
             if self.header.name.value in out.keys():
                 throwError("Function [\033[1;34m" + self.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedFunc",self.lineno)
             out[self.header.name.value] = self.header.return_type
+            self.functions = out
             return
         
         if isinstance(self.header,ClassHeader):
@@ -452,6 +459,21 @@ class FunctionCall(AstObj):
         self.inputs = inputs
         if isinstance(self.name,Reference):
             self.name = self.name.find_variables(parent,function=True)
+            if isinstance(self.name.parent.moth_type,ArrayType):
+                if self.name.child.value == "reshape":
+                    self.moth_type = ArrayType(self.name.parent.moth_type.name)
+                    self.moth_type.dimensions = len(self.inputs)
+                #elif self.name.child.value == "ndims":
+                #    self.moth_type = Type(Token("TYPE_NAME","int"))
+                #elif self.name.child.value == "shape":
+                #    self.moth_type = TupleType(Token("TYPE_NAME","int"))
+                else:
+                    throwError("Array Type does not have function " + self.name.child.value, "ArrayFuncNotFound",self.lineno)
+        else:
+            if self.name.value in parent.functions:
+                self.moth_type = parent.functions[self.name.value]
+            else:
+                throwError("Function " + str(self.name) + " not defined in scope ","FuncDefined",self.lineno)
         return self
 
     def add(self,inp):
@@ -489,7 +511,7 @@ class BaseType(AstObj):
     def eval(self,parent=None):
         return self.get_c()
     
-    def get_c(self):
+    def get_c(self,parent=None):
         return "__Moth" + self.name.value
     
     def get_raw(self):
@@ -499,7 +521,22 @@ class BaseType(AstObj):
         return ""
 
 class Template(BaseType):
-    def get_c(self):
+
+    def __init__(self,name,lineno=None):
+        super().__init__(name,lineno)
+        self.value = name.value
+        self.c_str = self.value
+
+    def get_c(self,parent=None):
+        if type(parent) != type(None):
+            if not self.name.value in parent.declarations:
+                if isinstance(parent.header,ClassHeader):
+                    scope_t = "class [\033[1;33m" + parent.header.name.value + "\033[0;0m]"
+                elif isinstance(parent.header,FunctionHeader):
+                    scope_t = "function [\033[1;33m" + parent.header.name.value[4:] + "\033[0;0m]"
+                else:
+                    scope_t = "scope"
+                throwError("Type \033[1;34m" + self.name.value + "\033[0;0m not declared in " + scope_t,"DtypeNotDeclared",self.lineno)
         return self.name.value
     
     def get_raw(self):
@@ -509,11 +546,23 @@ class Template(BaseType):
         return ""
 
 class ListType(BaseType):
-    def get_c(self):
+    def get_c(self,parent=None):
         return "__MothListContainer<" + self.name.get_c() + ">"
     
     def get_raw(self):
         return "ListContainer"
+
+    def get_special(self,is_class=False):
+        if is_class:
+            return ""
+        return ""
+    
+class TupleType(BaseType):
+    def get_c(self,parent=None):
+        return "__MothTuple<" + self.name.get_c() + ">"
+    
+    def get_raw(self):
+        return "Tuple"
 
     def get_special(self,is_class=False):
         if is_class:
@@ -525,11 +574,27 @@ class ListLiteral(Container):
         out = ""
         return var.eval(parent) + ".Mothreset();" + ";".join([var.eval(parent) + "." + "Mothappend(" + i.eval(parent) + ")" for i in self.items])
 
+class TupleLiteral(Container):
+    def __init__(self,dtype,item=None,lineno=None):
+        super().__init__(item,lineno)
+        self.dtype = dtype
+
+    def eval(self,parent):
+        out = ""
+        nitems = len(self.items)
+        if len(self.items) == 0:
+            out = out = "newTuple<" + self.dtype.get_c() + ">(" + str(nitems) + ")"
+        else:
+            out = "newTuple<" + self.dtype.get_c() + ">(" + str(nitems) + "," + ",".join([i.eval(parent) for i in self.items]) + ")"
+        return out
+        #return var.eval(parent) + ".Mothreset();" + ";".join([var.eval(parent) + "." + "Mothappend(" + i.eval(parent) + ")" for i in self.items])
+
+
 class Type(BaseType):
     pass
 
 class ObjectType(BaseType):
-    def get_c(self):
+    def get_c(self,parent=None):
         return "__MothObject" + self.name.value
     
     def get_raw(self):
@@ -544,8 +609,8 @@ class ArrayType(BaseType):
         self.dimensions += 1
         return self
     
-    def get_c(self):
-        return "__MothArray<" + self.name.get_c() + ">"
+    def get_c(self,parent=None):
+        return "__MothArray<" + self.name.get_c(parent) + ">"
 
     def get_raw(self):
         return "Array"
@@ -588,7 +653,8 @@ class Declaration(AstObj):
         self.name = name
     
     def find_variables(self,parent):
-        var = Variable(self,self.name.value,self.type_name.get_c(),self.type_name)
+        #print(parent.declarations,self.name.value,self.type_name.get_c(parent))
+        var = Variable(self,self.name.value,self.type_name.get_c(parent),self.type_name)
         return var
 
     def eval(self,parent):
@@ -612,6 +678,10 @@ class Assign(AstObj):
             return self.expression.eval(self.var,parent)
         elif isinstance(self.expression,ListLiteral):
             return self.expression.eval(self.var,parent)
+        elif isinstance(self.expression,AllocArray):
+            if self.var.moth_type.dimensions != len(self.expression.items):
+                throwError("Can't initialize " + str(self.var.moth_type.dimensions) + " dimensional array \033[1;34m" + self.var.c_str + "\033[0;0m with " + str(len(self.expression.items)) + " dimensions","ArrayAllocError",self.lineno)
+            return self.var.eval(parent) + " = " + self.expression.eval(parent)
         else:
             return self.var.eval(parent) + " = " + self.expression.eval(parent)
     
@@ -632,6 +702,8 @@ class AllocArray(Container):
     def __init__(self,dtype,item,lineno=None):
         super().__init__(item,lineno)
         self.dtype = dtype
+        self.moth_type = self.dtype
+        
     def eval(self,parent):
         return "newArray<" + self.dtype.get_c() + ">(" + str(len(self.items)) + "," + ",".join([i.eval(parent) for i in self.items]) + ")" #var.eval(parent) + "." + "init(" + ",".join([i.eval(parent) for i in self.items]) + ")"
  
@@ -648,7 +720,21 @@ class AssignInc(AstObj):
         return self
     
     def eval(self,parent):
-        return Assign(self.var,BinOp(self.var,Token("",self.op.value[:-1]),self.expression)).eval(parent)
+        if self.op.value == "+=":
+            t = Token("PLUS","+")
+        elif self.op.value == "-=":
+            t = Token("MINUS","-")
+        elif self.op.value == "*=":
+            t = Token("STAR","*")
+        elif self.op.value == "/=":
+            t = Token("SLASH","/")
+        elif self.op.value == "%=":
+            t = Token("PERCENT","%")
+        elif self.op.value == "**=":
+            t = Token("STARSTAR","**")
+        else:
+            throwError("THIS SHOULD NOT HAPPEN","VERYBAD",self.lineno)
+        return Assign(self.var,BinOp(self.var,t,self.expression)).eval(parent)
 
 class Inc(AstObj):
     def __init__(self,var,op,lineno=None):
@@ -661,7 +747,13 @@ class Inc(AstObj):
         return self
     
     def eval(self,parent):
-        return Assign(self.var,BinOp(self.var,Token("",self.op.value[0]),Number(Token("","1")))).eval(parent)
+        if self.op.value == "++":
+            t = Token("PLUS","+")
+        elif self.op.value == "--":
+            t = Token("MINUS","-")
+        else:
+            throwError("THIS SHOULD NOT HAPPEN","VERYBAD",self.lineno)
+        return Assign(self.var,BinOp(self.var,t,Number(Token("","1")))).eval(parent)
 
 class BinOp(AstObj):
     def __init__(self,left,op,right,lineno=None):
@@ -858,15 +950,25 @@ class Reference(AstObj):
     def find_variables(self,parent,function=False):
         self.parent = self.parent.find_variables(parent)
         if not function:
-            if not "complex" in self.parent.moth_type.name.value:
-                self.child = self.child.find_variables(parent.classes[self.parent.moth_type.name.value])
-                self.c_type = self.child.c_type
-                self.moth_type = self.child.moth_type
-                self.c_str = self.parent.eval(parent) + "." + self.child.eval(parent)
+            if (isinstance(self.parent.moth_type,ArrayType)):
+                if (self.child.value == "ndims"):
+                    self.c_str = self.parent.eval(parent) + "." + self.child.value
+                    self.moth_type = Type(Token("TYPE_NAME","int"))
+                elif (self.child.value == "shape"):
+                    self.c_str = "" + self.parent.eval(parent) + "." + self.child.value + ".get()"
+                    self.moth_type = TupleType(Type(Token("TYPE_NAME","int")))
+                else:
+                    throwError("UNKOCNWDSKA","asd",self.lineno)
             else:
-                self.c_type = "__Mothcomplexf"
-                self.moth_type = BaseType(Token("",self.parent.moth_type.name.value))
-                self.c_str = self.parent.eval(parent) + "." + self.child.eval(parent)[4:]
+                if not "complex" in self.parent.moth_type.name.value:
+                    self.child = self.child.find_variables(parent.classes[self.parent.moth_type.name.value])
+                    self.c_type = self.child.c_type
+                    self.moth_type = self.child.moth_type
+                    self.c_str = self.parent.eval(parent) + "." + self.child.eval(parent)
+                else:
+                    self.c_type = "__Mothcomplexf"
+                    self.moth_type = BaseType(Token("",self.parent.moth_type.name.value))
+                    self.c_str = self.parent.eval(parent) + "." + self.child.eval(parent)[4:]
         else:
             self.c_str = self.parent.eval(parent) + "." + self.child.eval(parent)
         return self

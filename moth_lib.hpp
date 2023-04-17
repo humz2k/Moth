@@ -74,6 +74,7 @@ __Mothcomplexf I;
 
 //#define NUMARGS(...)  (sizeof((int[]){__VA_ARGS__})/sizeof(int))
 #define __MothArrayINDEX(arr,n,...) arr[arr.get_index(n,__VA_ARGS__)]
+#define __MothTupleINDEX(tup,n,idx) tup->findIndex(idx)
 #define __MothListContainerINDEX(list,n,idx) list.findIndex(idx,0)
 #define __MothBaseINDEX(base,n,idx) base[idx]
 /*
@@ -153,6 +154,43 @@ void __MothPrint(__Mothcomplexf f){
 void __MothPrint(__Mothcomplexd f){
     printf("%f %fi",f.real,f.imag);
 }
+
+template <class T>
+class __MothTuple {
+    public:
+        std::shared_ptr<T> raw;
+        int size;
+        __MothTuple(){
+            size = 0;
+        }
+        __MothTuple(int in_size, int in_items[]){
+            size = in_size;
+            std::shared_ptr<T> tmp_raw (static_cast<int*>(malloc(in_size*sizeof(T))),free);
+            for (int i = 0; i < size; i++){
+                tmp_raw.get()[i] = in_items[i];
+            }
+            raw = tmp_raw;
+        }
+
+        T findIndex(int index){
+            return raw.get()[index];
+        }
+
+        void __print__() const{
+            printf("(");
+            if (size > 0){
+                for (int i = 0; i < (size-1); i++){
+                    __MothPrint(raw.get()[i]);
+                    printf(", ");
+                }
+                __MothPrint(raw.get()[size-1]);
+            }
+            printf(")");
+        }
+        int Mothlen(){
+            return size;
+        }
+};
 
 template <class T>
 class __MothList {
@@ -298,6 +336,25 @@ class __MothListContainer {
 
 };
 
+template <class T, class ...Args>
+__MothTuple<T> newTuple(int nitems, Args&&... args){
+    T items[] = {args...};
+    __MothTuple<T> out(nitems,items);
+    //for (int i = 0; i < nitems; i++){
+    //    __MothPrint(items[i]);
+    //}
+    return out;
+}
+
+template <class T, class ...Args>
+__MothTuple<T> newTuple(int nitems, T items[]){
+    __MothTuple<T> out(nitems,items);
+    //for (int i = 0; i < nitems; i++){
+    //    __MothPrint(items[i]);
+    //}
+    return out;
+}
+
 template <class T>
 class __MothArray {
     public:
@@ -306,6 +363,7 @@ class __MothArray {
         std::shared_ptr<int> dims;
         std::shared_ptr<int> muls;
         std::shared_ptr<T> raw;
+        std::shared_ptr<__MothTuple<int>> shape;
         int initialized;
         int freed;
 
@@ -318,6 +376,8 @@ class __MothArray {
             ndims = in_ndims;
             //dims = (int*)malloc(ndims * sizeof(int));
             //muls = (int*)malloc(ndims * sizeof(int));
+            __MothTuple<int> new_shape = newTuple<int>(0);
+            shape = std::make_shared<__MothTuple<int>>(std::move(new_shape));
             std::shared_ptr<int> tmp_dims (static_cast<int*>(malloc(ndims*sizeof(int))),free);
             std::shared_ptr<int> tmp_muls (static_cast<int*>(malloc(ndims*sizeof(int))),free);
             dims = tmp_dims;
@@ -331,6 +391,8 @@ class __MothArray {
             if (initialized){
                 MothRuntimeError("ArrayReallocError","Array reallocated by Moth. This should not happen...\n")
             }
+            __MothTuple<int> new_shape = newTuple<int>(ndims,in_dims);
+            shape = std::make_shared<__MothTuple<int>>(std::move(new_shape));
             initialized = 1;
             size = 1;
             int i;
@@ -348,7 +410,7 @@ class __MothArray {
             raw = tmp_raw;
         }
 
-        template <class... Args>
+        /*template <class... Args>
         void init(Args&&... args){
             int in_dims[] = {args...};
             if (initialized){
@@ -371,7 +433,7 @@ class __MothArray {
             //raw = (T*)malloc(size * sizeof(T));
             std::shared_ptr<T> tmp_raw (static_cast<T*>(malloc(size*sizeof(T))),free);
             raw = tmp_raw;
-        }
+        }*/
 
         int get_index(int nargs, int idx[]) const {
             int out = 0;
@@ -421,6 +483,27 @@ class __MothArray {
         __MothArray<T> Mothreshape(Args&&... args){
             int new_shape[] = {args...};
             int new_ndims = sizeof(new_shape)/sizeof(int);
+            int new_size = 1;
+            for (int i = 0; i < new_ndims; i++){
+                new_size = new_size * new_shape[i];
+            }
+            if (new_size != size){
+                MothRuntimeError("ArrayReshapeError","Can't reshape array (trying to resize from %d to %d)\n",size,new_size);
+            }
+
+            //printf("size: %d\n",size);
+            __MothArray<T> out(new_ndims);
+            out.init(new_shape);
+            for (int i = 0; i < size; i++){
+                out.raw.get()[i] = raw.get()[i];
+            }
+            //printf("dims %d\n",out.ndims);
+            return out;
+        }
+
+        __MothArray<T> Mothreshape(__MothTuple<int> input_shape){
+            int* new_shape = input_shape.raw.get();
+            int new_ndims = input_shape.size;
             int new_size = 1;
             for (int i = 0; i < new_ndims; i++){
                 new_size = new_size * new_shape[i];
@@ -548,6 +631,11 @@ template<class T>
 void __MothPrint(const __MothListContainer<T>& list){
     printf("[");
     list.__print__();
+}
+
+template<class T>
+void __MothPrint(__MothTuple<T>* input){
+    input->__print__();
 }
 
 void __MothPrint(__Mothstr input){

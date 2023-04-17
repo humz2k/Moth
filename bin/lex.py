@@ -10,8 +10,8 @@ def get_lexer(filename = "tokens.txt",user_types = [], statics = [], templates =
         lexer.add("USER_TYPE",i)
     for i in statics:
         lexer.add("STATIC_OBJECT",i)
-    #for i in templates:
-    #    lexer.add("TEMPLATE_T",i)
+    for i in templates:
+        lexer.add("TEMPLATE_T",i)
 
     for i in raw:
         if i[0] == "IGNORE":

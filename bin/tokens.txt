@@ -49,6 +49,7 @@ CLOSE_SQUARE \]
 TYPE_NAME \bvoid\b|\bchar\b|\buchar\b|\bshort\b|\bushort\b|\bint\b|\buint\b|\blong\b|\bulong\b|\bfloat\b|\bdouble\b|\bbool\b|\bcomplexf\b|\bcomplexd\b|\bstr\b
 LIST \blist\b
 OBJECT \bobject\b|\bobj\b
+TUPLE \btuple\b
 DTYPE \bdtype\b
 TYPE_QUERY \btype\b
 

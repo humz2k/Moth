@@ -27,6 +27,13 @@
         "stdexcept": "cpp",
         "tuple": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "__bits": "cpp",
+        "__string": "cpp",
+        "cctype": "cpp",
+        "cwchar": "cpp",
+        "cwctype": "cpp",
+        "string": "cpp",
+        "string_view": "cpp"
     }
 }
