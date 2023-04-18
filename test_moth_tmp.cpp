@@ -1,10 +1,11 @@
 
+
 #include "moth_lib.hpp"
 
+
 template <class arr_t>
-__MothArray<arr_t> Mothzeros(__MothTuple<__Mothint> shape){
+__MothArray<arr_t> __MothnmMothzeros(__MothTuple<__Mothint> shape){
 __Mothint size;__Mothint i;__MothArray<arr_t> out;
-__MothPrint(shape.Mothlen());__MothPrint("\n");
 size = 1;
 for (i = 0;i < shape.Mothlen();i = i + 1){
 
@@ -12,14 +13,43 @@ size = __MothBaseSTAR(size,__MothTupleINDEX(shape,1,i));
 
 }
 
-__MothPrint(size);__MothPrint("\n");
-out = newArray<arr_t>(1,10);
-return out;
+out = newArray<arr_t>(1,size);
+for (i = 0;i < size;i = i + 1){
+
+__MothArrayINDEX(out,1,i) = 0;
 
 }
+
+return out.Mothreshape(shape);
+
+}
+
+template <class arr_t>
+__MothArray<arr_t> __MothnmMothones(__MothTuple<__Mothint> shape){
+__Mothint size;__Mothint i;__MothArray<arr_t> out;
+size = 1;
+for (i = 0;i < shape.Mothlen();i = i + 1){
+
+size = __MothBaseSTAR(size,__MothTupleINDEX(shape,1,i));
+
+}
+
+out = newArray<arr_t>(1,size);
+for (i = 0;i < size;i = i + 1){
+
+__MothArrayINDEX(out,1,i) = 1;
+
+}
+
+return out.Mothreshape(shape);
+
+}
+
 __Mothint Mothmain(){
-__MothArray<__Mothint> a;
-a = Mothzeros<__Mothint>(newTuple<__Mothint>(1,10));
+__MothArray<__Mothint> a;__MothArray<__Mothfloat> b;
+a = __MothnmMothzeros<__Mothint>(newTuple<__Mothint>(2,10,2));
+b = __MothBaseSTAR(__MothnmMothones<__Mothfloat>(newTuple<__Mothint>(1,10)),2);
+__MothPrint(b);
 return 0;
 
 }

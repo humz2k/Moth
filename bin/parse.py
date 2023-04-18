@@ -276,6 +276,13 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def cont_array_ttype(p):
         return p[0].add_dim()
 
+    @pg.production('array_type : type_name OPEN_SQUARE CLOSE_SQUARE')
+    @pg.production('array_type : array_type OPEN_SQUARE CLOSE_SQUARE')
+    def inf_array_t(p):
+        out = aster.ArrayType(p[0],lineno = p[1].source_pos)
+        out.dimensions = 'inf'
+        return out
+
     @pg.production('open_array_type : type_name OPEN_SQUARE COLON',precedence="three")
     @pg.production('open_array_type : array_type OPEN_SQUARE COLON',precedence="three")
     def open_array_type(p):
@@ -289,21 +296,31 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def allocobj(p):
         return aster.AllocObject(p[1],lineno=p[0].source_pos)
     
+    @pg.production('tuple_literal : OPEN_PAREN COMMA CLOSE_PAREN')
     @pg.production('tuple_literal : type_name_base OPEN_PAREN COMMA CLOSE_PAREN')
     def empty_tuple(p):
-        return aster.TupleLiteral(p[0],lineno=p[0])
+        if len(p) == 3:
+            return aster.TupleLiteral(None,lineno=p[0].source_pos)
+        return aster.TupleLiteral(p[0],lineno=p[1].source_pos)
     
+    @pg.production('tuple_literal : OPEN_PAREN expression COMMA CLOSE_PAREN')
     @pg.production('tuple_literal : type_name_base OPEN_PAREN expression COMMA CLOSE_PAREN')
     def one_tuple(p):
-        return aster.TupleLiteral(p[0],p[2],lineno=p[0])
+        if len(p) == 4:
+            return aster.TupleLiteral(None,p[1],lineno=p[0].source_pos)
+        return aster.TupleLiteral(p[0],p[2],lineno=p[1].source_pos)
     
     @pg.production('tuple_literal : tuple_literal_open CLOSE_PAREN')
     def pass_tuple(p):
         return p[0]
     
+    @pg.production('tuple_literal_open : OPEN_PAREN expression COMMA expression')
     @pg.production('tuple_literal_open : type_name_base OPEN_PAREN expression COMMA expression')
     def open_tuple(p):
-        out = aster.TupleLiteral(p[0],p[2],lineno=p[0])
+        if len(p) == 4:
+            out = aster.TupleLiteral(None,p[1],lineno=p[0].source_pos)
+            return out.add(p[3])
+        out = aster.TupleLiteral(p[0],p[2],lineno=p[1].source_pos)
         return out.add(p[4])
     
     @pg.production('tuple_literal_open : tuple_literal_open COMMA expression')

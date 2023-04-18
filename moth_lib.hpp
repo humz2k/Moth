@@ -74,7 +74,7 @@ __Mothcomplexf I;
 
 //#define NUMARGS(...)  (sizeof((int[]){__VA_ARGS__})/sizeof(int))
 #define __MothArrayINDEX(arr,n,...) arr[arr.get_index(n,__VA_ARGS__)]
-#define __MothTupleINDEX(tup,n,idx) tup->findIndex(idx)
+#define __MothTupleINDEX(tup,n,idx) tup.findIndex(idx)
 #define __MothListContainerINDEX(list,n,idx) list.findIndex(idx,0)
 #define __MothBaseINDEX(base,n,idx) base[idx]
 /*
@@ -363,7 +363,7 @@ class __MothArray {
         std::shared_ptr<int> dims;
         std::shared_ptr<int> muls;
         std::shared_ptr<T> raw;
-        std::shared_ptr<__MothTuple<int>> shape;
+        __MothTuple<int> shape;
         int initialized;
         int freed;
 
@@ -376,8 +376,7 @@ class __MothArray {
             ndims = in_ndims;
             //dims = (int*)malloc(ndims * sizeof(int));
             //muls = (int*)malloc(ndims * sizeof(int));
-            __MothTuple<int> new_shape = newTuple<int>(0);
-            shape = std::make_shared<__MothTuple<int>>(std::move(new_shape));
+            shape = newTuple<int>(0);
             std::shared_ptr<int> tmp_dims (static_cast<int*>(malloc(ndims*sizeof(int))),free);
             std::shared_ptr<int> tmp_muls (static_cast<int*>(malloc(ndims*sizeof(int))),free);
             dims = tmp_dims;
@@ -391,8 +390,7 @@ class __MothArray {
             if (initialized){
                 MothRuntimeError("ArrayReallocError","Array reallocated by Moth. This should not happen...\n")
             }
-            __MothTuple<int> new_shape = newTuple<int>(ndims,in_dims);
-            shape = std::make_shared<__MothTuple<int>>(std::move(new_shape));
+            shape = newTuple<int>(ndims,in_dims);
             initialized = 1;
             size = 1;
             int i;
@@ -409,31 +407,6 @@ class __MothArray {
     }       std::shared_ptr<T> tmp_raw (static_cast<T*>(malloc(size*sizeof(T))),free);
             raw = tmp_raw;
         }
-
-        /*template <class... Args>
-        void init(Args&&... args){
-            int in_dims[] = {args...};
-            if (initialized){
-                MothRuntimeError("ArrayReallocError","Array reallocated. array(...) is a special constructor and does not return an array type.\n")
-            }
-            initialized = 1;
-            size = 1;
-            int i;
-            for (i = 0; i < ndims; i++){
-                dims.get()[i] = in_dims[i];
-                size = size * in_dims[i];
-            }
-            for (i = 0; i < ndims; i++){
-                muls.get()[i] = 1;
-                int start = i+1;
-                for (int j = start; j < ndims; j++){
-                    muls.get()[i] = muls.get()[i] * dims.get()[j];
-            }
-    }
-            //raw = (T*)malloc(size * sizeof(T));
-            std::shared_ptr<T> tmp_raw (static_cast<T*>(malloc(size*sizeof(T))),free);
-            raw = tmp_raw;
-        }*/
 
         int get_index(int nargs, int idx[]) const {
             int out = 0;
@@ -612,6 +585,14 @@ __MothArray<T> newArray(int ndims, Args&&... args){
     return out;
 }
 
+template <class T>
+__MothArray<T> newArray(int pass, __MothTuple<int> shape){
+    int ndims = shape.size;
+    __MothArray<T> out(ndims);
+    out.init(shape.raw.get());
+    return out;
+}
+
 template <class T, class ...Args>
 __MothList<T> newList(int nitems, Args&&... args){
     T items[] = {args...};
@@ -634,8 +615,8 @@ void __MothPrint(const __MothListContainer<T>& list){
 }
 
 template<class T>
-void __MothPrint(__MothTuple<T>* input){
-    input->__print__();
+void __MothPrint(const __MothTuple<T>& input){
+    input.__print__();
 }
 
 void __MothPrint(__Mothstr input){

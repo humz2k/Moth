@@ -470,7 +470,15 @@ class FunctionCall(AstObj):
                 else:
                     throwError("Array Type does not have function " + self.name.child.value, "ArrayFuncNotFound",self.lineno)
         else:
-            if self.name.value in parent.functions:
+            if isinstance(self.name,StaticFunction):
+                if self.name.class_name.value in parent.classes:
+                    if "Moth" + self.name.function_name.value in parent.classes[self.name.class_name.value].functions:
+                        self.moth_type = parent.classes[self.name.class_name.value].functions["Moth" + self.name.function_name.value]
+                    else:
+                        throwError("Function " + str(self.name.class_name + self.name.function_name.value) + " not defined in scope ","FuncDefined",self.lineno)
+                else:
+                    throwError("Class " + str(self.name.class_name) + " not defined in scope ","ClassDefined",self.lineno)
+            elif self.name.value in parent.functions:
                 self.moth_type = parent.functions[self.name.value]
             else:
                 throwError("Function " + str(self.name) + " not defined in scope ","FuncDefined",self.lineno)
@@ -579,6 +587,22 @@ class TupleLiteral(Container):
         super().__init__(item,lineno)
         self.dtype = dtype
 
+    def find_variables(self,parent):
+        items = []
+        for i in self.items:
+            items.append(i.find_variables(parent))
+        self.items = items
+        if type(self.dtype) == type(None):
+            self.dtype = Type(Token("TYPE_NAME","int"))
+            for i in self.items:
+                if i.moth_type.get_c() in ["__Mothchar", "__Mothuchar", "__Mothshort", "__Mothushort", "__Mothint", "__Mothuint", "__Mothlong", "__Mothulong"]:
+                    pass
+                elif i.moth_type.get_c() in ["__Mothfloat","__Mothdouble"]:
+                    self.dtype = Type(Token("TYPE_NAME","float"))
+                else:
+                    throwError("Only int or float is valid for type inferred tuple","TypeInferTupleErr",self.lineno)
+        return self
+
     def eval(self,parent):
         out = ""
         nitems = len(self.items)
@@ -679,8 +703,19 @@ class Assign(AstObj):
         elif isinstance(self.expression,ListLiteral):
             return self.expression.eval(self.var,parent)
         elif isinstance(self.expression,AllocArray):
-            if self.var.moth_type.dimensions != len(self.expression.items):
-                throwError("Can't initialize " + str(self.var.moth_type.dimensions) + " dimensional array \033[1;34m" + self.var.c_str + "\033[0;0m with " + str(len(self.expression.items)) + " dimensions","ArrayAllocError",self.lineno)
+            if self.var.moth_type.dimensions == "inf":
+                pass
+            else:
+                if len(self.expression.items) == 1:
+                    if isinstance(self.expression.items[0],TupleLiteral):
+                        if self.var.moth_type.dimensions != len(self.expression.items[0].items):
+                            throwError("Can't initialize " + str(self.var.moth_type.dimensions) + " dimensional array \033[1;34m" + self.var.c_str + "\033[0;0m with " + str(len(self.expression.items[0].items)) + " dimensions","ArrayAllocError",self.lineno)
+                    else:
+                        if self.var.moth_type.dimensions != len(self.expression.items):
+                            throwError("Can't initialize " + str(self.var.moth_type.dimensions) + " dimensional array \033[1;34m" + self.var.c_str + "\033[0;0m with " + str(len(self.expression.items)) + " dimensions","ArrayAllocError",self.lineno)
+                else:
+                    if self.var.moth_type.dimensions != len(self.expression.items):
+                        throwError("Can't initialize " + str(self.var.moth_type.dimensions) + " dimensional array \033[1;34m" + self.var.c_str + "\033[0;0m with " + str(len(self.expression.items)) + " dimensions","ArrayAllocError",self.lineno)
             return self.var.eval(parent) + " = " + self.expression.eval(parent)
         else:
             return self.var.eval(parent) + " = " + self.expression.eval(parent)
@@ -703,7 +738,7 @@ class AllocArray(Container):
         super().__init__(item,lineno)
         self.dtype = dtype
         self.moth_type = self.dtype
-        
+
     def eval(self,parent):
         return "newArray<" + self.dtype.get_c() + ">(" + str(len(self.items)) + "," + ",".join([i.eval(parent) for i in self.items]) + ")" #var.eval(parent) + "." + "init(" + ",".join([i.eval(parent) for i in self.items]) + ")"
  
@@ -955,7 +990,7 @@ class Reference(AstObj):
                     self.c_str = self.parent.eval(parent) + "." + self.child.value
                     self.moth_type = Type(Token("TYPE_NAME","int"))
                 elif (self.child.value == "shape"):
-                    self.c_str = "" + self.parent.eval(parent) + "." + self.child.value + ".get()"
+                    self.c_str = "" + self.parent.eval(parent) + "." + self.child.value
                     self.moth_type = TupleType(Type(Token("TYPE_NAME","int")))
                 else:
                     throwError("UNKOCNWDSKA","asd",self.lineno)

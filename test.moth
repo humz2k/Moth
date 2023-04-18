@@ -1,13 +1,8 @@
-def arr_t[:] zeros(tuple int shape, dtype arr_t):
-    print(shape.len(),"\n")
-    int size = 1
-    for int i in range(shape.len()):
-        size *= shape[i]
-    print(size,"\n")
-    arr_t[:] out = arr_t array(10)
-    return out
+include moth-libs/numoth
 
 def int main():
     #print(test().a)
-    int[:] a = zeros(int (10,),int)
+    int[:,:] a = nm.zeros((10,2),int)
+    float[] b = nm.ones((10,),float) * 2
+    print(b)
     return 0
