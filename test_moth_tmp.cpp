@@ -49,8 +49,8 @@ __Mothint Mothmain(){
 __MothArray<__Mothint> a;__MothArray<__Mothint> b;
 a = __MothnmMothones<__Mothint>(newTuple<__Mothint>(1,10));
 b = __MothBaseSTAR(__MothnmMothones<__Mothint>(newTuple<__Mothint>(1,10)),2);
-a = __MothBasePLUS(a,b);
-__MothPrint(a);
+__MothPrint(b);
+__MothPrint(__MothBaseMINUS(10,a));
 return 0;
 
 }

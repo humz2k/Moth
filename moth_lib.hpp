@@ -883,6 +883,9 @@ __MothList<T> newList(int nitems, Args&&... args){
         if (arr2.ndims > output_ndims){\
             output_ndims = arr2.ndims;\
         }\
+        int* arr1dims = (int*)malloc(output_ndims*sizeof(int));\
+        int* arr2dims = (int*)malloc(output_ndims*sizeof(int));\
+        int* output_dims = (int*)malloc(output_ndims*sizeof(int));\
         for (dim1 = arr1.ndims-1; dim1 >= 0; dim1--){\
             for (dim2 = arr2.ndims-1; dim2 >= 0; dim2--){\
                 if (!(((arr1.dims.get()[dim1] == arr2.dims.get()[dim2]) || (arr1.dims.get()[dim1] == 1)) || (arr2.dims.get()[dim2] == 1))){\
@@ -900,42 +903,62 @@ __MothList<T> newList(int nitems, Args&&... args){
 
 ArrayBroadcast(+);
 
-template <class T>
-inline __MothArray<T> operator/(const __MothArray<T>& arr, int div){
-    __MothArray<T> out = newArray<T>(0,arr.shape);
-    for (int i = 0; i < arr.size; i++){
-        out[i] = arr[i] / div;
-    }
-    return out;
-}
+#define ArrayBroadcastScalar_t(op,scalar_t) \
+template <class T> \
+inline __MothArray<T> operator op (const __MothArray<T>& arr, scalar_t scalar){ \
+    __MothArray<T> out = newArray<T>(0,arr.shape); \
+    for (int i = 0; i < arr.size; i++){ \
+        out[i] = arr[i] op scalar; \
+    } \
+    return out; \
+} \
+ \
+template <class T> \
+inline __MothArray<T> operator op (scalar_t scalar, const __MothArray<T>& arr){ \
+    __MothArray<T> out = newArray<T>(0,arr.shape); \
+    for (int i = 0; i < arr.size; i++){ \
+        out[i] = scalar op arr[i]; \
+    } \
+    return out; \
+} \
+ \
+template <class T> \
+inline __MothArray<T> operator op (const __MothArraySlice<T>& arr, scalar_t scalar){ \
+    __MothArray<T> out = arr; \
+    for (int i = 0; i < arr.size; i++){ \
+        out[i] = out[i] op scalar; \
+    } \
+    return out; \
+} \
+ \
+template <class T> \
+inline __MothArray<T> operator op (scalar_t scalar, const __MothArraySlice<T>& arr){ \
+    __MothArray<T> out = arr; \
+    for (int i = 0; i < arr.size; i++){ \
+        out[i] = scalar op out[i]; \
+    } \
+    return out; \
+}\
 
-template <class T>
-inline __MothArray<T> operator/(int div, const __MothArray<T>& arr){
-    __MothArray<T> out = newArray<T>(0,arr.shape);
-    for (int i = 0; i < arr.size; i++){
-        out[i] = div / arr[i];
-    }
-    return out;
-}
+#define ArrayBroadcastScalar(op) \
+ArrayBroadcastScalar_t(op,__Mothchar)\
+ArrayBroadcastScalar_t(op,__Mothuchar)\
+ArrayBroadcastScalar_t(op,__Mothshort)\
+ArrayBroadcastScalar_t(op,__Mothushort)\
+ArrayBroadcastScalar_t(op,__Mothint)\
+ArrayBroadcastScalar_t(op,__Mothuint)\
+ArrayBroadcastScalar_t(op,__Mothlong)\
+ArrayBroadcastScalar_t(op,__Mothulong)\
+ArrayBroadcastScalar_t(op,__Mothfloat)\
+ArrayBroadcastScalar_t(op,__Mothdouble)
 
-template <class T>
-inline __MothArray<T> operator/(const __MothArraySlice<T>& arr, int div){
-    __MothArray<T> out = arr;
-    for (int i = 0; i < arr.size; i++){
-        out[i] = out[i] / div;
-    }
-    return out;
-}
+ArrayBroadcastScalar(/)
+ArrayBroadcastScalar(-)
+ArrayBroadcastScalar(+)
+ArrayBroadcastScalar(*)
+ArrayBroadcastScalar(%)
 
-template <class T>
-inline __MothArray<T> operator/(int div, const __MothArraySlice<T>& arr){
-    __MothArray<T> out = arr;
-    for (int i = 0; i < arr.size; i++){
-        out[i] = div / out[i];
-    }
-    return out;
-}
-
+/*
 template <class T>
 inline __MothArray<T> operator-(const __MothArray<T>& arr, int sub){
     __MothArray<T> out = newArray<T>(0,arr.shape);
@@ -1079,7 +1102,7 @@ inline __MothArray<T> operator%(int mul, const __MothArraySlice<T>& arr){
     }
     return out;
 }
-
+*/
 template <class T>
 __MothArray<T> __MothBaseSTARSTAR(const __MothArray<T>& arr, int s){
     __MothArray<T> out = newArray<T>(0,arr.shape);
@@ -1115,7 +1138,7 @@ __MothArray<T> __MothBaseSTARSTAR(int s, const __MothArraySlice<T>& arr){
     }
     return out;
 }
-
+/*
 template <class T>
 inline __MothArray<T> operator/(const __MothArray<T>& arr, double div){
     __MothArray<T> out = newArray<T>(0,arr.shape);
@@ -1295,7 +1318,7 @@ inline __MothArray<T> operator%(double mul, const __MothArraySlice<T>& arr){
     }
     return out;
 }
-
+*/
 template <class T>
 __MothArray<T> __MothBaseSTARSTAR(const __MothArray<T>& arr, double s){
     __MothArray<T> out = newArray<T>(0,arr.shape);
