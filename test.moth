@@ -2,7 +2,8 @@ include moth-libs/numoth
 
 def int main():
     #print(test().a)
-    int[:,:] a = nm.zeros((10,2),int)
-    float[] b = nm.ones((10,),float) * 2
-    print(b)
+    int[:] a = nm.ones((10,),int)
+    #for int i in range(10):
+    #    a[i] = i
+    print(a[0:3:1][1])
     return 0

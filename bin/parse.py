@@ -242,16 +242,46 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
         #print("MATCHED REFERENCE")
         #print(p)
         return p[0]
+    
+    @pg.production('slice_range : COLON')
+    def empty_slice_range(p):
+        return aster.SliceRange(lineno=p[0].source_pos)
+    
+    @pg.production('slice_range : expression COLON')
+    def start_slice_range(p):
+        return aster.SliceRange(start = p[0], lineno=p[1].source_pos)
+    
+    @pg.production('slice_range : COLON expression')
+    def end_slice_range(p):
+        return aster.SliceRange(start = p[1], lineno=p[0].source_pos)
+    
+    @pg.production('slice_range : expression COLON expression COLON expression')
+    def step_slice_range(p):
+        return aster.SliceRange(start = p[0], end = p[2], step = p[4], lineno=p[1].source_pos)
+    
+    @pg.production('slice_range : expression COLON COLON expression')
+    def step_slice_range(p):
+        return aster.SliceRange(start = p[0], step = p[3], lineno=p[1].source_pos)
+    
+    @pg.production('slice_range : COLON expression COLON expression')
+    def step_slice_range(p):
+        return aster.SliceRange(end = p[1], step = p[3], lineno=p[0].source_pos)
+    
+    @pg.production('slice_range : COLON COLON expression')
+    def step_slice_range(p):
+        return aster.SliceRange(step = p[2], lineno=p[0].source_pos)
 
     @pg.production('array_reference_open : reference OPEN_SQUARE expression',precedence="one")
-    @pg.production('array_reference_open : reference OPEN_SQUARE COLON',precedence="one")
+    @pg.production('array_reference_open : reference OPEN_SQUARE slice_range',precedence="one")
+    @pg.production('array_reference_open : function_call OPEN_SQUARE expression',precedence="one")
+    @pg.production('array_reference_open : function_call OPEN_SQUARE slice_range',precedence="one")
     @pg.production('array_reference_open : identifier OPEN_SQUARE expression',precedence="one")
-    @pg.production('array_reference_open : identifier OPEN_SQUARE COLON',precedence="one")
+    @pg.production('array_reference_open : identifier OPEN_SQUARE slice_range',precedence="one")
     def array_reference_open(p):
         return aster.ArrayReference(p[0],p[2],lineno=p[1].source_pos)
 
     @pg.production('array_reference_open : array_reference_open COMMA expression')
-    @pg.production('array_reference_open : array_reference_open COMMA COLON')
+    @pg.production('array_reference_open : array_reference_open COMMA slice_range')
     def array_reference_cont(p):
         return p[0].add(p[2])
     

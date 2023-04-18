@@ -46,10 +46,9 @@ return out.Mothreshape(shape);
 }
 
 __Mothint Mothmain(){
-__MothArray<__Mothint> a;__MothArray<__Mothfloat> b;
-a = __MothnmMothzeros<__Mothint>(newTuple<__Mothint>(2,10,2));
-b = __MothBaseSTAR(__MothnmMothones<__Mothfloat>(newTuple<__Mothint>(1,10)),2);
-__MothPrint(b);
+__MothArray<__Mothint> a;
+a = __MothnmMothones<__Mothint>(newTuple<__Mothint>(1,10));
+__MothPrint(__MothBaseINDEX(__MothGetSlice(a,3,0,3,1),1,1));
 return 0;
 
 }

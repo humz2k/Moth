@@ -91,7 +91,32 @@ inline __Mothdouble __MothBasePLUS(__Mothchar f, __Mothdouble s){return (f+s);}
 */
 #define __MothBasePLUS(f,s) (f+s)
 #define __MothBaseMINUS(f,s) (f-s)
-#define __MothBaseSTARSTAR(f,s) pow(f,s)
+//#define __MothBaseSTARSTAR(f,s) pow(f,s)
+
+inline int __MothBaseSTARSTAR(int f, int s){
+    int out = 1;
+    for (int i = 0; i < s; i++){
+        out = out * f;
+    }
+    return out;
+}
+
+inline float __MothBaseSTARSTAR(double f, int s){
+    float out = 1;
+    for (int i = 0; i < s; i++){
+        out = out * f;
+    }
+    return out;
+}
+
+inline float __MothBaseSTARSTAR(double f, double s){
+    return pow(f,s);
+}
+
+inline float __MothBaseSTARSTAR(int f, double s){
+    return pow(f,s);
+}
+
 #define __MothBaseSTAR(f,s) (f*s)
 #define __MothBaseSLASH(f,s) (f/s)
 #define __MothBasePERCENT(f,s) (f%s)
@@ -365,7 +390,6 @@ class __MothArray {
         std::shared_ptr<T> raw;
         __MothTuple<int> shape;
         int initialized;
-        int freed;
 
         __MothArray(){
 
@@ -383,7 +407,6 @@ class __MothArray {
             muls = tmp_muls;
 
             initialized = 0;
-            freed = 0;
         }
 
         void init(int in_dims[]){
@@ -407,7 +430,7 @@ class __MothArray {
     }       std::shared_ptr<T> tmp_raw (static_cast<T*>(malloc(size*sizeof(T))),free);
             raw = tmp_raw;
         }
-
+        
         int get_index(int nargs, int idx[]) const {
             int out = 0;
             if (nargs != ndims){
@@ -577,6 +600,121 @@ class __MothArray {
         }
 };
 
+template <class T>
+class __MothArraySlice {
+    public:
+        int ndims;
+        int size;
+        std::shared_ptr<int> dims;
+        __MothArray<T> parent;
+        __MothTuple<int> shape;
+        int initialized;
+        std::shared_ptr<int> active_dims;
+        std::shared_ptr<int> dim_starts;
+        std::shared_ptr<int> dim_ends;
+        std::shared_ptr<int> dim_steps;
+        __MothArraySlice(){
+
+        }
+
+        int get_index(int nargs, int index[]){
+            printf("GET_INDEX");
+            if (nargs != ndims){
+                MothRuntimeError("ArrayIndexError","Tried to index %d dimensional slice with %d dimensional index\n",ndims, nargs);
+            }
+            int* fixed_index = (int*)malloc(parent.ndims * sizeof(int));
+            int count = 0;
+            for (int i = 0; i < parent.ndims; i++){
+                printf("ACTIVE %d\n",active_dims.get()[i]);
+                if (active_dims.get()[i] == 0){
+                    fixed_index[i] = dim_starts.get()[i];
+                }
+                else{
+                    if (index[count] < 0){
+                        index[count] = index[count] + dims.get()[count];
+                    }
+                    fixed_index[i] = (index[count] * dim_steps.get()[i]) + dim_starts.get()[i];
+                    printf("END %d\n",dim_ends.get()[i]);
+                    if (fixed_index[i] >= dim_ends.get()[i]){
+                        MothRuntimeError("ArrayIndexError","Index out of range in slice\n");
+                    }
+                    if (fixed_index[i] < 0){
+                        MothRuntimeError("ArrayIndexError","Index out of range in slice\n");
+                    }
+                    count++;
+                }
+            }
+            int out = parent.get_index(parent.ndims,fixed_index);
+            free(fixed_index);
+            return out;
+        }
+
+        template <class... Args>
+        int get_index(int nargs, Args&&... args){
+            printf("GET_INDEX");
+            int index[] = {args...};
+            return get_index(nargs,index);
+        }
+
+        T& operator[](int idx){
+            printf("INDEX %d\n",idx);
+            return parent[idx];
+        }
+
+};
+
+template<class T, class ...Args>
+__MothArraySlice<T> __MothGetSlice(__MothArray<T> input, int nargs, Args&&... args){
+    int slice_dims[] = {args...};
+    if (nargs != (input.ndims*3)){
+        MothRuntimeError("ArraySliceErr","Wrong number of inputs to MothGetSlice");
+    }
+    __MothArraySlice<T> out;
+    std::shared_ptr<int> new_dim_starts (static_cast<int*>(malloc(input.ndims*sizeof(int))),free);
+    std::shared_ptr<int> new_dim_ends (static_cast<int*>(malloc(input.ndims*sizeof(int))),free);
+    std::shared_ptr<int> new_dim_steps (static_cast<int*>(malloc(input.ndims*sizeof(int))),free);
+    std::shared_ptr<int> new_active_dims (static_cast<int*>(malloc(input.ndims*sizeof(int))),free);
+    int new_shape_size = 0;
+    for (int index = 0; index < input.ndims; index++){
+        new_dim_starts.get()[index] = slice_dims[index*3];
+        new_dim_ends.get()[index] = slice_dims[index*3+1];
+        new_dim_steps.get()[index] = slice_dims[index*3+2];
+        if (slice_dims[index*3+2] == 0){
+            new_active_dims.get()[index] = 0;
+        }else{
+            new_active_dims.get()[index] = 1;
+            new_shape_size++;
+        }
+    }
+    std::shared_ptr<int> new_dims (static_cast<int*>(malloc(new_shape_size*sizeof(int))),free);
+    int count = 0;
+    int size = 1;
+    for (int index = 0; index < input.ndims; index++){
+        new_dim_starts.get()[index] = slice_dims[index*3];
+        new_dim_ends.get()[index] = slice_dims[index*3+1];
+        new_dim_steps.get()[index] = slice_dims[index*3+2];
+        if (slice_dims[index*3+2] == 0){
+            
+        }else{
+            new_dims.get()[count] = (slice_dims[index*3+1] - slice_dims[index*3])/(slice_dims[index*3+2]);
+            size = size * new_dims.get()[count];
+            count++;
+        }
+    }
+    __MothTuple<int> new_shape = newTuple<int>(new_shape_size,new_dims.get());
+    out.dims = new_dims;
+    out.size = size;
+    out.ndims = new_shape_size;
+    out.dim_starts = new_dim_starts;
+    out.dim_ends = new_dim_ends;
+    out.dim_steps = new_dim_steps;
+    out.active_dims = new_active_dims;
+    out.shape = new_shape;
+    out.initialized = 1;
+    out.parent = input;
+    return out;
+}
+
 template <class T, class ...Args>
 __MothArray<T> newArray(int ndims, Args&&... args){
     int dims[] = {args...};
@@ -603,9 +741,230 @@ __MothList<T> newList(int nitems, Args&&... args){
     return out;
 }
 
+template <class T>
+inline __MothArray<T> operator/(const __MothArray<T>& arr, int div){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] / div;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator/(int div, const __MothArray<T>& arr){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = div / arr[i];
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator-(const __MothArray<T>& arr, int sub){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] - sub;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator-(int sub, const __MothArray<T>& arr){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = sub - arr[i];
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator+(const __MothArray<T>& arr, int add){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] + add;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator+(int add, const __MothArray<T>& arr){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] + add;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator*(const __MothArray<T>& arr, int mul){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] * mul;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator*(int mul, const __MothArray<T>& arr){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] * mul;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator%(const __MothArray<T>& arr, int mul){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] % mul;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator%(int mul, const __MothArray<T>& arr){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] % mul;
+    }
+    return out;
+}
+
+template <class T>
+__MothArray<T> __MothBaseSTARSTAR(const __MothArray<T>& arr, int s){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = __MothBaseSTARSTAR(arr[i], s);
+    }
+    return out;
+}
+
+template <class T>
+__MothArray<T> __MothBaseSTARSTAR(int s, const __MothArray<T>& arr){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = __MothBaseSTARSTAR(s,arr[i]);
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator/(const __MothArray<T>& arr, double div){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] / div;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator/(double div, const __MothArray<T>& arr){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = div / arr[i];
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator-(const __MothArray<T>& arr, double sub){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] - sub;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator-(double sub, const __MothArray<T>& arr){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = sub - arr[i];
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator+(const __MothArray<T>& arr, double add){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] + add;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator+(double add, const __MothArray<T>& arr){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] + add;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator*(const __MothArray<T>& arr, double mul){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] * mul;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator*(double mul, const __MothArray<T>& arr){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] * mul;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator%(const __MothArray<T>& arr, double mul){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] % mul;
+    }
+    return out;
+}
+
+template <class T>
+inline __MothArray<T> operator%(double mul, const __MothArray<T>& arr){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = arr[i] % mul;
+    }
+    return out;
+}
+
+template <class T>
+__MothArray<T> __MothBaseSTARSTAR(const __MothArray<T>& arr, double s){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = __MothBaseSTARSTAR(arr[i], s);
+    }
+    return out;
+}
+
+template <class T>
+__MothArray<T> __MothBaseSTARSTAR(double s, const __MothArray<T>& arr){
+    __MothArray<T> out = newArray<T>(0,arr.shape);
+    for (int i = 0; i < arr.size; i++){
+        out[i] = __MothBaseSTARSTAR(s,arr[i]);
+    }
+    return out;
+}
+
 template<class T>
 void __MothPrint(const __MothArray<T>& arr){
     arr.__print__();
+}
+
+template<class T>
+void __MothPrint(const __MothArraySlice<T>& arr){
+    printf("[SLICE]\n");
 }
 
 template<class T>

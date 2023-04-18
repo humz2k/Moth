@@ -644,19 +644,42 @@ class ArrayType(BaseType):
         #if is_class:
         #    return "{" + str(self.dimensions) + "}"
         #return "(" + str(self.dimensions) + ")"
-    
+
+class SliceRange(AstObj):
+    def __init__(self,start=None,end=None,step=None,lineno=None):
+        self.start,self.end,self.step = start,end,step
+        self.lineno = lineno
+
+    def find_variables(self,parent):
+        if type(self.start) != type(None):
+            self.start = self.start.find_variables(parent)
+        else:
+            self.start = Number(Token("NUMBER","0"))
+        if type(self.end) != type(None):
+            self.end = self.end.find_variables(parent)
+        if type(self.step) != type(None):
+            self.step = self.step.find_variables(parent)
+        else:
+            self.step = Number(Token("NUMBER","1"))
+        return self
+
 class ArrayReference(AstObj):
     def __init__(self,name,index,lineno=None):
         self.lineno = lineno
         self.name = name
         self.index = [index]
+        self.is_slice = False
     
     def find_variables(self,parent):
         self.name = self.name.find_variables(parent)
         index = []
         self.moth_type = self.name.moth_type.name
         for i in self.index:
-            index.append(i.find_variables(parent))
+            if isinstance(i,SliceRange):
+                self.is_slice = True
+                index.append(i.find_variables(parent))
+            else:
+                index.append(i.find_variables(parent))
         self.index = index
         return self
     
@@ -665,9 +688,23 @@ class ArrayReference(AstObj):
         return self
 
     def eval(self,parent):
-        size = str(len(self.index))
-        index = ",".join([i.eval(parent) for idx,i in enumerate(self.index)])
-        return "__Moth" + self.name.moth_type.get_raw() + "INDEX(" + self.name.eval(parent) + "," + size + "," + index + ")"
+        if self.is_slice:
+            slice_inputs = []
+            for idx,i in enumerate(self.index):
+                if isinstance(i,SliceRange):
+                    slice_inputs.append(i.start.eval(parent))
+                    if type(i.end) == type(None):
+                        slice_inputs.append(self.name.eval(parent) + ".dims.get()[" + str(idx) + "]")
+                    else:
+                        slice_inputs.append(i.end.eval(parent))
+                    slice_inputs.append(i.step.eval(parent))
+                else:
+                    slice_inputs += [i.eval(parent),i.eval(parent),"0"]
+            return "__MothGetSlice(" + self.name.eval(parent) + "," + str(len(slice_inputs)) + "," + ",".join(slice_inputs) + ")"
+        else:
+            size = str(len(self.index))
+            index = ",".join([i.eval(parent) for idx,i in enumerate(self.index)])
+            return "__Moth" + self.name.moth_type.get_raw() + "INDEX(" + self.name.eval(parent) + "," + size + "," + index + ")"
 
 
 class Declaration(AstObj):
@@ -807,7 +844,7 @@ class BinOp(AstObj):
         return self
 
     def eval(self,parent):
-        return "__Moth" + self.right.moth_type.get_raw() + self.op.name + "(" + self.left.eval(parent) + "," + self.right.eval(parent) + ")"
+        return "__Moth" + "Base" + self.op.name + "(" + self.left.eval(parent) + "," + self.right.eval(parent) + ")"
 
 class Not(AstObj):
     def __init__(self,val,lineno=None):
