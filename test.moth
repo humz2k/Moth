@@ -1,11 +1,7 @@
 include moth-libs/numoth
+include moth-libs/math
 
 def int main():
-    #print(test().a)
-    int[:] a = nm.ones((1,6),int)*5
-    float[:] b = (nm.ones((7,1),float)*2)
-    print(a)
-    print(b)
-    float[] c = a*b
-    print((c*10)**0.5)
+    float a = 10
+    print(math.sqrtf(a),"\n")
     return 0

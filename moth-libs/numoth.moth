@@ -17,3 +17,17 @@ class nm(static):
         for int i in range(size):
             out[i] = 1
         return out.reshape(shape)
+
+    def arr_t[:] arange(int start, int stop, int step, dtype arr_t):
+        int size = (stop - start)/step
+        arr_t[:] out = arr_t array(size)
+        for int i in range(size):
+            out[i] = (i*step)+start
+        return out
+
+    def arr_t[:] linspace(double start, double stop, int num, dtype arr_t):
+        arr_t[:] out = arr_t array(num)
+        double scale = (stop-start)/float(num-1)
+        for int i in range(num):
+            out[i] = i*scale + start
+        return out

@@ -409,6 +409,20 @@ class __MothArray {
             initialized = 0;
         }
 
+        T* Mothcptr(){
+            return raw.get();
+        }
+
+        template<class T1>
+        operator __MothArray<T1>() const{
+            __MothArray<T1> out(ndims);
+            out.init(dims.get());
+            for (int i = 0; i < size; i++){
+                out.raw.get()[i] = (T1)raw.get()[i];
+            }
+            return out;
+        }
+
         void init(int in_dims[]){
             if (initialized){
                 MothRuntimeError("ArrayReallocError","Array reallocated by Moth. This should not happen...\n")
@@ -665,8 +679,9 @@ class __MothArraySlice {
             free(indexes);
         }
 
-        void recursive_copy(int* indexes, __MothArray<T> out, int count) const {
-            out.raw.get()[count] = parent.raw.get()[get_index_from_ptr(ndims,indexes)];
+        template<class T1>
+        void recursive_copy(int* indexes, __MothArray<T1> out, int count) const {
+            out.raw.get()[count] = (T1)parent.raw.get()[get_index_from_ptr(ndims,indexes)];
             indexes[ndims-1]++;
             for (int i = ndims-1; i > 0; i--){
                 if (indexes[i] == dims.get()[i]){
@@ -680,13 +695,14 @@ class __MothArraySlice {
             return recursive_copy(indexes,out,count+1);
         }
 
-        operator __MothArray<T>() const {
-            __MothArray<T> out = newArray<T>(0,shape);
+        template<class T1>
+        operator __MothArray<T1>() const {
+            __MothArray<T1> out = newArray<T1>(0,shape);
             int* indexes = (int*)malloc(ndims*sizeof(int));
             for (int i = 0; i < ndims; i++){
                 indexes[i] = 0;
             }
-            recursive_copy(indexes,out,0);
+            recursive_copy<T1>(indexes,out,0);
             free(indexes);
             return out;
         }
@@ -706,11 +722,21 @@ class __MothArraySlice {
                         index[count] = index[count] + dims.get()[count];
                     }
                     fixed_index[i] = (index[count] * dim_steps.get()[i]) + dim_starts.get()[i];
-                    if (fixed_index[i] >= dim_ends.get()[i]){
-                        MothRuntimeError("ArrayIndexError","Index out of range in slice\n");
+                    if (dim_steps.get()[i] < 0){
+                        if (fixed_index[i] > dim_starts.get()[i]){
+                            MothRuntimeError("ArrayIndexError","Index out of range in slice\n");
+                        }
+                        if (fixed_index[i] <= dim_ends.get()[i]){
+                            MothRuntimeError("ArrayIndexError","Index out of range in slice\n");
+                        }
                     }
-                    if (fixed_index[i] < 0){
-                        MothRuntimeError("ArrayIndexError","Index out of range in slice\n");
+                    else{
+                        if (fixed_index[i] >= dim_ends.get()[i]){
+                            MothRuntimeError("ArrayIndexError","Index out of range in slice\n");
+                        }
+                        if (fixed_index[i] < dim_starts.get()[i]){
+                            MothRuntimeError("ArrayIndexError","Index out of range in slice\n");
+                        }
                     }
                     count++;
                 }
@@ -828,6 +854,10 @@ __MothArraySlice<T> __MothGetSlice(__MothArray<T> input, int nargs, Args&&... ar
         new_dim_starts.get()[index] = slice_dims[index*3];
         new_dim_ends.get()[index] = slice_dims[index*3+1];
         new_dim_steps.get()[index] = slice_dims[index*3+2];
+        if (new_dim_steps.get()[index] < 0){
+            new_dim_starts.get()[index] = slice_dims[index*3+1]-1;
+            new_dim_ends.get()[index] = slice_dims[index*3]-1;
+        }
         if (slice_dims[index*3+2] == 0){
             new_active_dims.get()[index] = 0;
         }else{
@@ -839,13 +869,13 @@ __MothArraySlice<T> __MothGetSlice(__MothArray<T> input, int nargs, Args&&... ar
     int count = 0;
     int size = 1;
     for (int index = 0; index < input.ndims; index++){
-        new_dim_starts.get()[index] = slice_dims[index*3];
-        new_dim_ends.get()[index] = slice_dims[index*3+1];
-        new_dim_steps.get()[index] = slice_dims[index*3+2];
+        //new_dim_starts.get()[index] = slice_dims[index*3];
+        //new_dim_ends.get()[index] = slice_dims[index*3+1];
+        //new_dim_steps.get()[index] = slice_dims[index*3+2];
         if (slice_dims[index*3+2] == 0){
             
         }else{
-            new_dims.get()[count] = (slice_dims[index*3+1] - slice_dims[index*3])/(slice_dims[index*3+2]);
+            new_dims.get()[count] = abs((slice_dims[index*3+1] - slice_dims[index*3])/(slice_dims[index*3+2]));
             size = size * new_dims.get()[count];
             count++;
         }
@@ -876,6 +906,247 @@ __MothList<T> newList(int nitems, Args&&... args){
 
 #define ArrayBroadcast(op_,T1,T2,T3) \
     inline __MothArray<T1> operator op_(const __MothArray<T2>& arr1, const __MothArray<T3>& arr2){\
+        int found = 1;\
+        int dim1; int dim2;\
+        int output_ndims = arr1.ndims;\
+        if (arr2.ndims > output_ndims){\
+            output_ndims = arr2.ndims;\
+        }\
+        int* arr1dims = (int*)malloc(output_ndims*sizeof(int));\
+        int* arr2dims = (int*)malloc(output_ndims*sizeof(int));\
+        for (int i = 0; i < output_ndims; i++){\
+            arr1dims[i] = 1;\
+            arr2dims[i] = 1;\
+        }\
+        int* output_dims = (int*)malloc(output_ndims*sizeof(int));\
+        int count = output_ndims -1;\
+        for (dim1 = arr1.ndims-1; dim1 >= 0; dim1--){\
+            arr1dims[count] = arr1.dims.get()[dim1];\
+            count--;\
+        }\
+        count = output_ndims -1;\
+        for (dim2 = arr2.ndims-1; dim2 >= 0; dim2--){\
+            arr2dims[count] = arr2.dims.get()[dim2];\
+            count--;\
+        }\
+        for (int i = output_ndims - 1; i >= 0; i--){\
+            if (!(((arr1dims[i] == arr2dims[i]) || (arr1dims[i] == 1)) || (arr2dims[i] == 1))){\
+                found = 0;break;\
+            }\
+            output_dims[i] = arr1dims[i];\
+            if(arr2dims[i] > output_dims[i]){\
+                output_dims[i] = arr2dims[i];\
+            }\
+        }\
+        if (found == 0){\
+            free(arr1dims);free(arr2dims);free(output_dims);\
+            MothRuntimeError("BroadcastErr","Array shapes are not broadcastable");\
+        }\
+        __MothArray<T1> out = newArray<T1>(0,newTuple<int>(output_ndims,output_dims));\
+        int size = 1;\
+        for (int i = 0; i < output_ndims; i++){\
+            size = size * output_dims[i];\
+            output_dims[i]--;\
+        }\
+        int arr1offset = output_ndims - arr1.ndims;\
+        int arr2offset = output_ndims - arr2.ndims;\
+        for (int i = 0; i < size; i++){\
+            int output_index = 0;\
+            int arr1_index = 0;\
+            int arr2_index = 0;\
+            for (int j = 0; j < output_ndims; j++){\
+                output_index = output_index + out.muls.get()[j]*output_dims[j];\
+            }\
+            for (int j = arr1offset; j < output_ndims; j++){\
+                if (arr1dims[j] != 1){\
+                    arr1_index = arr1_index + arr1.muls.get()[j-arr1offset]*output_dims[j];\
+                }\
+            }\
+            for (int j = arr2offset; j < output_ndims; j++){\
+                if (arr2dims[j] != 1){\
+                    arr2_index = arr2_index + arr2.muls.get()[j-arr2offset]*output_dims[j];\
+                }\
+            }\
+            out.raw.get()[output_index] = arr1.raw.get()[arr1_index] op_ arr2.raw.get()[arr2_index];\
+            output_dims[output_ndims-1]--;\
+            for (int j = output_ndims-1; j > 0; j--){\
+                if (output_dims[j] < 0){\
+                    output_dims[j] = out.dims.get()[j] - 1;\
+                    output_dims[j-1]--;\
+                }\
+            }\
+            if (output_dims[0] < 0){\
+                break;\
+            }\
+        }\
+        free(arr1dims);free(arr2dims);free(output_dims);\
+        return out;\
+    }
+
+#define ArrayBroadcastSlice1(op_,T1,T2,T3) \
+    inline __MothArray<T1> operator op_(const __MothArraySlice<T2>& slice1, const __MothArray<T3>& arr2){\
+        __MothArray<T2> arr1 = slice1;\
+        int found = 1;\
+        int dim1; int dim2;\
+        int output_ndims = arr1.ndims;\
+        if (arr2.ndims > output_ndims){\
+            output_ndims = arr2.ndims;\
+        }\
+        int* arr1dims = (int*)malloc(output_ndims*sizeof(int));\
+        int* arr2dims = (int*)malloc(output_ndims*sizeof(int));\
+        for (int i = 0; i < output_ndims; i++){\
+            arr1dims[i] = 1;\
+            arr2dims[i] = 1;\
+        }\
+        int* output_dims = (int*)malloc(output_ndims*sizeof(int));\
+        int count = output_ndims -1;\
+        for (dim1 = arr1.ndims-1; dim1 >= 0; dim1--){\
+            arr1dims[count] = arr1.dims.get()[dim1];\
+            count--;\
+        }\
+        count = output_ndims -1;\
+        for (dim2 = arr2.ndims-1; dim2 >= 0; dim2--){\
+            arr2dims[count] = arr2.dims.get()[dim2];\
+            count--;\
+        }\
+        for (int i = output_ndims - 1; i >= 0; i--){\
+            if (!(((arr1dims[i] == arr2dims[i]) || (arr1dims[i] == 1)) || (arr2dims[i] == 1))){\
+                found = 0;break;\
+            }\
+            output_dims[i] = arr1dims[i];\
+            if(arr2dims[i] > output_dims[i]){\
+                output_dims[i] = arr2dims[i];\
+            }\
+        }\
+        if (found == 0){\
+            free(arr1dims);free(arr2dims);free(output_dims);\
+            MothRuntimeError("BroadcastErr","Array shapes are not broadcastable");\
+        }\
+        __MothArray<T1> out = newArray<T1>(0,newTuple<int>(output_ndims,output_dims));\
+        int size = 1;\
+        for (int i = 0; i < output_ndims; i++){\
+            size = size * output_dims[i];\
+            output_dims[i]--;\
+        }\
+        int arr1offset = output_ndims - arr1.ndims;\
+        int arr2offset = output_ndims - arr2.ndims;\
+        for (int i = 0; i < size; i++){\
+            int output_index = 0;\
+            int arr1_index = 0;\
+            int arr2_index = 0;\
+            for (int j = 0; j < output_ndims; j++){\
+                output_index = output_index + out.muls.get()[j]*output_dims[j];\
+            }\
+            for (int j = arr1offset; j < output_ndims; j++){\
+                if (arr1dims[j] != 1){\
+                    arr1_index = arr1_index + arr1.muls.get()[j-arr1offset]*output_dims[j];\
+                }\
+            }\
+            for (int j = arr2offset; j < output_ndims; j++){\
+                if (arr2dims[j] != 1){\
+                    arr2_index = arr2_index + arr2.muls.get()[j-arr2offset]*output_dims[j];\
+                }\
+            }\
+            out.raw.get()[output_index] = arr1.raw.get()[arr1_index] op_ arr2.raw.get()[arr2_index];\
+            output_dims[output_ndims-1]--;\
+            for (int j = output_ndims-1; j > 0; j--){\
+                if (output_dims[j] < 0){\
+                    output_dims[j] = out.dims.get()[j] - 1;\
+                    output_dims[j-1]--;\
+                }\
+            }\
+            if (output_dims[0] < 0){\
+                break;\
+            }\
+        }\
+        free(arr1dims);free(arr2dims);free(output_dims);\
+        return out;\
+    }
+
+#define ArrayBroadcastSlice2(op_,T1,T2,T3) \
+    inline __MothArray<T1> operator op_(const __MothArray<T2>& arr1, const __MothArraySlice<T3>& slice2){\
+        __MothArray<T3> arr2 = slice2;\
+        int found = 1;\
+        int dim1; int dim2;\
+        int output_ndims = arr1.ndims;\
+        if (arr2.ndims > output_ndims){\
+            output_ndims = arr2.ndims;\
+        }\
+        int* arr1dims = (int*)malloc(output_ndims*sizeof(int));\
+        int* arr2dims = (int*)malloc(output_ndims*sizeof(int));\
+        for (int i = 0; i < output_ndims; i++){\
+            arr1dims[i] = 1;\
+            arr2dims[i] = 1;\
+        }\
+        int* output_dims = (int*)malloc(output_ndims*sizeof(int));\
+        int count = output_ndims -1;\
+        for (dim1 = arr1.ndims-1; dim1 >= 0; dim1--){\
+            arr1dims[count] = arr1.dims.get()[dim1];\
+            count--;\
+        }\
+        count = output_ndims -1;\
+        for (dim2 = arr2.ndims-1; dim2 >= 0; dim2--){\
+            arr2dims[count] = arr2.dims.get()[dim2];\
+            count--;\
+        }\
+        for (int i = output_ndims - 1; i >= 0; i--){\
+            if (!(((arr1dims[i] == arr2dims[i]) || (arr1dims[i] == 1)) || (arr2dims[i] == 1))){\
+                found = 0;break;\
+            }\
+            output_dims[i] = arr1dims[i];\
+            if(arr2dims[i] > output_dims[i]){\
+                output_dims[i] = arr2dims[i];\
+            }\
+        }\
+        if (found == 0){\
+            free(arr1dims);free(arr2dims);free(output_dims);\
+            MothRuntimeError("BroadcastErr","Array shapes are not broadcastable");\
+        }\
+        __MothArray<T1> out = newArray<T1>(0,newTuple<int>(output_ndims,output_dims));\
+        int size = 1;\
+        for (int i = 0; i < output_ndims; i++){\
+            size = size * output_dims[i];\
+            output_dims[i]--;\
+        }\
+        int arr1offset = output_ndims - arr1.ndims;\
+        int arr2offset = output_ndims - arr2.ndims;\
+        for (int i = 0; i < size; i++){\
+            int output_index = 0;\
+            int arr1_index = 0;\
+            int arr2_index = 0;\
+            for (int j = 0; j < output_ndims; j++){\
+                output_index = output_index + out.muls.get()[j]*output_dims[j];\
+            }\
+            for (int j = arr1offset; j < output_ndims; j++){\
+                if (arr1dims[j] != 1){\
+                    arr1_index = arr1_index + arr1.muls.get()[j-arr1offset]*output_dims[j];\
+                }\
+            }\
+            for (int j = arr2offset; j < output_ndims; j++){\
+                if (arr2dims[j] != 1){\
+                    arr2_index = arr2_index + arr2.muls.get()[j-arr2offset]*output_dims[j];\
+                }\
+            }\
+            out.raw.get()[output_index] = arr1.raw.get()[arr1_index] op_ arr2.raw.get()[arr2_index];\
+            output_dims[output_ndims-1]--;\
+            for (int j = output_ndims-1; j > 0; j--){\
+                if (output_dims[j] < 0){\
+                    output_dims[j] = out.dims.get()[j] - 1;\
+                    output_dims[j-1]--;\
+                }\
+            }\
+            if (output_dims[0] < 0){\
+                break;\
+            }\
+        }\
+        free(arr1dims);free(arr2dims);free(output_dims);\
+        return out;\
+    }
+
+#define ArrayBroadcastSlice3(op_,T1,T2,T3) \
+    inline __MothArray<T1> operator op_(const __MothArraySlice<T2>& slice1, const __MothArraySlice<T3>& slice2){\
+        __MothArray<T2> arr1 = slice1;\
+        __MothArray<T3> arr2 = slice2;\
         int found = 1;\
         int dim1; int dim2;\
         int output_ndims = arr1.ndims;\
@@ -1039,29 +1310,95 @@ __MothArray<T1> __MothBaseSTARSTAR(const __MothArray<T2>& arr1, const __MothArra
 
 #define ArrayBroadcastAllTypes(op) \
     ArrayBroadcast(op,__Mothchar,__Mothchar,__Mothchar);\
+    ArrayBroadcastSlice1(op,__Mothchar,__Mothchar,__Mothchar);\
+    ArrayBroadcastSlice2(op,__Mothchar,__Mothchar,__Mothchar);\
+    ArrayBroadcastSlice3(op,__Mothchar,__Mothchar,__Mothchar);\
     ArrayBroadcast(op,__Mothuchar,__Mothuchar,__Mothuchar);\
+    ArrayBroadcastSlice1(op,__Mothuchar,__Mothuchar,__Mothuchar);\
+    ArrayBroadcastSlice2(op,__Mothuchar,__Mothuchar,__Mothuchar);\
+    ArrayBroadcastSlice3(op,__Mothuchar,__Mothuchar,__Mothuchar);\
     ArrayBroadcast(op,__Mothshort,__Mothshort,__Mothshort);\
+    ArrayBroadcastSlice1(op,__Mothshort,__Mothshort,__Mothshort);\
+    ArrayBroadcastSlice2(op,__Mothshort,__Mothshort,__Mothshort);\
+    ArrayBroadcastSlice3(op,__Mothshort,__Mothshort,__Mothshort);\
     ArrayBroadcast(op,__Mothushort,__Mothushort,__Mothushort);\
+    ArrayBroadcastSlice1(op,__Mothushort,__Mothushort,__Mothushort);\
+    ArrayBroadcastSlice2(op,__Mothushort,__Mothushort,__Mothushort);\
+    ArrayBroadcastSlice3(op,__Mothushort,__Mothushort,__Mothushort);\
     ArrayBroadcast(op,__Mothint,__Mothint,__Mothint);\
+    ArrayBroadcastSlice1(op,__Mothint,__Mothint,__Mothint);\
+    ArrayBroadcastSlice2(op,__Mothint,__Mothint,__Mothint);\
+    ArrayBroadcastSlice3(op,__Mothint,__Mothint,__Mothint);\
     ArrayBroadcast(op,__Mothuint,__Mothuint,__Mothuint);\
+    ArrayBroadcastSlice1(op,__Mothuint,__Mothuint,__Mothuint);\
+    ArrayBroadcastSlice2(op,__Mothuint,__Mothuint,__Mothuint);\
+    ArrayBroadcastSlice3(op,__Mothuint,__Mothuint,__Mothuint);\
     ArrayBroadcast(op,__Mothlong,__Mothlong,__Mothlong);\
+    ArrayBroadcastSlice1(op,__Mothlong,__Mothlong,__Mothlong);\
+    ArrayBroadcastSlice2(op,__Mothlong,__Mothlong,__Mothlong);\
+    ArrayBroadcastSlice3(op,__Mothlong,__Mothlong,__Mothlong);\
     ArrayBroadcast(op,__Mothulong,__Mothulong,__Mothulong);\
+    ArrayBroadcastSlice1(op,__Mothulong,__Mothulong,__Mothulong);\
+    ArrayBroadcastSlice2(op,__Mothulong,__Mothulong,__Mothulong);\
+    ArrayBroadcastSlice3(op,__Mothulong,__Mothulong,__Mothulong);\
     ArrayBroadcast(op,__Mothfloat,__Mothfloat,__Mothfloat);\
+    ArrayBroadcastSlice1(op,__Mothfloat,__Mothfloat,__Mothfloat);\
+    ArrayBroadcastSlice2(op,__Mothfloat,__Mothfloat,__Mothfloat);\
+    ArrayBroadcastSlice3(op,__Mothfloat,__Mothfloat,__Mothfloat);\
     ArrayBroadcast(op,__Mothfloat,__Mothint,__Mothfloat);\
+    ArrayBroadcastSlice1(op,__Mothfloat,__Mothint,__Mothfloat);\
+    ArrayBroadcastSlice2(op,__Mothfloat,__Mothint,__Mothfloat);\
+    ArrayBroadcastSlice3(op,__Mothfloat,__Mothint,__Mothfloat);\
     ArrayBroadcast(op,__Mothfloat,__Mothfloat,__Mothint);\
+    ArrayBroadcastSlice1(op,__Mothfloat,__Mothfloat,__Mothint);\
+    ArrayBroadcastSlice2(op,__Mothfloat,__Mothfloat,__Mothint);\
+    ArrayBroadcastSlice3(op,__Mothfloat,__Mothfloat,__Mothint);\
     ArrayBroadcast(op,__Mothdouble,__Mothdouble,__Mothdouble);\
+    ArrayBroadcastSlice1(op,__Mothdouble,__Mothdouble,__Mothdouble);\
+    ArrayBroadcastSlice2(op,__Mothdouble,__Mothdouble,__Mothdouble);\
+    ArrayBroadcastSlice3(op,__Mothdouble,__Mothdouble,__Mothdouble);\
     ArrayBroadcast(op,__Mothdouble,__Mothfloat,__Mothdouble);\
+    ArrayBroadcastSlice1(op,__Mothdouble,__Mothfloat,__Mothdouble);\
+    ArrayBroadcastSlice2(op,__Mothdouble,__Mothfloat,__Mothdouble);\
+    ArrayBroadcastSlice3(op,__Mothdouble,__Mothfloat,__Mothdouble);\
     ArrayBroadcast(op,__Mothdouble,__Mothdouble,__Mothfloat);\
+    ArrayBroadcastSlice1(op,__Mothdouble,__Mothdouble,__Mothfloat);\
+    ArrayBroadcastSlice2(op,__Mothdouble,__Mothdouble,__Mothfloat);\
+    ArrayBroadcastSlice3(op,__Mothdouble,__Mothdouble,__Mothfloat);\
 
 #define ArrayBroadcastIntTypes(op) \
     ArrayBroadcast(op,__Mothchar,__Mothchar,__Mothchar);\
+    ArrayBroadcastSlice1(op,__Mothchar,__Mothchar,__Mothchar);\
+    ArrayBroadcastSlice2(op,__Mothchar,__Mothchar,__Mothchar);\
+    ArrayBroadcastSlice3(op,__Mothchar,__Mothchar,__Mothchar);\
     ArrayBroadcast(op,__Mothuchar,__Mothuchar,__Mothuchar);\
+    ArrayBroadcastSlice1(op,__Mothuchar,__Mothuchar,__Mothuchar);\
+    ArrayBroadcastSlice2(op,__Mothuchar,__Mothuchar,__Mothuchar);\
+    ArrayBroadcastSlice3(op,__Mothuchar,__Mothuchar,__Mothuchar);\
     ArrayBroadcast(op,__Mothshort,__Mothshort,__Mothshort);\
+    ArrayBroadcastSlice1(op,__Mothshort,__Mothshort,__Mothshort);\
+    ArrayBroadcastSlice2(op,__Mothshort,__Mothshort,__Mothshort);\
+    ArrayBroadcastSlice3(op,__Mothshort,__Mothshort,__Mothshort);\
     ArrayBroadcast(op,__Mothushort,__Mothushort,__Mothushort);\
+    ArrayBroadcastSlice1(op,__Mothushort,__Mothushort,__Mothushort);\
+    ArrayBroadcastSlice2(op,__Mothushort,__Mothushort,__Mothushort);\
+    ArrayBroadcastSlice3(op,__Mothushort,__Mothushort,__Mothushort);\
     ArrayBroadcast(op,__Mothint,__Mothint,__Mothint);\
+    ArrayBroadcastSlice1(op,__Mothint,__Mothint,__Mothint);\
+    ArrayBroadcastSlice2(op,__Mothint,__Mothint,__Mothint);\
+    ArrayBroadcastSlice3(op,__Mothint,__Mothint,__Mothint);\
     ArrayBroadcast(op,__Mothuint,__Mothuint,__Mothuint);\
+    ArrayBroadcastSlice1(op,__Mothuint,__Mothuint,__Mothuint);\
+    ArrayBroadcastSlice2(op,__Mothuint,__Mothuint,__Mothuint);\
+    ArrayBroadcastSlice3(op,__Mothuint,__Mothuint,__Mothuint);\
     ArrayBroadcast(op,__Mothlong,__Mothlong,__Mothlong);\
+    ArrayBroadcastSlice1(op,__Mothlong,__Mothlong,__Mothlong);\
+    ArrayBroadcastSlice2(op,__Mothlong,__Mothlong,__Mothlong);\
+    ArrayBroadcastSlice3(op,__Mothlong,__Mothlong,__Mothlong);\
     ArrayBroadcast(op,__Mothulong,__Mothulong,__Mothulong);\
+    ArrayBroadcastSlice1(op,__Mothulong,__Mothulong,__Mothulong);\
+    ArrayBroadcastSlice2(op,__Mothulong,__Mothulong,__Mothulong);\
+    ArrayBroadcastSlice3(op,__Mothulong,__Mothulong,__Mothulong);\
 
 ArrayBroadcastAllTypes(-);
 ArrayBroadcastAllTypes(+);

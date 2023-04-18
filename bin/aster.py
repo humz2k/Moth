@@ -988,11 +988,11 @@ class Cptr(Ctypes):
         if isinstance(self.var,Null):
             return "NULL"
         elif isinstance(self.var.moth_type,ArrayType):
-            return self.var.c_str + ".raw"
+            return self.var.eval(parent) + ".raw.get()"
         elif isinstance(self.var.moth_type,ObjectType):
-            return self.var.c_str
+            throwError("Can't pass Moth objects to C","MothObjPtrErr",self.lineno)
         else:
-            return "&"+self.var.c_str
+            return "&"+self.var.eval(parent)
 
 class Ccall(Ctypes):
     def __init__(self,func_name,lineno=None):
@@ -1055,6 +1055,7 @@ class Cast(AstObj):
         self.new_type = new_type
         self.expression = expression
         self.c_type = self.new_type.get_c()
+        self.moth_type = new_type
     
     def find_variables(self,parent):
         self.expression = self.expression.find_variables(parent)
