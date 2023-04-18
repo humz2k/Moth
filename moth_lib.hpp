@@ -920,7 +920,7 @@ __MothList<T> newList(int nitems, Args&&... args){
             output_dims[i]--;\
         }\
         int arr1offset = output_ndims - arr1.ndims;\
-        int arr2offset = output_ndims - arr1.ndims;\
+        int arr2offset = output_ndims - arr2.ndims;\
         for (int i = 0; i < size; i++){\
             int output_index = 0;\
             int arr1_index = 0;\
@@ -930,7 +930,7 @@ __MothList<T> newList(int nitems, Args&&... args){
             }\
             for (int j = arr1offset; j < output_ndims; j++){\
                 if (arr1dims[j] != 1){\
-                    arr1_index = arr1_index + arr1.muls.get()[j-arr2offset]*output_dims[j];\
+                    arr1_index = arr1_index + arr1.muls.get()[j-arr1offset]*output_dims[j];\
                 }\
             }\
             for (int j = arr2offset; j < output_ndims; j++){\
