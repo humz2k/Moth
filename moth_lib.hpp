@@ -958,84 +958,83 @@ __MothList<T> newList(int nitems, Args&&... args){
 //    inline __MothArray<T> operator op_(const __MothArraySlice<T>& arr1, const __MothArray<T>& arr2){
 //        __MothArray<T>
 //    }
-
-template<class T>
-__MothArray<T> __MothBaseSTARSTAR(const __MothArray<T>& arr1, const __MothArray<T>& arr2){
-    int found = 1;
-    int dim1; int dim2;
-    int output_ndims = arr1.ndims;
-    if (arr2.ndims > output_ndims){
-        output_ndims = arr2.ndims;
-    }
-    int* arr1dims = (int*)malloc(output_ndims*sizeof(int));
-    int* arr2dims = (int*)malloc(output_ndims*sizeof(int));
-    for (int i = 0; i < output_ndims; i++){
-        arr1dims[i] = 1;
-        arr2dims[i] = 1;
-    }
-    int* output_dims = (int*)malloc(output_ndims*sizeof(int));
-    int count = output_ndims -1;
-    for (dim1 = arr1.ndims-1; dim1 >= 0; dim1--){
-        arr1dims[count] = arr1.dims.get()[dim1];
-        count--;
-    }
-    count = output_ndims -1;
-    for (dim2 = arr2.ndims-1; dim2 >= 0; dim2--){
-        arr2dims[count] = arr2.dims.get()[dim2];
-        count--;
-    }
-    for (int i = output_ndims - 1; i >= 0; i--){
-        if (!(((arr1dims[i] == arr2dims[i]) || (arr1dims[i] == 1)) || (arr2dims[i] == 1))){
-            found = 0;break;
-        }
-        output_dims[i] = arr1dims[i];
-        if(arr2dims[i] > output_dims[i]){
-            output_dims[i] = arr2dims[i];
-        }
-    }
-    if (found == 0){
-        free(arr1dims);free(arr2dims);free(output_dims);
-        MothRuntimeError("BroadcastErr","Array shapes are not broadcastable");
-    }
-    __MothArray<T> out = newArray<T>(0,newTuple<int>(output_ndims,output_dims));
-    int size = 1;
-    for (int i = 0; i < output_ndims; i++){
-        size = size * output_dims[i];
-        output_dims[i]--;
-    }
-    int arr1offset = output_ndims - arr1.ndims;
-    int arr2offset = output_ndims - arr2.ndims;
-    for (int i = 0; i < size; i++){
-        int output_index = 0;
-        int arr1_index = 0;
-        int arr2_index = 0;
-        for (int j = 0; j < output_ndims; j++){
-            output_index = output_index + out.muls.get()[j]*output_dims[j];
-        }
-        for (int j = arr1offset; j < output_ndims; j++){
-            if (arr1dims[j] != 1){
-                arr1_index = arr1_index + arr1.muls.get()[j-arr1offset]*output_dims[j];
-            }
-        }
-        for (int j = arr2offset; j < output_ndims; j++){
-            if (arr2dims[j] != 1){
-                arr2_index = arr2_index + arr2.muls.get()[j-arr2offset]*output_dims[j];
-            }
-        }
-        out.raw.get()[output_index] = __MothBaseSTARSTAR(arr1.raw.get()[arr1_index],arr2.raw.get()[arr2_index]);
-        output_dims[output_ndims-1]--;
-        for (int j = output_ndims-1; j > 0; j--){
-            if (output_dims[j] < 0){
-                output_dims[j] = out.dims.get()[j] - 1;
-                output_dims[j-1]--;
-            }
-        }
-        if (output_dims[0] < 0){
-            break;
-        }
-    }
-    free(arr1dims);free(arr2dims);free(output_dims);
-    return out;
+#define ArrayBroadcastSTARSTAR(T1,T2,T3) \
+__MothArray<T1> __MothBaseSTARSTAR(const __MothArray<T2>& arr1, const __MothArray<T3>& arr2){ \
+    int found = 1;\
+    int dim1; int dim2;\
+    int output_ndims = arr1.ndims;\
+    if (arr2.ndims > output_ndims){\
+        output_ndims = arr2.ndims;\
+    }\
+    int* arr1dims = (int*)malloc(output_ndims*sizeof(int));\
+    int* arr2dims = (int*)malloc(output_ndims*sizeof(int));\
+    for (int i = 0; i < output_ndims; i++){\
+        arr1dims[i] = 1;\
+        arr2dims[i] = 1;\
+    }\
+    int* output_dims = (int*)malloc(output_ndims*sizeof(int));\
+    int count = output_ndims -1;\
+    for (dim1 = arr1.ndims-1; dim1 >= 0; dim1--){\
+        arr1dims[count] = arr1.dims.get()[dim1];\
+        count--;\
+    }\
+    count = output_ndims -1;\
+    for (dim2 = arr2.ndims-1; dim2 >= 0; dim2--){\
+        arr2dims[count] = arr2.dims.get()[dim2];\
+        count--;\
+    }\
+    for (int i = output_ndims - 1; i >= 0; i--){\
+        if (!(((arr1dims[i] == arr2dims[i]) || (arr1dims[i] == 1)) || (arr2dims[i] == 1))){\
+            found = 0;break;\
+        }\
+        output_dims[i] = arr1dims[i];\
+        if(arr2dims[i] > output_dims[i]){\
+            output_dims[i] = arr2dims[i];\
+        }\
+    }\
+    if (found == 0){\
+        free(arr1dims);free(arr2dims);free(output_dims);\
+        MothRuntimeError("BroadcastErr","Array shapes are not broadcastable");\
+    }\
+    __MothArray<T1> out = newArray<T1>(0,newTuple<int>(output_ndims,output_dims));\
+    int size = 1;\
+    for (int i = 0; i < output_ndims; i++){\
+        size = size * output_dims[i];\
+        output_dims[i]--;\
+    }\
+    int arr1offset = output_ndims - arr1.ndims;\
+    int arr2offset = output_ndims - arr2.ndims;\
+    for (int i = 0; i < size; i++){\
+        int output_index = 0;\
+        int arr1_index = 0;\
+        int arr2_index = 0;\
+        for (int j = 0; j < output_ndims; j++){\
+            output_index = output_index + out.muls.get()[j]*output_dims[j];\
+        }\
+        for (int j = arr1offset; j < output_ndims; j++){\
+            if (arr1dims[j] != 1){\
+                arr1_index = arr1_index + arr1.muls.get()[j-arr1offset]*output_dims[j];\
+            }\
+        }\
+        for (int j = arr2offset; j < output_ndims; j++){\
+            if (arr2dims[j] != 1){\
+                arr2_index = arr2_index + arr2.muls.get()[j-arr2offset]*output_dims[j];\
+            }\
+        }\
+        out.raw.get()[output_index] = __MothBaseSTARSTAR(arr1.raw.get()[arr1_index],arr2.raw.get()[arr2_index]);\
+        output_dims[output_ndims-1]--;\
+        for (int j = output_ndims-1; j > 0; j--){\
+            if (output_dims[j] < 0){\
+                output_dims[j] = out.dims.get()[j] - 1;\
+                output_dims[j-1]--;\
+            }\
+        }\
+        if (output_dims[0] < 0){\
+            break;\
+        }\
+    }\
+    free(arr1dims);free(arr2dims);free(output_dims);\
+    return out;\
 }
 
 #define ArrayBroadcastAllTypes(op) \
@@ -1070,6 +1069,21 @@ ArrayBroadcastAllTypes(/);
 //ArrayBroadcastAllTypes(%);
 ArrayBroadcastAllTypes(*);
 ArrayBroadcastIntTypes(%);
+
+ArrayBroadcastSTARSTAR(__Mothchar,__Mothchar,__Mothchar);
+ArrayBroadcastSTARSTAR(__Mothuchar,__Mothuchar,__Mothuchar);
+ArrayBroadcastSTARSTAR(__Mothshort,__Mothshort,__Mothshort);
+ArrayBroadcastSTARSTAR(__Mothushort,__Mothushort,__Mothushort);
+ArrayBroadcastSTARSTAR(__Mothint,__Mothint,__Mothint);
+//ArrayBroadcastSTARSTAR(__Mothuint,__Mothuint,__Mothuint);
+//ArrayBroadcastSTARSTAR(__Mothlong,__Mothlong,__Mothlong);
+//ArrayBroadcastSTARSTAR(__Mothulong,__Mothulong,__Mothulong);
+ArrayBroadcastSTARSTAR(__Mothfloat,__Mothfloat,__Mothfloat);
+ArrayBroadcastSTARSTAR(__Mothfloat,__Mothint,__Mothfloat);
+ArrayBroadcastSTARSTAR(__Mothfloat,__Mothfloat,__Mothint);
+ArrayBroadcastSTARSTAR(__Mothdouble,__Mothdouble,__Mothdouble);
+ArrayBroadcastSTARSTAR(__Mothdouble,__Mothfloat,__Mothdouble);
+ArrayBroadcastSTARSTAR(__Mothdouble,__Mothdouble,__Mothfloat);
 
 #define ArrayBroadcastScalar_t(op,scalar_t) \
 template <class T> \

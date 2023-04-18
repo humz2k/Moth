@@ -52,7 +52,7 @@ b = __MothBaseSTAR(__MothnmMothones<__Mothfloat>(newTuple<__Mothint>(2,7,1)),2);
 __MothPrint(a);
 __MothPrint(b);
 c = __MothBaseSTAR(a,b);
-__MothPrint(c);
+__MothPrint(__MothBaseSTARSTAR(__MothBaseSTAR(c,10),0.5));
 return 0;
 
 }

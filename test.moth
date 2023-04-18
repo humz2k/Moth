@@ -7,5 +7,5 @@ def int main():
     print(a)
     print(b)
     float[] c = a*b
-    print(c)
+    print((c*10)**0.5)
     return 0
