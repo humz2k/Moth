@@ -188,9 +188,15 @@ class __MothTuple {
         __MothTuple(){
             size = 0;
         }
-        __MothTuple(int in_size, int in_items[]){
+        __MothTuple(T item){
+            size = 1;
+            std::shared_ptr<T> tmp_raw (static_cast<T*>(malloc(size*sizeof(T))),free);
+            tmp_raw.get()[0] = item;
+            raw = tmp_raw;
+        }
+        __MothTuple(int in_size, T in_items[]){
             size = in_size;
-            std::shared_ptr<T> tmp_raw (static_cast<int*>(malloc(in_size*sizeof(T))),free);
+            std::shared_ptr<T> tmp_raw (static_cast<T*>(malloc(in_size*sizeof(T))),free);
             for (int i = 0; i < size; i++){
                 tmp_raw.get()[i] = in_items[i];
             }

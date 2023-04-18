@@ -18,6 +18,7 @@ class nm(static):
             out[i] = 1
         return out.reshape(shape)
 
+    @overload 
     def arr_t[:] arange(int start, int stop, int step, dtype arr_t):
         int size = (stop - start)/step
         arr_t[:] out = arr_t array(size)
@@ -25,9 +26,82 @@ class nm(static):
             out[i] = (i*step)+start
         return out
 
+    @overload 
+    def int[:] arange(int start, int stop, int step):
+        int size = (stop - start)/step
+        int[:] out = int array(size)
+        for int i in range(size):
+            out[i] = (i*step)+start
+        return out
+
+    @overload
+    def arr_t[:] arange(int start, int stop, dtype arr_t):
+        int step = 1
+        int size = (stop - start)/step
+        arr_t[:] out = arr_t array(size)
+        for int i in range(size):
+            out[i] = (i*step)+start
+        return out
+
+    @overload
+    def int[:] arange(int start, int stop):
+        int step = 1
+        int size = (stop - start)/step
+        int[:] out = int array(size)
+        for int i in range(size):
+            out[i] = (i*step)+start
+        return out
+    
+    @overload
+    def arr_t[:] arange(int stop, dtype arr_t):
+        int step = 1
+        int start = 0
+        int size = (stop - start)/step
+        arr_t[:] out = arr_t array(size)
+        for int i in range(size):
+            out[i] = (i*step)+start
+        return out
+
+    @overload
+    def int[:] arange(int stop):
+        int step = 1
+        int start = 0
+        int size = (stop - start)/step
+        int[:] out = int array(size)
+        for int i in range(size):
+            out[i] = (i*step)+start
+        return out
+
+    @overload
     def arr_t[:] linspace(double start, double stop, int num, dtype arr_t):
         arr_t[:] out = arr_t array(num)
-        double scale = (stop-start)/float(num-1)
+        double scale = (stop-start)/double(num-1)
+        for int i in range(num):
+            out[i] = i*scale + start
+        return out
+
+    @overload
+    def double[:] linspace(double start, double stop, int num):
+        double[:] out = double array(num)
+        double scale = (stop-start)/double(num-1)
+        for int i in range(num):
+            out[i] = i*scale + start
+        return out
+
+    @overload
+    def arr_t[:] linspace(double start, double stop, dtype arr_t):
+        int num = 50
+        arr_t[:] out = arr_t array(num)
+        double scale = (stop-start)/double(num-1)
+        for int i in range(num):
+            out[i] = i*scale + start
+        return out
+
+    @overload
+    def double[:] linspace(double start, double stop):
+        int num = 50
+        double[:] out = double array(num)
+        double scale = (stop-start)/double(num-1)
         for int i in range(num):
             out[i] = i*scale + start
         return out

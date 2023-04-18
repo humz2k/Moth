@@ -2,6 +2,6 @@ include moth-libs/numoth
 include moth-libs/math
 
 def int main():
-    float a = 10
-    print(math.sqrtf(a),"\n")
+    float[:] b = nm.ones(10,int)
+    print(b)
     return 0

@@ -85,6 +85,24 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
         else:
             return aster.FunctionHeader(p[1],p[2],aster.FunctionDefInputs(),lineno=p[0].source_pos)
         
+    @pg.production('function_header : AT OVERLOAD SEMI_COLON DEF type identifier OPEN_PAREN CLOSE_PAREN COLON')
+    #@pg.production('function_header : DEF type template_t OPEN_PAREN CLOSE_PAREN COLON')
+    @pg.production('function_header : AT OVERLOAD SEMI_COLON DEF template_t identifier OPEN_PAREN CLOSE_PAREN COLON')
+    #@pg.production('function_header : DEF template_t template_t OPEN_PAREN CLOSE_PAREN COLON')
+    @pg.production('function_header : AT OVERLOAD SEMI_COLON  DEF array_template_type identifier OPEN_PAREN CLOSE_PAREN COLON')
+    #@pg.production('function_header : DEF array_template_type template_t OPEN_PAREN CLOSE_PAREN COLON')
+    @pg.production('function_header : AT OVERLOAD SEMI_COLON  DEF type identifier func_def_inputs COLON')
+    #@pg.production('function_header : DEF type template_t func_def_inputs COLON')
+    @pg.production('function_header : AT OVERLOAD SEMI_COLON  DEF template_t identifier func_def_inputs COLON')
+    #@pg.production('function_header : DEF template_t template_t func_def_inputs COLON')
+    @pg.production('function_header : AT OVERLOAD SEMI_COLON  DEF array_template_type identifier func_def_inputs COLON')
+    #@pg.production('function_header : DEF array_template_type template_t func_def_inputs COLON')
+    def function_header_ol(p):
+        if len(p) == 8:
+            return aster.FunctionHeader(p[4],p[5],p[6],overload=True,lineno=p[0].source_pos)
+        else:
+            return aster.FunctionHeader(p[4],p[5],aster.FunctionDefInputs(),overload=True,lineno=p[0].source_pos)
+        
     @pg.production('if_header : IF expression COLON')
     def if_header(p):
         return aster.IfHeader(p[1],lineno=p[0].source_pos)

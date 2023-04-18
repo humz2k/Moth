@@ -18,6 +18,8 @@ STAR \*
 SLASH \/
 PERCENT \%
 
+AT \@
+
 EQUAL \=\=
 NOT_EQUAL \!\=
 GREATER \>
@@ -52,6 +54,7 @@ OBJECT \bobject\b|\bobj\b
 TUPLE \btuple\b
 DTYPE \bdtype\b
 TYPE_QUERY \btype\b
+OVERLOAD \boverload\b
 
 C_VAL \b__c_val\b
 C_PTR \b__c_ptr\b

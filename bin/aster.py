@@ -48,6 +48,7 @@ class Identifier(AstObj):
                 scope_t = "function [\033[1;33m" + parent.header.name.value[4:] + "\033[0;0m]"
             else:
                 scope_t = "scope"
+            print(parent.declarations)
             throwError("Name \033[1;34m" + c_str + "\033[0;0m not found in " + scope_t,"VarNotFound",self.lineno)
         moth_type = parent.declarations[c_str]
         return Variable(raw,c_str,c_type,moth_type)
@@ -181,7 +182,8 @@ class Scope(AstObj):
     def find_functions(self,out):
         if isinstance(self.header,FunctionHeader):
             if self.header.name.value in out.keys():
-                throwError("Function [\033[1;34m" + self.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedFunc",self.lineno)
+                if not self.header.overload:
+                    throwError("Function [\033[1;34m" + self.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedFunc",self.lineno)
             out[self.header.name.value] = self.header.return_type
             self.functions = out
             return
@@ -193,7 +195,8 @@ class Scope(AstObj):
                     i.classes = self.classes
                     if isinstance(i.header,FunctionHeader):
                         if i.header.name.value in self.functions:
-                            throwError("Function [\033[1;34m" + self.header.name.value + "." + i.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedMemFunc",i.lineno)
+                            if not i.header.overload:
+                                throwError("Function [\033[1;34m" + self.header.name.value + "." + i.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedMemFunc",i.lineno)
                             #throwError("Redefined function " + self.header.name.value + "." + i.header.name.value,"RedefineMemFunc",self.lineno)
                         self.functions[i.header.name.value] = i.header.return_type
                         out[i.header.name.value] = i.header.return_type
@@ -304,11 +307,12 @@ class ClassHeader(ScopeHeader):
         return out
 
 class FunctionHeader(ScopeHeader):
-    def __init__(self,return_type,name,inputs,lineno = None):
+    def __init__(self,return_type,name,inputs,overload=False,lineno = None):
         self.lineno = lineno
         self.return_type = return_type
         self.name = Token("IDENTIFIER","Moth" + name.value)
         self.inputs = inputs
+        self.overload = overload
         if self.name.value == "Mothmain" and self.return_type.get_c() != "__Mothint":
             throwError("Function [\033[1;34mmain\033[0;0m] returns \033[1;34m" + self.return_type.get_c()[6:] + "\033[0;0m instead of \033[1;34mint\033[0;0m","MainReturnType",self.lineno)
     
@@ -468,20 +472,20 @@ class FunctionCall(AstObj):
                 #elif self.name.child.value == "shape":
                 #    self.moth_type = TupleType(Token("TYPE_NAME","int"))
                 else:
-                    throwError("Array Type does not have function " + self.name.child.value, "ArrayFuncNotFound",self.lineno)
+                    throwError("Array Type does not have function \033[1;34m" + self.name.child.value + "\033[0;0m", "ArrayFuncNotFound",self.lineno)
         else:
             if isinstance(self.name,StaticFunction):
                 if self.name.class_name.value in parent.classes:
                     if "Moth" + self.name.function_name.value in parent.classes[self.name.class_name.value].functions:
                         self.moth_type = parent.classes[self.name.class_name.value].functions["Moth" + self.name.function_name.value]
                     else:
-                        throwError("Function " + str(self.name.class_name + self.name.function_name.value) + " not defined in scope ","FuncDefined",self.lineno)
+                        throwError("Function [\033[1;34m" + self.name.class_name.value + "." + self.name.function_name.value + "\033[0;0m] not defined in scope ","FuncUnDefined",self.lineno)
                 else:
-                    throwError("Class " + str(self.name.class_name) + " not defined in scope ","ClassDefined",self.lineno)
+                    throwError("Class [\033[1;34m" + str(self.name.class_name) + "\033[0;0m] not defined in scope ","ClassUnDefined",self.lineno)
             elif self.name.value in parent.functions:
                 self.moth_type = parent.functions[self.name.value]
             else:
-                throwError("Function " + str(self.name) + " not defined in scope ","FuncDefined",self.lineno)
+                throwError("Function [\033[1;34m" + str(self.name) + "\033[0;0m] not defined in scope ","FuncUnDefined",self.lineno)
         return self
 
     def add(self,inp):
@@ -600,7 +604,7 @@ class TupleLiteral(Container):
                 elif i.moth_type.get_c() in ["__Mothfloat","__Mothdouble"]:
                     self.dtype = Type(Token("TYPE_NAME","float"))
                 else:
-                    throwError("Only int or float is valid for type inferred tuple","TypeInferTupleErr",self.lineno)
+                    throwError("Only \033[1;34mint\033[0;0m or \033[1;34mfloat\033[0;0m is valid for type inferred tuple","TypeInferTupleErr",self.lineno)
         return self
 
     def eval(self,parent):
@@ -1031,7 +1035,7 @@ class Reference(AstObj):
                     self.c_str = "" + self.parent.eval(parent) + "." + self.child.value
                     self.moth_type = TupleType(Type(Token("TYPE_NAME","int")))
                 else:
-                    throwError("UNKOCNWDSKA","asd",self.lineno)
+                    throwError("Arrays have no attribute \033[1;34m" + self.child.value + "\033[0;0m","ArrayAttributeErr",self.lineno)
             else:
                 if not "complex" in self.parent.moth_type.name.value:
                     self.child = self.child.find_variables(parent.classes[self.parent.moth_type.name.value])
