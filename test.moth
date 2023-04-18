@@ -4,5 +4,6 @@ include moth-libs/math
 def int main():
     float[:] b = nm.ones(3)
     float[:] a = nm.arange(3)
-    #print(a \cross b)
+    print(b.shape == a.shape,"\n")
+    print((b*3).sum())
     return 0

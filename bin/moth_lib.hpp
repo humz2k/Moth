@@ -203,6 +203,18 @@ class __MothTuple {
             raw = tmp_raw;
         }
 
+        __Mothbool operator == (const __MothTuple<T> &other){
+            if (size != other.size){
+                return false;
+            }
+            for (int i = 0; i < size; i++){
+                if (raw.get()[i] != other.raw.get()[i]){
+                    return false;
+                }
+            }
+            return true;
+        }
+
         T findIndex(int index){
             return raw.get()[index];
         }
@@ -413,6 +425,14 @@ class __MothArray {
             muls = tmp_muls;
 
             initialized = 0;
+        }
+
+        T Mothsum(){
+            T total = 0;
+            for (int i = 0; i < size; i++){
+                total = total + raw.get()[i];
+            }
+            return total;
         }
 
         T* Mothcptr(){

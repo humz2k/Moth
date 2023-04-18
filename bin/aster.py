@@ -466,6 +466,8 @@ class FunctionCall(AstObj):
                 if self.name.child.value == "reshape":
                     self.moth_type = ArrayType(self.name.parent.moth_type.name)
                     self.moth_type.dimensions = len(self.inputs)
+                elif self.name.child.value == "sum":
+                    self.moth_type = self.name.parent.moth_type.name
                 #elif self.name.child.value == "ndims":
                 #    self.moth_type = Type(Token("TYPE_NAME","int"))
                 #elif self.name.child.value == "shape":

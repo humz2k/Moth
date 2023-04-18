@@ -21,6 +21,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     ('left', ['AMP', 'VERT']),
     ('left', ['AND', 'OR']),
     ('left', ['NOT']),
+    ('left', ['BACKSLASH']),
     ('left', ['PERIOD']),
     ('left',['three','two','one'])
     #('left', ['identifier','template_t'])
@@ -612,10 +613,11 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def reference2(p):
         return aster.StaticFunction(p[0],p[2],lineno=p[1].source_pos)
     
-    @pg.production('reference : alloc_array PERIOD identifier')
-    @pg.production('reference : identifier PERIOD identifier')
-    @pg.production('reference : function_call PERIOD identifier')
-    @pg.production('reference : reference PERIOD identifier')
+    #@pg.production('reference : alloc_array PERIOD identifier')
+    #@pg.production('reference : identifier PERIOD identifier')
+    #@pg.production('reference : function_call PERIOD identifier')
+    #@pg.production('reference : reference PERIOD identifier')
+    @pg.production('reference : expression PERIOD identifier')
     def reference(p):
         return aster.Reference(p[0],p[2],lineno=p[1].source_pos)
     

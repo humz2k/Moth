@@ -464,6 +464,8 @@ __Mothint Mothmain(){
 __MothArray<__Mothfloat> b;__MothArray<__Mothfloat> a;
 b = __MothnmMothones(3);
 a = __MothnmMotharange(3);
+__MothPrint(__MothBaseEQUAL(b.shape,a.shape));__MothPrint("\n");
+__MothPrint(__MothBaseSTAR(b,3).Mothsum());
 return 0;
 
 }
