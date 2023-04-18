@@ -1,0 +1,8 @@
+def int main():
+    int[:] my_int_array = int array(5)
+    my_int_array[0] = 10
+    print(my_int_array,"\n")
+    float[:,:] my_float_array = float array(3,3)
+    my_float_array[1,2] = 1.5
+    print(my_float_array)
+    return 0
