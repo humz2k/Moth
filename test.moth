@@ -3,7 +3,7 @@ include moth-libs/numoth
 def int main():
     #print(test().a)
     int[:] a = nm.ones((10,),int)
-    #for int i in range(10):
-    #    a[i] = i
-    print(a[0:3:1][1])
+    int[:] b = nm.ones((10,),int)*2
+    a = a + b
+    print(a)
     return 0

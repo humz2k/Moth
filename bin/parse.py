@@ -253,7 +253,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     
     @pg.production('slice_range : COLON expression')
     def end_slice_range(p):
-        return aster.SliceRange(start = p[1], lineno=p[0].source_pos)
+        return aster.SliceRange(end = p[1], lineno=p[0].source_pos)
     
     @pg.production('slice_range : expression COLON expression COLON expression')
     def step_slice_range(p):
@@ -262,6 +262,10 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('slice_range : expression COLON COLON expression')
     def step_slice_range(p):
         return aster.SliceRange(start = p[0], step = p[3], lineno=p[1].source_pos)
+    
+    @pg.production('slice_range : expression COLON expression')
+    def step_slice_range(p):
+        return aster.SliceRange(start = p[0], end = p[2], lineno=p[1].source_pos)
     
     @pg.production('slice_range : COLON expression COLON expression')
     def step_slice_range(p):

@@ -677,6 +677,7 @@ class ArrayReference(AstObj):
         for i in self.index:
             if isinstance(i,SliceRange):
                 self.is_slice = True
+                self.moth_type = self.name.moth_type
                 index.append(i.find_variables(parent))
             else:
                 index.append(i.find_variables(parent))

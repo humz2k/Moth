@@ -3,3 +3,6 @@ main:
 
 leak:
 	leaks -atExit -- ./test | grep LEAK:
+
+clean:
+	rm test
