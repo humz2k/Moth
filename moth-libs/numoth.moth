@@ -128,5 +128,7 @@ class nm(static):
         return out
 
 @overload
-def float[:] cross(float[:] a, float[:] b):
-    return a
+def double dot(double[:] a, double[:] b):
+    if a.shape != b.shape:
+        throwErr("Shapes not equal in \\dot\n")
+    return (a*b).sum()

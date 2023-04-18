@@ -238,9 +238,15 @@ return out;
 
 }
 
-__MothArray<__Mothfloat> Mothcross(__MothArray<__Mothfloat> a,__MothArray<__Mothfloat> b){
+__Mothdouble Mothdot(__MothArray<__Mothdouble> a,__MothArray<__Mothdouble> b){
 
-return a;
+if (__MothBaseNOT_EQUAL(a.shape,b.shape)){
+
+MoththrowErr("Shapes not equal in \\dot\n");
+
+}
+
+return __MothBaseSTAR(a,b).Mothsum();
 
 }
 
@@ -461,11 +467,11 @@ return floor(inp);
 }
 
 __Mothint Mothmain(){
-__MothArray<__Mothfloat> b;__MothArray<__Mothfloat> a;
-b = __MothnmMothones(3);
+__MothArray<__Mothint> b;__MothArray<__Mothint> a;__Mothint out;
+b = __MothnmMothones(newTuple<__Mothint>(1,3));
 a = __MothnmMotharange(3);
-__MothPrint(__MothBaseEQUAL(b.shape,a.shape));__MothPrint("\n");
-__MothPrint(__MothBaseSTAR(b,3).Mothsum());
+out = Mothdot(b,a);
+__MothPrint(out);__MothPrint("\n");
 return 0;
 
 }

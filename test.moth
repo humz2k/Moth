@@ -2,8 +2,8 @@ include moth-libs/numoth
 include moth-libs/math
 
 def int main():
-    float[:] b = nm.ones(3)
-    float[:] a = nm.arange(3)
-    print(b.shape == a.shape,"\n")
-    print((b*3).sum())
+    int[:] b = nm.ones((3,))
+    int[:] a = nm.arange(3)
+    int out = b \dot a
+    print(out,"\n")
     return 0

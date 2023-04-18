@@ -486,7 +486,10 @@ class FunctionCall(AstObj):
             elif self.name.value in parent.functions:
                 self.moth_type = parent.functions[self.name.value]
             else:
-                throwError("Function [\033[1;34m" + str(self.name) + "\033[0;0m] not defined in scope ","FuncUnDefined",self.lineno)
+                if self.name.value == "MoththrowErr":
+                    pass
+                else:
+                    throwError("Function [\033[1;34m" + str(self.name) + "\033[0;0m] not defined in scope ","FuncUnDefined",self.lineno)
         return self
 
     def add(self,inp):

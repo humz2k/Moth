@@ -9,6 +9,10 @@
 
 #define MothRuntimeError(err_t,...) fprintf(stderr, "\033[1;33mMothRuntimeError\033[0;0m(\033[1;31m%s\033[0;0m):\n\t",err_t); fprintf(stderr, __VA_ARGS__); exit(1);
 
+void MoththrowErr(const char* c){
+    MothRuntimeError("ThrownError",c);
+}
+
 typedef void __Mothvoid;
 typedef char __Mothchar;
 typedef unsigned char __Mothuchar;
@@ -213,6 +217,18 @@ class __MothTuple {
                 }
             }
             return true;
+        }
+
+        __Mothbool operator != (const __MothTuple<T> &other){
+            if (size != other.size){
+                return true;
+            }
+            for (int i = 0; i < size; i++){
+                if (raw.get()[i] != other.raw.get()[i]){
+                    return true;
+                }
+            }
+            return false;
         }
 
         T findIndex(int index){
