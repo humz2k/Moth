@@ -1,7 +1,7 @@
 from rply.token import Token
 import sys
 
-HEADERS = '#include "moth_lib.hpp"\n\n'
+HEADERS = ''#include "moth_lib.hpp"\n\n'
 LINEOFFSET = 0
 
 def throwError(err,err_t,lineno):

@@ -52,6 +52,7 @@ if __name__ == "__main__":
     args = sys.argv[1:]
 
     token_file = "/".join(os.path.realpath(__file__).split("/")[:-1]) + "/tokens.txt"
+    header_file = '#include "' + "/".join(os.path.realpath(__file__).split("/")[:-1]) + '/moth_lib.hpp"' + "\n"
     
     if len(args) == 0:
         print("USAGE: moth inputfile [flags]")
@@ -96,7 +97,7 @@ if __name__ == "__main__":
 
     base = parser.parse(tokens)
 
-    out = headers + base.eval(line_offset=line_offset)
+    out = header_file + headers + base.eval(line_offset=line_offset)
 
     with open(tmp_file,"w") as f:
         f.write(out)

@@ -1,7 +1,6 @@
+#include "/Users/humzaqureshi/GitHub/Moth/bin/moth_lib.hpp"
 
 
-
-#include "moth_lib.hpp"
 
 
 template <class arr_t>
