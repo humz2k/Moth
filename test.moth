@@ -2,8 +2,9 @@ include moth-libs/numoth
 
 def int main():
     #print(test().a)
-    int[:] a = nm.ones((10,),int)
-    int[:] b = nm.ones((10,),int)*2
-    #a = a + b
-    #print(a)
+    int[:] a = nm.ones((1,2),int)
+    int[:] b = (nm.ones((5,1),int)*2)
+    print(a)
+    print(b)
+    print(a+b)
     return 0
