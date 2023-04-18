@@ -48,7 +48,6 @@ class Identifier(AstObj):
                 scope_t = "function [\033[1;33m" + parent.header.name.value[4:] + "\033[0;0m]"
             else:
                 scope_t = "scope"
-            print(parent.declarations)
             throwError("Name \033[1;34m" + c_str + "\033[0;0m not found in " + scope_t,"VarNotFound",self.lineno)
         moth_type = parent.declarations[c_str]
         return Variable(raw,c_str,c_type,moth_type)
@@ -849,6 +848,8 @@ class BinOp(AstObj):
         return self
 
     def eval(self,parent):
+        if self.op.name  == "IDENTIFIER":
+            return "Moth" + self.op.value + "(" + self.left.eval(parent) + "," + self.right.eval(parent) + ")"
         return "__Moth" + "Base" + self.op.name + "(" + self.left.eval(parent) + "," + self.right.eval(parent) + ")"
 
 class Not(AstObj):

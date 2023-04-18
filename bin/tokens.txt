@@ -18,6 +18,8 @@ STAR \*
 SLASH \/
 PERCENT \%
 
+BACKSLASH \\
+
 AT \@
 
 EQUAL \=\=

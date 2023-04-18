@@ -24,6 +24,26 @@ return out.Mothreshape(shape);
 
 }
 
+__MothArray<__Mothint> __MothnmMothzeros(__MothTuple<__Mothint> shape){
+__Mothint size;__Mothint i;__MothArray<__Mothint> out;
+size = 1;
+for (i = 0;i < shape.Mothlen();i = i + 1){
+
+size = __MothBaseSTAR(size,__MothTupleINDEX(shape,1,i));
+
+}
+
+out = newArray<__Mothint>(1,size);
+for (i = 0;i < size;i = i + 1){
+
+__MothArrayINDEX(out,1,i) = 0;
+
+}
+
+return out.Mothreshape(shape);
+
+}
+
 template <class arr_t>
 __MothArray<arr_t> __MothnmMothones(__MothTuple<__Mothint> shape){
 __Mothint size;__Mothint i;__MothArray<arr_t> out;
@@ -35,6 +55,26 @@ size = __MothBaseSTAR(size,__MothTupleINDEX(shape,1,i));
 }
 
 out = newArray<arr_t>(1,size);
+for (i = 0;i < size;i = i + 1){
+
+__MothArrayINDEX(out,1,i) = 1;
+
+}
+
+return out.Mothreshape(shape);
+
+}
+
+__MothArray<__Mothint> __MothnmMothones(__MothTuple<__Mothint> shape){
+__Mothint size;__Mothint i;__MothArray<__Mothint> out;
+size = 1;
+for (i = 0;i < shape.Mothlen();i = i + 1){
+
+size = __MothBaseSTAR(size,__MothTupleINDEX(shape,1,i));
+
+}
+
+out = newArray<__Mothint>(1,size);
 for (i = 0;i < size;i = i + 1){
 
 __MothArrayINDEX(out,1,i) = 1;
@@ -198,6 +238,11 @@ return out;
 
 }
 
+__MothArray<__Mothfloat> Mothcross(__MothArray<__Mothfloat> a,__MothArray<__Mothfloat> b){
+
+return a;
+
+}
 
 __Mothfloat __MothmathMothacosf(__Mothfloat inp){
 
@@ -416,9 +461,9 @@ return floor(inp);
 }
 
 __Mothint Mothmain(){
-__MothArray<__Mothfloat> b;
-b = __MothnmMothones<__Mothint>(10);
-__MothPrint(b);
+__MothArray<__Mothfloat> b;__MothArray<__Mothfloat> a;
+b = __MothnmMothones(3);
+a = __MothnmMotharange(3);
 return 0;
 
 }

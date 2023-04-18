@@ -460,6 +460,10 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def binop(p):
         return aster.BinOp(p[0],p[1],p[2],lineno=p[1].source_pos)
     
+    @pg.production('expression : expression BACKSLASH identifier expression')
+    def user_binop(p):
+        return aster.BinOp(p[0],p[2],p[3],lineno=p[1].source_pos)
+    
     @pg.production('expression : NOT expression')
     def pass_not(p):
         return aster.Not(p[1],lineno=p[0].source_pos)

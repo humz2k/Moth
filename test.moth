@@ -2,6 +2,7 @@ include moth-libs/numoth
 include moth-libs/math
 
 def int main():
-    float[:] b = nm.ones(10,int)
-    print(b)
+    float[:] b = nm.ones(3)
+    float[:] a = nm.arange(3)
+    #print(a \cross b)
     return 0

@@ -1,5 +1,5 @@
-
 class nm(static):
+    @overload
     def arr_t[:] zeros(tuple int shape, dtype arr_t):
         int size = 1
         for int i in range(shape.len()):
@@ -8,12 +8,33 @@ class nm(static):
         for int i in range(size):
             out[i] = 0
         return out.reshape(shape)
+
+    @overload
+    def int[:] zeros(tuple int shape):
+        int size = 1
+        for int i in range(shape.len()):
+            size *= shape[i]
+        int[:] out = int array(size)
+        for int i in range(size):
+            out[i] = 0
+        return out.reshape(shape)
     
+    @overload
     def arr_t[:] ones(tuple int shape, dtype arr_t):
         int size = 1
         for int i in range(shape.len()):
             size *= shape[i]
         arr_t[:] out = arr_t array(size)
+        for int i in range(size):
+            out[i] = 1
+        return out.reshape(shape)
+
+    @overload
+    def int[:] ones(tuple int shape):
+        int size = 1
+        for int i in range(shape.len()):
+            size *= shape[i]
+        int[:] out = int array(size)
         for int i in range(size):
             out[i] = 1
         return out.reshape(shape)
@@ -105,3 +126,7 @@ class nm(static):
         for int i in range(num):
             out[i] = i*scale + start
         return out
+
+@overload
+def float[:] cross(float[:] a, float[:] b):
+    return a
