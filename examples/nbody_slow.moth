@@ -31,7 +31,7 @@ def int main():
         add(acc,vel,0.5*dt)
     int end = timer.clock()
     print(pos)
-    print(timer.to_seconds(end-start),"seconds\n")
+    print(timer.to_seconds(end-start)," s\n")
         #print(pos)
     #print(acc)
     return 0
