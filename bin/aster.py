@@ -22,7 +22,7 @@ class Variable:
         self.c_type = c_type
         self.moth_type = moth_type
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         return self.c_str
 
 class AstObj:
@@ -52,7 +52,7 @@ class Identifier(AstObj):
         moth_type = parent.declarations[c_str]
         return Variable(raw,c_str,c_type,moth_type)
 
-    def eval(self,parent=None):
+    def eval(self,parent=None,isRaw=False):
         return "Moth" + self.value
 
 class String(AstObj):
@@ -66,7 +66,7 @@ class String(AstObj):
     def find_variables(self,parent):
         return self
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         return self.value
     
 class Char(AstObj):
@@ -80,7 +80,7 @@ class Char(AstObj):
     def find_variables(self,parent):
         return self
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         return self.value
 
 
@@ -99,7 +99,7 @@ class Number(AstObj):
     def find_variables(self,parent):
         return self
 
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         return self.value
 
 class Container(AstObj):
@@ -148,7 +148,7 @@ class Program(Container):
         for scope in self.items:
             scope.find_variables(self)
 
-    def eval(self, line_offset = 0):
+    def eval(self, line_offset = 0,isRaw=False):
         global HEADERS,LINEOFFSET
         LINEOFFSET = line_offset
         self.verify()
@@ -239,7 +239,7 @@ class Scope(AstObj):
         self.body.find_variables(self)
         return self
 
-    def eval(self,parent,dont_declare=[],isKernel=False):
+    def eval(self,parent,dont_declare=[],isKernel=False, isRaw = False):
         self.dont_declare += dont_declare
         self.functions = parent.functions
         self.classes = parent.classes
@@ -253,6 +253,8 @@ class Scope(AstObj):
             isKernel = True
             end = "\ ".strip() + "\n"
             out += "\n" + "{\ ".strip() + "\n"
+            if self.header.raw_ptr == True:
+                isRaw = True
         else:
             if isKernel:
                 out += "{\ ".strip() + "\n"
@@ -267,10 +269,10 @@ class Scope(AstObj):
                 out += "\n}" + ";\n"
         elif isinstance(self.header,KernelHeader):
             out += self.header.get_fors(self)
-            out += self.body.eval(self,isKernel=True)
+            out += self.body.eval(self,isKernel=True,isRaw=isRaw)
             out += "}" * len(self.header.iterators) + "}\n" + "\n"
         else:
-            out += self.body.eval(self,isKernel=isKernel)
+            out += self.body.eval(self,isKernel=isKernel,isRaw = isRaw)
             if isKernel:
                 out += "}\ ".strip() + "\n" + "\ ".strip()
             else:
@@ -302,7 +304,7 @@ class ScopeBody(AstObj):
         self.lines = lines
         return self
 
-    def eval(self,parent,dont_declare=[],isKernel=False):
+    def eval(self,parent,dont_declare=[],isKernel=False,isRaw=False):
         out = ""
         end = ""
         if isKernel:
@@ -314,9 +316,9 @@ class ScopeBody(AstObj):
                         #line.header.name.value = "OBJECT_" + parent.header.name.value+"_"+line.header.name.value
                         out += line.eval(parent,dont_declare,isKernel=isKernel) + "\n"
                     else:
-                        out += line.eval(parent,isKernel=isKernel) + "\n"
+                        out += line.eval(parent,isKernel=isKernel,isRaw=isRaw) + "\n"
                 else:
-                    out += line.eval(parent) + ";" + end + "\n"
+                    out += line.eval(parent,isRaw=isRaw) + ";" + end + "\n"
         return out
 
 
@@ -328,14 +330,16 @@ class KernelHeader(ScopeHeader):
         self.name = name
         self.iterators = [Identifier(Token("IDENTIFIER",i)) for i in list(iterators.value)]
         self.expressions = [expression]
-        self.inputs = []
+        self.inputs = None
         self.lineno = lineno
         self.target = "C"
+        self.raw_ptr = False
 
     def find_declarations(self,declarations,dont_declare):
-        for i in self.inputs:
-            declarations[i.value] = ArrayType(Type(Token("TYPE_NAME","ANY")))
-            dont_declare.append(i.value)
+        #for i in self.inputs:
+        #    declarations[i.value] = ArrayType(Type(Token("TYPE_NAME","ANY")))
+        #    dont_declare.append(i.value)
+        self.inputs.find_declarations(declarations,dont_declare)
         for i in self.iterators:
             declarations[i.value] = Type(Token("TYPE_NAME","int"))
             #dont_declare.append(i.value)
@@ -343,10 +347,10 @@ class KernelHeader(ScopeHeader):
         #exit()
 
     def find_variables(self,parent):
-        inputs = []
-        for i in self.inputs:
-            inputs.append(i.find_variables(parent))
-        self.inputs = inputs
+        #inputs = []
+        #for i in self.inputs:
+        #    inputs.append(i.find_variables(parent))
+        self.inputs = self.inputs.find_variables(parent)
         expressions = []
         for i in self.expressions:
             expressions.append(i.find_variables(parent))
@@ -362,33 +366,51 @@ class KernelHeader(ScopeHeader):
         return self
     
     def add_input(self,inp):
-        self.inputs.append(inp)
+        self.inputs = inp
         return self
     
     def set_target(self,target):
         self.target = target.value[1:-1]
         return self
     
-    def eval(self,parent):
-        c_header = "#define Moth" + self.name.value + "(" + ",".join([i.eval(parent) for i in self.inputs]) + r") \ ".strip()
+    def set_raw(self):
+        self.raw_ptr = True
+        return self
+    
+    def eval(self,parent,isRaw=False):
+        c_header = "#define Moth" + self.name.value + "(" + ",".join([i[1].eval(parent) for i in self.inputs.items]) + r") \ ".strip()
         return c_header
     
     def get_fors(self,parent):
         for_loops = []
+        declares = ""
         for i,expr in zip(self.iterators,self.expressions):
-            for_loops.append("for (" + i.eval(parent) + " = 0; " + i.eval(parent) +  " < " + expr.eval(parent) + "; " + i.eval(parent) + "++)")
+            declares += "__Mothint " + i.eval(parent) + "_range = " + expr.eval(parent) + ";"
+            for_loops.append("for (" + i.eval(parent) + " = 0; " + i.eval(parent) +  " < " + i.eval(parent) + "_range" + "; " + i.eval(parent) + "++)")
+        
+        if self.raw_ptr:
+            arrays = [i for i in self.inputs.items if isinstance(i[0],ArrayType)]
+            for t,var in arrays:
+                dims = t.dimensions
+                name = var.eval(parent)
+                declares += t.name.get_c() + "* " + name + "_raw = " + name + ".raw.get();"
+                for dim in range(dims):
+                    declares += "__Mothint " + name + "_idx" + str(dim) + " = " + name + ".muls.get()[" + str(dim) + "];"
+        
         for_loops = [(idx+1)*"\t" + i for idx,i in enumerate(for_loops)]
         c_header = ("{\ ".strip()+"\n").join(for_loops) + "{\ ".strip() + "\n"
         if self.target == "OPENMP":
             local_vars = [i for i in list(parent.declarations.keys()) if not i in [j.eval(parent) for j in self.iterators]] #+ [j.eval(parent) for j in self.inputs]
             private = (",".join([i.eval(parent) for i in self.iterators[1:]])).strip()
-            thread_private = (",".join(local_vars)).strip()
             if len(private) != 0:
                 private = " private(" + private + ")"
-            if len(thread_private) != 0:
-                thread_private = " threadprivate(" + thread_private + ")"
+            thread_private = ""
+            if self.raw_ptr == False:
+                thread_private = (",".join(local_vars)).strip()
+                if len(thread_private) != 0:
+                    thread_private = " threadprivate(" + thread_private + ")"
             c_header = '_Pragma("omp parallel for' + private + thread_private + '")' + "\ ".strip() + "\n" + c_header # + 'printf("%d",omp_get_num_threads());\ '.strip() + "\n"
-        return c_header
+        return declares + "\ ".strip() + "\n" + c_header
 
 class ClassHeader(ScopeHeader):
     def __init__(self,name,inherits=None,lineno = None):
@@ -400,7 +422,7 @@ class ClassHeader(ScopeHeader):
     def find_variables(self,parent):
         return self
 
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         global STRUCTS
         out = ""
         if self.inherits == "STATIC":
@@ -427,7 +449,7 @@ class FunctionHeader(ScopeHeader):
     def find_declarations(self,declarations,dont_declare):
         self.inputs.find_declarations(declarations,dont_declare)
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         if isinstance(parent,Scope):
             if isinstance(parent.header,ClassHeader):
                 if parent.header.inherits == "STATIC":
@@ -468,8 +490,8 @@ class IfHeader(ScopeHeader):
         self.expression = self.expression.find_variables(parent)
         return self
     
-    def eval(self,parent):
-        return "if (" + self.expression.eval(parent) + ")"
+    def eval(self,parent,isRaw=False):
+        return "if (" + self.expression.eval(parent,isRaw=isRaw) + ")"
 
 class ElifHeader(ScopeHeader):
     def __init__(self,expression,lineno = None):
@@ -480,8 +502,8 @@ class ElifHeader(ScopeHeader):
         self.expression = self.expression.find_variables(parent)
         return self
     
-    def eval(self,parent):
-        return "else if (" + self.expression.eval(parent) + ")"
+    def eval(self,parent,isRaw=False):
+        return "else if (" + self.expression.eval(parent,isRaw=isRaw) + ")"
 
 class ElseHeader(ScopeHeader):
     def __init__(self,lineno = None):
@@ -490,7 +512,7 @@ class ElseHeader(ScopeHeader):
     def find_variables(self,parent):
         return self
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         return "else"
 
 class ForHeader(ScopeHeader):
@@ -505,8 +527,8 @@ class ForHeader(ScopeHeader):
         self.range_obj = self.range_obj.find_variables(parent)
         return self
     
-    def eval(self,parent):
-        return "for (" + self.var.c_str + " = " + self.range_obj.start.eval(parent) + ";" + self.var.c_str + " < " + self.range_obj.end.eval(parent) + ";" + self.var.c_str + " = " + self.var.c_str + " + " + self.range_obj.step.eval(parent) + ")"
+    def eval(self,parent,isRaw=False):
+        return "for (" + self.var.c_str + " = " + self.range_obj.start.eval(parent,isRaw=isRaw) + ";" + self.var.c_str + " < " + self.range_obj.end.eval(parent,isRaw=isRaw) + ";" + self.var.c_str + " = " + self.var.c_str + " + " + self.range_obj.step.eval(parent,isRaw=isRaw) + ")"
 
 class RangeObj(AstObj):
     def __init__(self,start,end,step,lineno = None):
@@ -533,8 +555,8 @@ class WhileHeader(ScopeHeader):
         self.condition = self.condition.find_variables(parent)
         return self
     
-    def eval(self,parent):
-        return "while (" + self.condition.eval(parent) + ")"
+    def eval(self,parent,isRaw=False):
+        return "while (" + self.condition.eval(parent,isRaw=isRaw) + ")"
     
 class StaticFunction(AstObj):
     def __init__(self,class_name,function_name,lineno=None):
@@ -575,6 +597,8 @@ class FunctionCall(AstObj):
                     self.moth_type = self.name.parent.moth_type.name
                 elif self.name.child.value == "zero":
                     self.moth_type = Type(Token("TYPE_NAME","void"))
+                elif self.name.child.value == "inf2zero":
+                    self.moth_type = Type(Token("TYPE_NAME","void"))
                 #elif self.name.child.value == "ndims":
                 #    self.moth_type = Type(Token("TYPE_NAME","int"))
                 #elif self.name.child.value == "shape":
@@ -603,9 +627,9 @@ class FunctionCall(AstObj):
         self.inputs.append(inp)
         return self
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         if isinstance(self.name,Reference):
-            name = self.name.eval(parent)
+            name = self.name.eval(parent,isRaw=isRaw)
         elif isinstance(self.name,StaticFunction):
             name = "__Moth"+self.name.class_name.value+"Moth"+self.name.function_name.value
         else:
@@ -616,8 +640,8 @@ class FunctionCall(AstObj):
         templates = [i for i in self.inputs if isinstance(i,BaseType)]
         out = name
         if len(templates) != 0:
-            out += "<" + ",".join([i.eval(parent) for i in templates]) + ">"
-        out += "(" + ",".join([i.eval(parent) for i in inputs]) + ")"
+            out += "<" + ",".join([i.eval(parent,isRaw=isRaw) for i in templates]) + ">"
+        out += "(" + ",".join([i.eval(parent,isRaw=isRaw) for i in inputs]) + ")"
         return out
 
 class Lines(Container):
@@ -631,7 +655,7 @@ class BaseType(AstObj):
     def find_variables(self,parent=None):
         return self
     
-    def eval(self,parent=None):
+    def eval(self,parent=None,isRaw=False):
         return self.get_c()
     
     def get_c(self,parent=None):
@@ -693,7 +717,7 @@ class TupleType(BaseType):
         return ""
 
 class ListLiteral(Container):
-    def eval(self,var,parent):
+    def eval(self,var,parent,isRaw=False):
         out = ""
         return var.eval(parent) + ".Mothreset();" + ";".join([var.eval(parent) + "." + "Mothappend(" + i.eval(parent) + ")" for i in self.items])
 
@@ -718,13 +742,13 @@ class TupleLiteral(Container):
                     throwError("Only \033[1;34mint\033[0;0m or \033[1;34mfloat\033[0;0m is valid for type inferred tuple","TypeInferTupleErr",self.lineno)
         return self
 
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         out = ""
         nitems = len(self.items)
         if len(self.items) == 0:
             out = out = "newTuple<" + self.dtype.get_c() + ">(" + str(nitems) + ")"
         else:
-            out = "newTuple<" + self.dtype.get_c() + ">(" + str(nitems) + "," + ",".join([i.eval(parent) for i in self.items]) + ")"
+            out = "newTuple<" + self.dtype.get_c() + ">(" + str(nitems) + "," + ",".join([i.eval(parent,isRaw=isRaw) for i in self.items]) + ")"
         return out
         #return var.eval(parent) + ".Mothreset();" + ";".join([var.eval(parent) + "." + "Mothappend(" + i.eval(parent) + ")" for i in self.items])
 
@@ -803,24 +827,30 @@ class ArrayReference(AstObj):
         self.index.append(index)
         return self
 
-    def eval(self,parent):
-        if self.is_slice:
-            slice_inputs = []
-            for idx,i in enumerate(self.index):
-                if isinstance(i,SliceRange):
-                    slice_inputs.append(i.start.eval(parent))
-                    if type(i.end) == type(None):
-                        slice_inputs.append(self.name.eval(parent) + ".dims.get()[" + str(idx) + "]")
-                    else:
-                        slice_inputs.append(i.end.eval(parent))
-                    slice_inputs.append(i.step.eval(parent))
-                else:
-                    slice_inputs += [i.eval(parent),i.eval(parent),"0"]
-            return "__MothGetSlice(" + self.name.eval(parent) + "," + str(len(slice_inputs)) + "," + ",".join(slice_inputs) + ")"
+    def eval(self,parent,isRaw=False):
+        if isRaw:
+            #nindex = len(self.index)
+            name = self.name.eval(parent,isRaw)
+            muls = "+".join([i.eval(parent,isRaw) + "*" + name + "_idx" + str(idx) for idx,i in enumerate(self.index)])
+            return name + "_raw[" + muls + "]"
         else:
-            size = str(len(self.index))
-            index = ",".join([i.eval(parent) for idx,i in enumerate(self.index)])
-            return "__Moth" + self.name.moth_type.get_raw() + "INDEX(" + self.name.eval(parent) + "," + size + "," + index + ")"
+            if self.is_slice:
+                slice_inputs = []
+                for idx,i in enumerate(self.index):
+                    if isinstance(i,SliceRange):
+                        slice_inputs.append(i.start.eval(parent))
+                        if type(i.end) == type(None):
+                            slice_inputs.append(self.name.eval(parent) + ".dims.get()[" + str(idx) + "]")
+                        else:
+                            slice_inputs.append(i.end.eval(parent))
+                        slice_inputs.append(i.step.eval(parent))
+                    else:
+                        slice_inputs += [i.eval(parent),i.eval(parent),"0"]
+                return "__MothGetSlice(" + self.name.eval(parent) + "," + str(len(slice_inputs)) + "," + ",".join(slice_inputs) + ")"
+            else:
+                size = str(len(self.index))
+                index = ",".join([i.eval(parent) for idx,i in enumerate(self.index)])
+                return "__Moth" + self.name.moth_type.get_raw() + "INDEX(" + self.name.eval(parent) + "," + size + "," + index + ")"
 
 
 class Declaration(AstObj):
@@ -834,7 +864,7 @@ class Declaration(AstObj):
         var = Variable(self,self.name.value,self.type_name.get_c(parent),self.type_name)
         return var
 
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         pass
 
 class Assign(AstObj):
@@ -848,13 +878,13 @@ class Assign(AstObj):
         self.expression = self.expression.find_variables(parent)
         return self
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         #if isinstance(self.expression,AllocArray):
         #    return self.expression.eval(self.var,parent)
         if isinstance(self.expression,AllocObject):
-            return self.expression.eval(self.var,parent)
+            return self.expression.eval(self.var,parent,isRaw=isRaw)
         elif isinstance(self.expression,ListLiteral):
-            return self.expression.eval(self.var,parent)
+            return self.expression.eval(self.var,parent,isRaw=isRaw)
         elif isinstance(self.expression,AllocArray):
             if self.var.moth_type.dimensions == "inf":
                 pass
@@ -869,9 +899,9 @@ class Assign(AstObj):
                 else:
                     if self.var.moth_type.dimensions != len(self.expression.items):
                         throwError("Can't initialize " + str(self.var.moth_type.dimensions) + " dimensional array \033[1;34m" + self.var.c_str + "\033[0;0m with " + str(len(self.expression.items)) + " dimensions","ArrayAllocError",self.lineno)
-            return self.var.eval(parent) + " = " + self.expression.eval(parent)
+            return self.var.eval(parent,isRaw=isRaw) + " = " + self.expression.eval(parent,isRaw=isRaw)
         else:
-            return self.var.eval(parent) + " = " + self.expression.eval(parent)
+            return self.var.eval(parent,isRaw=isRaw) + " = " + self.expression.eval(parent,isRaw=isRaw)
     
 class AllocObject(AstObj):
     def __init__(self,objname,lineno=None):
@@ -881,10 +911,9 @@ class AllocObject(AstObj):
     def find_variables(self,parent):
         return self
     
-    def eval(self,var,parent):
-        self.objname.name.value = var.eval(parent) + ".Moth__init__"
-        return self.objname.eval(parent)
-        return ""
+    def eval(self,var,parent,isRaw=False):
+        self.objname.name.value = var.eval(parent,isRaw=isRaw) + ".Moth__init__"
+        return self.objname.eval(parent,isRaw=isRaw)
 
 class AllocArray(Container):
     def __init__(self,dtype,item,lineno=None):
@@ -892,8 +921,8 @@ class AllocArray(Container):
         self.dtype = dtype
         self.moth_type = self.dtype
 
-    def eval(self,parent):
-        return "newArray<" + self.dtype.get_c() + ">(" + str(len(self.items)) + "," + ",".join([i.eval(parent) for i in self.items]) + ")" #var.eval(parent) + "." + "init(" + ",".join([i.eval(parent) for i in self.items]) + ")"
+    def eval(self,parent,isRaw=False):
+        return "newArray<" + self.dtype.get_c() + ">(" + str(len(self.items)) + "," + ",".join([i.eval(parent,isRaw=isRaw) for i in self.items]) + ")" #var.eval(parent) + "." + "init(" + ",".join([i.eval(parent) for i in self.items]) + ")"
  
 class AssignInc(AstObj):
     def __init__(self,var,expression,op,lineno=None):
@@ -907,7 +936,7 @@ class AssignInc(AstObj):
         self.expression = self.expression.find_variables(parent)
         return self
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         if self.op.value == "+=":
             t = Token("PLUS","+")
         elif self.op.value == "-=":
@@ -922,7 +951,7 @@ class AssignInc(AstObj):
             t = Token("STARSTAR","**")
         else:
             throwError("THIS SHOULD NOT HAPPEN","VERYBAD",self.lineno)
-        return Assign(self.var,BinOp(self.var,t,self.expression)).eval(parent)
+        return Assign(self.var,BinOp(self.var,t,self.expression)).eval(parent,isRaw=isRaw)
 
 class Inc(AstObj):
     def __init__(self,var,op,lineno=None):
@@ -934,14 +963,14 @@ class Inc(AstObj):
         self.var = self.var.find_variables(parent)
         return self
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         if self.op.value == "++":
             t = Token("PLUS","+")
         elif self.op.value == "--":
             t = Token("MINUS","-")
         else:
             throwError("THIS SHOULD NOT HAPPEN","VERYBAD",self.lineno)
-        return Assign(self.var,BinOp(self.var,t,Number(Token("","1")))).eval(parent)
+        return Assign(self.var,BinOp(self.var,t,Number(Token("","1")))).eval(parent,isRaw=isRaw)
 
 class BinOp(AstObj):
     def __init__(self,left,op,right,lineno=None):
@@ -959,10 +988,10 @@ class BinOp(AstObj):
                 self.moth_type = self.right.moth_type
         return self
 
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         if self.op.name  == "IDENTIFIER":
-            return "Moth" + self.op.value + "(" + self.left.eval(parent) + "," + self.right.eval(parent) + ")"
-        return "__Moth" + "Base" + self.op.name + "(" + self.left.eval(parent) + "," + self.right.eval(parent) + ")"
+            return "Moth" + self.op.value + "(" + self.left.eval(parent,isRaw=isRaw) + "," + self.right.eval(parent,isRaw=isRaw) + ")"
+        return "__Moth" + "Base" + self.op.name + "(" + self.left.eval(parent,isRaw=isRaw) + "," + self.right.eval(parent,isRaw=isRaw) + ")"
 
 class Not(AstObj):
     def __init__(self,val,lineno=None):
@@ -973,8 +1002,8 @@ class Not(AstObj):
         self.val = self.val.find_variables(parent)
         return self
     
-    def eval(self,parent):
-        return "__Moth" + self.val.moth_type.get_raw() + "NOT(" + self.val.eval(parent) + ")"
+    def eval(self,parent,isRaw=False):
+        return "__Moth" + self.val.moth_type.get_raw() + "NOT(" + self.val.eval(parent,isRaw=isRaw) + ")"
 
 class Return(AstObj):
     def __init__(self,val=None,lineno=None):
@@ -986,31 +1015,31 @@ class Return(AstObj):
             self.val = self.val.find_variables(parent)
         return self
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         out = "return "
         if type(self.val) != type(None):
-            out += self.val.eval(parent)
+            out += self.val.eval(parent,isRaw=isRaw)
         return out
 
 class Print(Container):
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         out = []
         formatters = {"int" : r"%d", "float": r"%f", "double": r"%lf","char":r"%c"}
         for i in self.items:
-            out.append(r'__MothPrint(' + i.eval(parent) + r')')
+            out.append(r'__MothPrint(' + i.eval(parent,isRaw=isRaw) + r')')
         return ";".join(out)
 
 class Pass(AstObj):
     def find_variables(self,parent):
         return self
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         return ""
 
 class Break(AstObj):
     def find_variables(self,parent):
         return self
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         return "break;"
 
 class Ctypes(AstObj):
@@ -1046,7 +1075,7 @@ class Craw(Ctypes):
                 s = self.val.eval(parent)
         return f + s
     
-    def eval(self,parent=None):
+    def eval(self,parent=None,isRaw=False):
         return self.get_c(parent)
 
 class Ctype(Ctypes):
@@ -1075,11 +1104,11 @@ class Clit(Ctypes):
     def find_variables(self,parent):
         return self
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         try:
             return self.val.value
         except:
-            return self.val.eval(parent)
+            return self.val.eval(parent,isRaw=isRaw)
 
 class Cval(Ctypes):
     def __init__(self,val,lineno=None):
@@ -1090,8 +1119,8 @@ class Cval(Ctypes):
         self.val = self.val.find_variables(parent)
         return self
 
-    def eval(self,parent):
-        return self.val.eval(parent)
+    def eval(self,parent,isRaw=False):
+        return self.val.eval(parent,isRaw=isRaw)
 
 class Cptr(Ctypes):
     def __init__(self,var,lineno=None):
@@ -1102,15 +1131,15 @@ class Cptr(Ctypes):
         self.var = self.var.find_variables(parent)
         return self
 
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         if isinstance(self.var,Null):
             return "NULL"
         elif isinstance(self.var.moth_type,ArrayType):
-            return self.var.eval(parent) + ".raw.get()"
+            return self.var.eval(parent,isRaw=isRaw) + ".raw.get()"
         elif isinstance(self.var.moth_type,ObjectType):
             throwError("Can't pass Moth objects to C","MothObjPtrErr",self.lineno)
         else:
-            return "&"+self.var.eval(parent)
+            return "&"+self.var.eval(parent,isRaw=isRaw)
 
 class Ccall(Ctypes):
     def __init__(self,func_name,lineno=None):
@@ -1129,8 +1158,8 @@ class Ccall(Ctypes):
         self.inputs.append(inp)
         return self
 
-    def eval(self,parent):
-        return self.func_name.value + "(" + ",".join([i.eval(parent) for i in self.inputs]) + ")"
+    def eval(self,parent,isRaw=False):
+        return self.func_name.value + "(" + ",".join([i.eval(parent,isRaw=isRaw) for i in self.inputs]) + ")"
     
 class Reference(AstObj):
     def __init__(self,parent,child,lineno=None):
@@ -1164,7 +1193,7 @@ class Reference(AstObj):
             self.c_str = self.parent.eval(parent) + "." + self.child.eval(parent)
         return self
 
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         return self.c_str #self.parent.eval(parent) + "." + self.child.eval(parent)
 
 class Cast(AstObj):
@@ -1179,8 +1208,8 @@ class Cast(AstObj):
         self.expression = self.expression.find_variables(parent)
         return self
     
-    def eval(self,parent):
-        return "(" + self.new_type.get_c() + ")" + "(" + self.expression.eval(parent) + ")"
+    def eval(self,parent,isRaw=False):
+        return "(" + self.new_type.get_c() + ")" + "(" + self.expression.eval(parent,isRaw=isRaw) + ")"
     
 class Null(AstObj):
     def __init__(self,lineno=None):
@@ -1189,5 +1218,5 @@ class Null(AstObj):
     def find_variables(self,parent):
         return self
     
-    def eval(self,parent):
+    def eval(self,parent,isRaw=False):
         return "NULL"

@@ -1,0 +1,45 @@
+include moth-libs/numoth
+include moth-libs/math
+include moth-libs/timer
+
+def kernel add[i: c.shape[0]](int[:] a, int[:] b, int[:] c):
+    c[i] = a[i] + b[i]
+
+def kernel add_raw[i: c.shape[0]](int[:] a, int[:] b, int[:] c) _rawptr:
+    c[i] = a[i] + b[i]
+
+def int main():
+    int n = 1000
+    int[:] a = nm.ones(n)
+    int[:] b = nm.ones(n)
+    int[:] c
+    int[:] tmp
+
+    int start
+    int end
+
+    start = timer.clock()
+    c = a + b[:]
+    end = timer.clock()
+
+    print(timer.to_seconds(end-start)," s\n")
+
+    start = timer.clock()
+    for int i in range(n):
+        c[i] = a[i] + b[i]
+    end = timer.clock()
+
+    print(timer.to_seconds(end-start)," s\n")
+
+    start = timer.clock()
+    add(a,b,c)
+    end = timer.clock()
+
+    print(timer.to_seconds(end-start)," s\n")
+
+    start = timer.clock()
+    add_raw(a,b,c)
+    end = timer.clock()
+
+    print(timer.to_seconds(end-start)," s\n")
+    return 0

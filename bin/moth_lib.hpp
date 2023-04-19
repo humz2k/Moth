@@ -537,6 +537,15 @@ class __MothArray {
             return out;
         }
 
+        void Mothinf2zero(){
+            double inf = std::numeric_limits<double>::infinity();
+            for (int i = 0; i < size; i++){
+                if (raw.get()[i] == inf){
+                    raw.get()[i] = 0;
+                }
+            }
+        }
+
         template <class... Args>
         __MothArray<T> Mothreshape(Args&&... args){
             int new_shape[] = {args...};
@@ -695,19 +704,22 @@ class __MothArraySlice {
 
         }
 
-        void recursive_assign(int* indexes, const __MothArray<T> &arr, int count){
-            parent.raw.get()[get_index_from_ptr(ndims,indexes)] = arr.raw.get()[count];
-            indexes[ndims-1]++;
-            for (int i = ndims-1; i > 0; i--){
-                if (indexes[i] == dims.get()[i]){
-                    indexes[i] = 0;
-                    indexes[i-1]++;
+        void assign(int* indexes, const __MothArray<T> &arr){
+            for (int j = 0; j < arr.size; j++){
+                parent.raw.get()[get_index_from_ptr(ndims,indexes)] = arr.raw.get()[j];
+                indexes[ndims-1]++;
+                for (int i = ndims-1; i > 0; i--){
+                    if (indexes[i] == dims.get()[i]){
+                        indexes[i] = 0;
+                        indexes[i-1]++;
+                    }
+                }
+                if (indexes[0] == dims.get()[0]){
+                    return;
                 }
             }
-            if (indexes[0] == dims.get()[0]){
-                return;
-            }
-            return recursive_assign(indexes,arr,count+1);
+            return;
+            //return recursive_assign(indexes,arr,count+1);
         }
 
         void operator=(const __MothArray<T> &arr){
@@ -723,24 +735,39 @@ class __MothArraySlice {
             for (int i = 0; i < ndims; i++){
                 indexes[i] = 0;
             }
-            recursive_assign(indexes,arr,0);
+            for (int j = 0; j < arr.size; j++){
+                parent.raw.get()[get_index_from_ptr(ndims,indexes)] = arr.raw.get()[j];
+                indexes[ndims-1]++;
+                for (int i = ndims-1; i > 0; i--){
+                    if (indexes[i] == dims.get()[i]){
+                        indexes[i] = 0;
+                        indexes[i-1]++;
+                    }
+                }
+                if (indexes[0] == dims.get()[0]){
+                    break;
+                }
+            }
             free(indexes);
         }
 
         template<class T1>
-        void recursive_copy(int* indexes, __MothArray<T1> out, int count) const {
-            out.raw.get()[count] = (T1)parent.raw.get()[get_index_from_ptr(ndims,indexes)];
-            indexes[ndims-1]++;
-            for (int i = ndims-1; i > 0; i--){
-                if (indexes[i] == dims.get()[i]){
-                    indexes[i] = 0;
-                    indexes[i-1]++;
+        void copy(int* indexes, __MothArray<T1> out) const {
+            for (int j = 0; j < out.size; j++){
+                out.raw.get()[j] = (T1)parent.raw.get()[get_index_from_ptr(ndims,indexes)];
+                indexes[ndims-1]++;
+                for (int i = ndims-1; i > 0; i--){
+                    if (indexes[i] == dims.get()[i]){
+                        indexes[i] = 0;
+                        indexes[i-1]++;
+                    }
+                }
+                if (indexes[0] == dims.get()[0]){
+                    return;
                 }
             }
-            if (indexes[0] == dims.get()[0]){
-                return;
-            }
-            return recursive_copy(indexes,out,count+1);
+            return;
+            //return recursive_copy(indexes,out,count+1);
         }
 
         template<class T1>
@@ -750,7 +777,19 @@ class __MothArraySlice {
             for (int i = 0; i < ndims; i++){
                 indexes[i] = 0;
             }
-            recursive_copy<T1>(indexes,out,0);
+            for (int j = 0; j < out.size; j++){
+                out.raw.get()[j] = (T1)parent.raw.get()[get_index_from_ptr(ndims,indexes)];
+                indexes[ndims-1]++;
+                for (int i = ndims-1; i > 0; i--){
+                    if (indexes[i] == dims.get()[i]){
+                        indexes[i] = 0;
+                        indexes[i-1]++;
+                    }
+                }
+                if (indexes[0] == dims.get()[0]){
+                    break;
+                }
+            }
             free(indexes);
             return out;
         }

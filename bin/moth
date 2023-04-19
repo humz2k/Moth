@@ -13,22 +13,26 @@ def parse_flags(args):
     output_file = "a.out"
     cc = "g++-12"
     keep_temp = False
-    flags = ["-o","-keep_temp","-cc","-I","-L","-l","-f"]
+    printCompileLine = False
+    flags = ["-o","-keep_temp","-cc","-I","-L","-l","-f","-O","-printCompileLine"]
     includes = []
     links = []
     fs = []
+    os = []
     while i < len(args):
         currentFlag = ""
         val = args[i]
         for flag in flags:
             if args[i].startswith(flag):
                 currentFlag = flag
-        if currentFlag in ["","-keep_temp"]:
+        if currentFlag in ["","-keep_temp","-printCompileLine"]:
             i += 1
             if currentFlag == "":
                 to_compile = val
             elif currentFlag == "-keep_temp":
                 keep_temp = True
+            elif currentFlag == "-printCompileLine":
+                printCompileLine = True
         else:
             val = args[i][len(currentFlag):].strip()
             if val == "":
@@ -48,7 +52,9 @@ def parse_flags(args):
                 links.append("-L" + val)
             if currentFlag == "-l":
                 links.append("-l" + val)
-    return {"filename": to_compile,"output":output_file,"keep_temp":keep_temp,"cc":cc,"includes":includes,"links":links,"fs":fs}
+            if currentFlag == "-O":
+                os.append("-O" + val)
+    return {"filename": to_compile,"output":output_file,"keep_temp":keep_temp,"cc":cc,"includes":includes,"links":links,"fs":fs,"os":os,"printCompileLine":printCompileLine}
 
 if __name__ == "__main__":
 
@@ -104,8 +110,9 @@ if __name__ == "__main__":
 
     with open(tmp_file,"w") as f:
         f.write(out)
-    os.system(flags["cc"] + ' ' + tmp_file + ' -o ' + out_file + " " + " ".join(flags["includes"]) + " " + " ".join(flags["links"]) + " " + " ".join(flags["links"]))
-    
+    os.system(flags["cc"] + ' ' + tmp_file + ' -o ' + out_file + " " + " ".join(flags["includes"]) + " " + " ".join(flags["links"]) + " " + " ".join(flags["fs"]) + " " + " ".join(flags["os"]))
+    if flags["printCompileLine"]:
+        print(flags["cc"] + ' ' + tmp_file + ' -o ' + out_file + " " + " ".join(flags["includes"]) + " " + " ".join(flags["links"]) + " " + " ".join(flags["fs"]) + " " + " ".join(flags["os"]))
     if not flags["keep_temp"]:
         os.remove(tmp_file)
 

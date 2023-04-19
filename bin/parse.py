@@ -58,23 +58,37 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def cont_kernel_header_iter(p):
         return p[0].add_expression(p[2])
     
-    @pg.production('kernel_header_open_inputs : kernel_header_open_iterator CLOSE_SQUARE OPEN_PAREN identifier')
-    @pg.production('kernel_header_open_inputs : kernel_header_open_iterator CLOSE_SQUARE OPEN_PAREN template_t')
+    @pg.production('kernel_header_open_inputs : kernel_header_open_iterator CLOSE_SQUARE func_def_inputs')
+    #@pg.production('kernel_header_open_inputs : kernel_header_open_iterator CLOSE_SQUARE OPEN_PAREN template_t')
     def kernel_header_inputs_open(p):
-        return p[0].add_input(p[3])
-    
-    @pg.production('kernel_header_open_inputs : kernel_header_open_inputs COMMA identifier')
-    @pg.production('kernel_header_open_inputs : kernel_header_open_inputs COMMA template_t')
-    def kernel_header_inputs_cont(p):
         return p[0].add_input(p[2])
     
-    @pg.production('kernel_header : kernel_header_open_inputs CLOSE_PAREN COLON')
+   #@pg.production('kernel_header_open_inputs : kernel_header_open_inputs COMMA identifier')
+    #@pg.production('kernel_header_open_inputs : kernel_header_open_inputs COMMA template_t')
+    #def kernel_header_inputs_cont(p):
+    #    return p[0].add_input(p[2])
+    
+    @pg.production('kernel_header : kernel_header_open_inputs COLON')
     def kernel_header(p):
         return p[0]
     
-    @pg.production('kernel_header : kernel_header_open_inputs CLOSE_PAREN TARGET ASSIGN STRING COLON')
+    @pg.production('kernel_header : kernel_header_open_inputs RAWPTR COLON')
+    def kernel_header_raw(p):
+        return p[0].set_raw()
+    
+    @pg.production('kernel_header : kernel_header_open_inputs TARGET ASSIGN STRING COLON')
     def kernel_header(p):
-        return p[0].set_target(p[4])
+        return p[0].set_target(p[3])
+    
+    @pg.production('kernel_header : kernel_header_open_inputs TARGET ASSIGN STRING RAWPTR COLON')
+    def kernel_header_both(p):
+        out = p[0].set_target(p[3])
+        return out.set_raw()
+    
+    @pg.production('kernel_header : kernel_header_open_inputs RAWPTR TARGET ASSIGN STRING COLON')
+    def kernel_header_both(p):
+        out = p[0].set_target(p[4])
+        return out.set_raw()
 
     @pg.production('class_header : CLASS identifier COLON')
     #@pg.production('class_header : CLASS template_t COLON')

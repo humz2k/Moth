@@ -1,0 +1,37 @@
+include moth-libs/numoth
+include moth-libs/math
+include moth-libs/timer
+
+def kernel calc_acc[ij: parts.shape[0],parts.shape[0]](float[:,:] parts, float[:,:] out):
+    float[:] diff = parts[j,:] - parts[i,:]
+    float dist2 = diff[0]**2 + diff[1]**2 + diff[2]**2
+    if (dist2 != 0):
+        out[i,:] += (1/dist2) * diff
+
+def kernel add[i: f.shape[0]](float[:,:] f, float[:,:] s, float mul):
+    s[i,:] += f[i,:] * mul
+
+def void test():
+    pass
+
+def int main():
+    float dt = 0.005
+    int nsteps = 10
+    int np = 100
+    float[:,:] pos = nm.arange(np*3).reshape(np,3)
+    float[:,:] acc = nm.zeros((np,3))
+    float[:,:] vel = nm.zeros((np,3))
+    int start = timer.clock()
+    calc_acc(pos,acc)
+    for int i in range(nsteps):
+        add(acc,vel,0.5*dt)
+        add(vel,pos,dt)
+        acc.zero()
+        calc_acc(pos,acc)
+        add(acc,vel,0.5*dt)
+    int end = timer.clock()
+    print(pos)
+    print(timer.to_seconds(end-start),"seconds\n")
+        #print(pos)
+    #print(acc)
+    return 0

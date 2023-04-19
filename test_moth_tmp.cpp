@@ -405,32 +405,26 @@ return __MothBaseSLASH((__Mothdouble)(inp),CLOCKS_PER_SEC);
 
 }
 
-#define Mothcalc_acc(parts,out) \
-{\
-__Mothint i;__Mothint j;__MothArray<__Mothfloat> diff;__Mothfloat dist2;\
-	for (i = 0; i < __MothTupleINDEX(parts.shape,1,0); i++){\
-		for (j = 0; j < __MothTupleINDEX(parts.shape,1,0); j++){\
-diff = __MothBaseMINUS(__MothGetSlice(parts,6,j,j,0,0,parts.dims.get()[1],1),__MothGetSlice(parts,6,i,i,0,0,parts.dims.get()[1],1));\
-dist2 = __MothBasePLUS(__MothBasePLUS(__MothBaseSTARSTAR(__MothArrayINDEX(diff,1,0),2),__MothBaseSTARSTAR(__MothArrayINDEX(diff,1,1),2)),__MothBaseSTARSTAR(__MothArrayINDEX(diff,1,2),2));\
-if (__MothBaseNOT_EQUAL(dist2,0)){\
-__MothGetSlice(out,6,i,i,0,0,out.dims.get()[1],1) = __MothBasePLUS(__MothGetSlice(out,6,i,i,0,0,out.dims.get()[1],1),__MothBaseSTAR(__MothBaseSLASH(1,dist2),diff));\
-}\
-\
-}}}
+__Mothvoid Mothcalc_acc(__MothArray<__Mothfloat> pos,__MothArray<__Mothfloat> acc){
+__Mothint i;for (i = 0;i < __MothTupleINDEX(pos.shape,1,0);i = i + 1){
+__MothArray<__Mothfloat> diff;__MothArray<__Mothfloat> rdist2;__MothArray<__Mothfloat> muls;__MothArray<__Mothfloat> tmp;diff = __MothBaseMINUS(pos,__MothGetSlice(pos,6,i,i,0,0,pos.dims.get()[1],1));
+rdist2 = __MothBaseSLASH(1,__MothBasePLUS(__MothBasePLUS(__MothBaseSTARSTAR(__MothGetSlice(diff,6,0,diff.dims.get()[0],1,0,0,0),2),__MothBaseSTARSTAR(__MothGetSlice(diff,6,0,diff.dims.get()[0],1,1,1,0),2)),__MothBaseSTARSTAR(__MothGetSlice(diff,6,0,diff.dims.get()[0],1,2,2,0),2)));
+rdist2.Mothinf2zero();
+muls = __MothBaseSTAR(diff,rdist2.Mothreshape(__MothTupleINDEX(rdist2.shape,1,0),1));
+tmp = __MothGetSlice(muls,6,0,muls.dims.get()[0],1,0,0,0);
+__MothArrayINDEX(acc,2,i,0) = __MothBasePLUS(__MothArrayINDEX(acc,2,i,0),tmp.Mothsum());
+tmp = __MothGetSlice(muls,6,0,muls.dims.get()[0],1,1,1,0);
+__MothArrayINDEX(acc,2,i,1) = __MothBasePLUS(__MothArrayINDEX(acc,2,i,1),tmp.Mothsum());
+tmp = __MothGetSlice(muls,6,0,muls.dims.get()[0],1,2,2,0);
+__MothArrayINDEX(acc,2,i,2) = __MothBasePLUS(__MothArrayINDEX(acc,2,i,2),tmp.Mothsum());
 
-#define Mothadd(f,s,mul) \
-{\
-__Mothint i;\
-	for (i = 0; i < __MothTupleINDEX(f.shape,1,0); i++){\
-__MothGetSlice(s,6,i,i,0,0,s.dims.get()[1],1) = __MothBasePLUS(__MothGetSlice(s,6,i,i,0,0,s.dims.get()[1],1),__MothBaseSTAR(__MothGetSlice(f,6,i,i,0,0,f.dims.get()[1],1),mul));\
-}}
+}
 
-__Mothvoid Mothtest(){
 
 }
 __Mothint Mothmain(){
 __Mothfloat dt;__Mothint nsteps;__Mothint np;__MothArray<__Mothfloat> pos;__MothArray<__Mothfloat> acc;__MothArray<__Mothfloat> vel;__Mothint start;__Mothint i;__Mothint end;dt = 0.005;
-nsteps = 100;
+nsteps = 10;
 np = 100;
 pos = __MothnmMotharange(__MothBaseSTAR(np,3)).Mothreshape(np,3);
 acc = __MothnmMothzeros(newTuple<__Mothint>(2,np,3));
@@ -438,11 +432,10 @@ vel = __MothnmMothzeros(newTuple<__Mothint>(2,np,3));
 start = __MothtimerMothclock();
 Mothcalc_acc(pos,acc);
 for (i = 0;i < nsteps;i = i + 1){
-Mothadd(acc,vel,__MothBaseSTAR(0.5,dt));
-Mothadd(vel,pos,dt);
-acc.Mothzero();
+vel = __MothBasePLUS(vel,__MothBaseSTAR(acc,__MothBaseSTAR(0.5,dt)));
+pos = __MothBasePLUS(pos,__MothBaseSTAR(vel,dt));
 Mothcalc_acc(pos,acc);
-Mothadd(acc,vel,__MothBaseSTAR(0.5,dt));
+vel = __MothBasePLUS(vel,__MothBaseSTAR(acc,__MothBaseSTAR(0.5,dt)));
 
 }
 
