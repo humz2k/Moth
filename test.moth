@@ -1,9 +1,33 @@
 include moth-libs/numoth
 include moth-libs/math
+include moth-libs/timer
+
+def kernel cdist[ij: 5000,5000](parts,out) target="C":
+    #out[i] = parts[i,0]
+    out[i] += math.sqrtf(((parts[i,0] - parts[j,0])**2) + ((parts[i,1] - parts[j,1])**2) + ((parts[i,2] - parts[j,2])**2))
+
+def kernel ompdist[ij: 5000, 5000](parts,out) target="OPENMP":
+    #out[i] = parts[i,0]
+    out[i] += math.sqrtf(((parts[i,0] - parts[j,0])**2) + ((parts[i,1] - parts[j,1])**2) + ((parts[i,2] - parts[j,2])**2))
+
 
 def int main():
-    int[:] b = nm.ones((3,))
-    int[:] a = nm.arange(3)
-    int out = b \dot a
-    print(out,"\n")
+    int n_parts = 5000
+
+    float[:,:] particles = nm.arange(n_parts*3).reshape(n_parts,3)
+    float[:] distances = nm.zeros((n_parts,))
+
+    int start = timer.clock()
+    cdist(particles,distances)
+    int end = timer.clock()
+
+    print(timer.to_seconds(end-start)," seconds\n")
+
+    float[:] distances = nm.zeros((n_parts,))
+
+    int start = timer.clock()
+    ompdist(particles,distances)
+    int end = timer.clock()
+    #print(distances)
+    print(timer.to_seconds(end-start)," seconds\n")
     return 0

@@ -125,7 +125,7 @@ class Program(Container):
 
     def verify(self):
         for scope in self.items:
-            if not (isinstance(scope.header,FunctionHeader) or isinstance(scope.header,ClassHeader)):
+            if not (isinstance(scope.header,FunctionHeader) or isinstance(scope.header,ClassHeader) or isinstance(scope.header,KernelHeader)):
                 throwError("Found non-function or non-class on top level","TopLevel",self.lineno)
 
     def find_classes(self):
@@ -187,6 +187,13 @@ class Scope(AstObj):
             self.functions = out
             return
         
+        if isinstance(self.header,KernelHeader):
+            if self.header.name.value in out.keys():
+                throwError("Kernel [\033[1;34m" + self.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedKernel",self.lineno)
+            out["Moth" + self.header.name.value] = Type(Token("TYPE_NAME","void"))
+            self.functions = out
+            return
+        
         if isinstance(self.header,ClassHeader):
             self.functions = {}
             for i in self.body.lines.items:
@@ -209,6 +216,8 @@ class Scope(AstObj):
                 self.dont_declare.append(self.header.var.value)
         if isinstance(self.header,FunctionHeader):
             self.header.find_declarations(self.declarations,self.dont_declare)
+        if isinstance(self.header,KernelHeader):
+            self.header.find_declarations(self.declarations,self.dont_declare)
         self.body.find_declarations(self.declarations)
 
     def find_variables(self,parent):
@@ -219,26 +228,35 @@ class Scope(AstObj):
         self.body.find_variables(self)
         return self
 
-    def eval(self,parent,dont_declare=[]):
+    def eval(self,parent,dont_declare=[],isKernel=False):
         self.dont_declare += dont_declare
         self.functions = parent.functions
         self.classes = parent.classes
         out = ""
         out += self.header.eval(parent) 
         is_class = False
+        end = ""
         if isinstance(self.header,ClassHeader):
             is_class = True
+        elif isinstance(self.header,KernelHeader):
+            isKernel = True
+            end = "\ ".strip() + "\n"
+            out += "\n" + "{\ ".strip() + "\n"
         else:
             out += "{\n"
-        out += "".join([self.declarations[i].get_c() + " " + i + self.declarations[i].get_special(is_class) + ";" for i in self.declarations.keys() if not i in self.dont_declare]) + "\n"
+        out += "".join([self.declarations[i].get_c() + " " + i + self.declarations[i].get_special(is_class) + ";" for i in self.declarations.keys() if not i in self.dont_declare]) + end
         if isinstance(self.header,ClassHeader):
             out += self.body.eval(self,self.declarations)
             if self.header.inherits == "STATIC":
                 pass
             else:
                 out += "\n}" + ";\n"
+        elif isinstance(self.header,KernelHeader):
+            out += self.header.get_fors(self)
+            out += self.body.eval(self,isKernel=True)
+            out += "}" * len(self.header.iterators) + "}\n" + "\n"
         else:
-            out += self.body.eval(self)
+            out += self.body.eval(self,isKernel=isKernel)
             out += "\n}\n"
         return out
 
@@ -267,23 +285,93 @@ class ScopeBody(AstObj):
         self.lines = lines
         return self
 
-    def eval(self,parent,dont_declare=[]):
+    def eval(self,parent,dont_declare=[],isKernel=False):
         out = ""
+        end = ""
+        if isKernel:
+            end = "\ ".strip()
         for line in self.lines:
             if not (isinstance(line,Variable) or isinstance(line,Pass)):
                 if isinstance(line,Scope):
                     if isinstance(line.header,FunctionHeader):
                         #line.header.name.value = "OBJECT_" + parent.header.name.value+"_"+line.header.name.value
-                        out += line.eval(parent,dont_declare) + "\n"
+                        out += line.eval(parent,dont_declare) + end + "\n"
                     else:
-                        out += line.eval(parent) + "\n"
+                        out += line.eval(parent) + end + "\n"
                 else:
-                    out += line.eval(parent) + ";\n"
+                    out += line.eval(parent) + ";" + end + "\n"
         return out
 
 
 class ScopeHeader(AstObj):
     pass
+
+class KernelHeader(ScopeHeader):
+    def __init__(self,name,iterators,expression,lineno=None):
+        self.name = name
+        self.iterators = [Identifier(Token("IDENTIFIER",i)) for i in list(iterators.value)]
+        self.expressions = [expression]
+        self.inputs = []
+        self.lineno = lineno
+        self.target = "C"
+
+    def find_declarations(self,declarations,dont_declare):
+        for i in self.inputs:
+            declarations[i.value] = ArrayType(Type(Token("TYPE_NAME","ANY")))
+            dont_declare.append(i.value)
+        for i in self.iterators:
+            declarations[i.value] = Type(Token("TYPE_NAME","int"))
+            #dont_declare.append(i.value)
+        #print(self.iterators[0].value)
+        #exit()
+
+    def find_variables(self,parent):
+        inputs = []
+        for i in self.inputs:
+            inputs.append(i.find_variables(parent))
+        self.inputs = inputs
+        expressions = []
+        for i in self.expressions:
+            expressions.append(i.find_variables(parent))
+        self.expressions = expressions
+        iterators = []
+        for i in self.iterators:
+            iterators.append(i.find_variables(parent))
+        self.iterators = iterators
+        return self
+
+    def add_expression(self,expression):
+        self.expressions.append(expression)
+        return self
+    
+    def add_input(self,inp):
+        self.inputs.append(inp)
+        return self
+    
+    def set_target(self,target):
+        self.target = target.value[1:-1]
+        return self
+    
+    def eval(self,parent):
+        c_header = "#define Moth" + self.name.value + "(" + ",".join([i.eval(parent) for i in self.inputs]) + r") \ ".strip()
+        return c_header
+    
+    def get_fors(self,parent):
+        for_loops = []
+        for i,expr in zip(self.iterators,self.expressions):
+            for_loops.append("for (" + i.eval(parent) + " = 0; " + i.eval(parent) +  " < " + expr.eval(parent) + "; " + i.eval(parent) + "++)")
+        for_loops = [(idx+1)*"\t" + i for idx,i in enumerate(for_loops)]
+        c_header = ("{\ ".strip()+"\n").join(for_loops) + "{\ ".strip() + "\n"
+        if self.target == "OPENMP":
+            local_vars = [i for i in list(parent.declarations.keys()) if not i in [j.eval(parent) for j in self.iterators]] #+ [j.eval(parent) for j in self.inputs]
+            private = (",".join([i.eval(parent) for i in self.iterators[1:]])).strip()
+            thread_private = (",".join(local_vars)).strip()
+            if len(private) != 0:
+                private = " private(" + private + ")"
+            if len(thread_private) != 0:
+                thread_private = " threadprivate(" + thread_private + ")"
+            c_header = '_Pragma("omp parallel for' + private + thread_private + '")' + "\ ".strip() + "\n" + c_header # + 'printf("%d",omp_get_num_threads());\ '.strip() + "\n"
+        return c_header
 
 class ClassHeader(ScopeHeader):
     def __init__(self,name,inherits=None,lineno = None):
@@ -963,6 +1051,7 @@ class Clit(Ctypes):
     def __init__(self,val,lineno=None):
         self.lineno = lineno
         self.val = val
+        self.moth_type = Type(Token("TYPE_NAME","int"))
     
     def find_variables(self,parent):
         return self

@@ -46,9 +46,36 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('scope_header : elif_header')
     @pg.production('scope_header : else_header')
     @pg.production('scope_header : class_header')
+    @pg.production('scope_header : kernel_header')
     def scope_header(p):
         return p[0]
     
+    @pg.production('kernel_header_open_iterator : DEF KERNEL identifier OPEN_SQUARE identifier COLON expression')
+    def open_kernel_header(p):
+        return aster.KernelHeader(p[2],p[4],p[6],p[0].source_pos)
+    
+    @pg.production('kernel_header_open_iterator : kernel_header_open_iterator COMMA expression')
+    def cont_kernel_header_iter(p):
+        return p[0].add_expression(p[2])
+    
+    @pg.production('kernel_header_open_inputs : kernel_header_open_iterator CLOSE_SQUARE OPEN_PAREN identifier')
+    @pg.production('kernel_header_open_inputs : kernel_header_open_iterator CLOSE_SQUARE OPEN_PAREN template_t')
+    def kernel_header_inputs_open(p):
+        return p[0].add_input(p[3])
+    
+    @pg.production('kernel_header_open_inputs : kernel_header_open_inputs COMMA identifier')
+    @pg.production('kernel_header_open_inputs : kernel_header_open_inputs COMMA template_t')
+    def kernel_header_inputs_cont(p):
+        return p[0].add_input(p[2])
+    
+    @pg.production('kernel_header : kernel_header_open_inputs CLOSE_PAREN COLON')
+    def kernel_header(p):
+        return p[0]
+    
+    @pg.production('kernel_header : kernel_header_open_inputs CLOSE_PAREN TARGET ASSIGN STRING COLON')
+    def kernel_header(p):
+        return p[0].set_target(p[4])
+
     @pg.production('class_header : CLASS identifier COLON')
     #@pg.production('class_header : CLASS template_t COLON')
     @pg.production('class_header : CLASS identifier OPEN_PAREN identifier CLOSE_PAREN COLON')

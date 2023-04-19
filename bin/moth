@@ -13,9 +13,10 @@ def parse_flags(args):
     output_file = "a.out"
     cc = "g++-12"
     keep_temp = False
-    flags = ["-o","-keep_temp","-cc","-I","-L","-l"]
+    flags = ["-o","-keep_temp","-cc","-I","-L","-l","-f"]
     includes = []
     links = []
+    fs = []
     while i < len(args):
         currentFlag = ""
         val = args[i]
@@ -37,6 +38,8 @@ def parse_flags(args):
                 i += 1
             if currentFlag == "-o":
                 output_file = val
+            if currentFlag == "-f":
+                fs.append("-f" + val)
             if currentFlag == "-cc":
                 cc = val
             if currentFlag == "-I":
@@ -45,7 +48,7 @@ def parse_flags(args):
                 links.append("-L" + val)
             if currentFlag == "-l":
                 links.append("-l" + val)
-    return {"filename": to_compile,"output":output_file,"keep_temp":keep_temp,"cc":cc,"includes":includes,"links":links}
+    return {"filename": to_compile,"output":output_file,"keep_temp":keep_temp,"cc":cc,"includes":includes,"links":links,"fs":fs}
 
 if __name__ == "__main__":
 
@@ -101,8 +104,8 @@ if __name__ == "__main__":
 
     with open(tmp_file,"w") as f:
         f.write(out)
-    os.system(flags["cc"] + ' ' + tmp_file + ' -o ' + out_file + " " + " ".join(flags["includes"]) + " " + " ".join(flags["links"]))
-
+    os.system(flags["cc"] + ' ' + tmp_file + ' -o ' + out_file + " " + " ".join(flags["includes"]) + " " + " ".join(flags["links"]) + " " + " ".join(flags["links"]))
+    
     if not flags["keep_temp"]:
         os.remove(tmp_file)
 

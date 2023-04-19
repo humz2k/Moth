@@ -1,0 +1,8 @@
+cinclude <time.h>
+
+class timer(static):
+    def long clock():
+        return long(__c_call(clock))
+
+    def double to_seconds(long inp):
+        return (double(inp)/__c_lit(CLOCKS_PER_SEC))

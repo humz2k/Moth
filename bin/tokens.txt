@@ -57,6 +57,8 @@ TUPLE \btuple\b
 DTYPE \bdtype\b
 TYPE_QUERY \btype\b
 OVERLOAD \boverload\b
+KERNEL \bkernel\b
+TARGET \btarget\b
 
 C_VAL \b__c_val\b
 C_PTR \b__c_ptr\b

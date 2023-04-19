@@ -254,7 +254,7 @@ class __MothTuple {
 template <class T>
 class __MothList {
     public:
-        std::shared_ptr<__MothList<T>> next_item;
+        std::shared_ptr<__MothList<T> > next_item;
         int terminator;
         int initialized;
         T val;
@@ -273,7 +273,7 @@ class __MothList {
                 __MothList<T> new_next;
                 new_next.Mothappend(new_val);
                 new_next.terminator = 1;
-                next_item = std::make_shared<__MothList<T>>(std::move(new_next));
+                next_item = std::make_shared<__MothList<T> >(std::move(new_next));
                 return;
             }
             next_item->Mothappend(new_val);
@@ -291,7 +291,7 @@ class __MothList {
                 }
             }
             if (idx == 0){
-                std::shared_ptr<__MothList<T>> new_next = next_item->next_item;
+                std::shared_ptr<__MothList<T> > new_next = next_item->next_item;
                 T new_val = next_item->val;
                 int new_terminator = next_item->terminator;
                 int new_initialize = 1;
@@ -352,14 +352,14 @@ class __MothList {
 template <class T>
 class __MothListContainer {
     public:
-        std::shared_ptr<__MothList<T>> first_item;
+        std::shared_ptr<__MothList<T> > first_item;
         __MothListContainer(){
             __MothList<T> new_item;
-            first_item = std::make_shared<__MothList<T>>(std::move(new_item));
+            first_item = std::make_shared<__MothList<T> >(std::move(new_item));
         }
         void Mothreset(){
             __MothList<T> new_item;
-            first_item = std::make_shared<__MothList<T>>(std::move(new_item));
+            first_item = std::make_shared<__MothList<T> >(std::move(new_item));
         }
         void Mothappend(T var){
             first_item->Mothappend(var);
