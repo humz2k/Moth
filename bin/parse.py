@@ -159,6 +159,9 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     
     @pg.production('for_header : FOR identifier IN range_obj COLON')
     @pg.production('for_header : FOR type_name identifier IN range_obj COLON')
+    @pg.production('for_header : FOR identifier IN expression COLON')
+    @pg.production('for_header : FOR type_name identifier IN expression COLON')
+    @pg.production('for_header : FOR array_type identifier IN expression COLON')
     def for_header(p):
         if len(p) == 5:
             return aster.ForHeader(p[1],p[3],lineno=p[0].source_pos)

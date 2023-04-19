@@ -2,18 +2,19 @@
 
 
 #include <time.h>
-#include <mpi.h>
 
 template <class arr_t>
 __MothArray<arr_t> __MothnmMothzeros(__MothTuple<__Mothint> shape){
 __Mothint size;__Mothint i;__MothArray<arr_t> out;size = 1;
 for (i = 0;i < shape.Mothlen();i = i + 1){
+
 size = __MothBaseSTAR(size,__MothTupleINDEX(shape,1,i));
 
 }
 
 out = newArray<arr_t>(1,size);
 for (i = 0;i < size;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = 0;
 
 }
@@ -25,12 +26,14 @@ return out.Mothreshape(shape);
 __MothArray<__Mothint> __MothnmMothzeros(__MothTuple<__Mothint> shape){
 __Mothint size;__Mothint i;__MothArray<__Mothint> out;size = 1;
 for (i = 0;i < shape.Mothlen();i = i + 1){
+
 size = __MothBaseSTAR(size,__MothTupleINDEX(shape,1,i));
 
 }
 
 out = newArray<__Mothint>(1,size);
 for (i = 0;i < size;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = 0;
 
 }
@@ -43,12 +46,14 @@ template <class arr_t>
 __MothArray<arr_t> __MothnmMothones(__MothTuple<__Mothint> shape){
 __Mothint size;__Mothint i;__MothArray<arr_t> out;size = 1;
 for (i = 0;i < shape.Mothlen();i = i + 1){
+
 size = __MothBaseSTAR(size,__MothTupleINDEX(shape,1,i));
 
 }
 
 out = newArray<arr_t>(1,size);
 for (i = 0;i < size;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = 1;
 
 }
@@ -60,12 +65,14 @@ return out.Mothreshape(shape);
 __MothArray<__Mothint> __MothnmMothones(__MothTuple<__Mothint> shape){
 __Mothint size;__Mothint i;__MothArray<__Mothint> out;size = 1;
 for (i = 0;i < shape.Mothlen();i = i + 1){
+
 size = __MothBaseSTAR(size,__MothTupleINDEX(shape,1,i));
 
 }
 
 out = newArray<__Mothint>(1,size);
 for (i = 0;i < size;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = 1;
 
 }
@@ -79,6 +86,7 @@ __MothArray<arr_t> __MothnmMotharange(__Mothint start,__Mothint stop,__Mothint s
 __Mothint size;__MothArray<arr_t> out;__Mothint i;size = __MothBaseSLASH(__MothBaseMINUS(stop,start),step);
 out = newArray<arr_t>(1,size);
 for (i = 0;i < size;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = __MothBasePLUS(__MothBaseSTAR(i,step),start);
 
 }
@@ -91,6 +99,7 @@ __MothArray<__Mothint> __MothnmMotharange(__Mothint start,__Mothint stop,__Mothi
 __Mothint size;__MothArray<__Mothint> out;__Mothint i;size = __MothBaseSLASH(__MothBaseMINUS(stop,start),step);
 out = newArray<__Mothint>(1,size);
 for (i = 0;i < size;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = __MothBasePLUS(__MothBaseSTAR(i,step),start);
 
 }
@@ -105,6 +114,7 @@ __Mothint step;__Mothint size;__MothArray<arr_t> out;__Mothint i;step = 1;
 size = __MothBaseSLASH(__MothBaseMINUS(stop,start),step);
 out = newArray<arr_t>(1,size);
 for (i = 0;i < size;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = __MothBasePLUS(__MothBaseSTAR(i,step),start);
 
 }
@@ -118,6 +128,7 @@ __Mothint step;__Mothint size;__MothArray<__Mothint> out;__Mothint i;step = 1;
 size = __MothBaseSLASH(__MothBaseMINUS(stop,start),step);
 out = newArray<__Mothint>(1,size);
 for (i = 0;i < size;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = __MothBasePLUS(__MothBaseSTAR(i,step),start);
 
 }
@@ -133,6 +144,7 @@ start = 0;
 size = __MothBaseSLASH(__MothBaseMINUS(stop,start),step);
 out = newArray<arr_t>(1,size);
 for (i = 0;i < size;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = __MothBasePLUS(__MothBaseSTAR(i,step),start);
 
 }
@@ -147,6 +159,7 @@ start = 0;
 size = __MothBaseSLASH(__MothBaseMINUS(stop,start),step);
 out = newArray<__Mothint>(1,size);
 for (i = 0;i < size;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = __MothBasePLUS(__MothBaseSTAR(i,step),start);
 
 }
@@ -160,6 +173,7 @@ __MothArray<arr_t> __MothnmMothlinspace(__Mothdouble start,__Mothdouble stop,__M
 __MothArray<arr_t> out;__Mothdouble scale;__Mothint i;out = newArray<arr_t>(1,num);
 scale = __MothBaseSLASH(__MothBaseMINUS(stop,start),(__Mothdouble)(__MothBaseMINUS(num,1)));
 for (i = 0;i < num;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = __MothBasePLUS(__MothBaseSTAR(i,scale),start);
 
 }
@@ -172,6 +186,7 @@ __MothArray<__Mothdouble> __MothnmMothlinspace(__Mothdouble start,__Mothdouble s
 __MothArray<__Mothdouble> out;__Mothdouble scale;__Mothint i;out = newArray<__Mothdouble>(1,num);
 scale = __MothBaseSLASH(__MothBaseMINUS(stop,start),(__Mothdouble)(__MothBaseMINUS(num,1)));
 for (i = 0;i < num;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = __MothBasePLUS(__MothBaseSTAR(i,scale),start);
 
 }
@@ -186,6 +201,7 @@ __Mothint num;__MothArray<arr_t> out;__Mothdouble scale;__Mothint i;num = 50;
 out = newArray<arr_t>(1,num);
 scale = __MothBaseSLASH(__MothBaseMINUS(stop,start),(__Mothdouble)(__MothBaseMINUS(num,1)));
 for (i = 0;i < num;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = __MothBasePLUS(__MothBaseSTAR(i,scale),start);
 
 }
@@ -199,6 +215,7 @@ __Mothint num;__MothArray<__Mothdouble> out;__Mothdouble scale;__Mothint i;num =
 out = newArray<__Mothdouble>(1,num);
 scale = __MothBaseSLASH(__MothBaseMINUS(stop,start),(__Mothdouble)(__MothBaseMINUS(num,1)));
 for (i = 0;i < num;i = i + 1){
+
 __MothArrayINDEX(out,1,i) = __MothBasePLUS(__MothBaseSTAR(i,scale),start);
 
 }
@@ -209,7 +226,7 @@ return out;
 
 __Mothdouble Mothdot(__MothArray<__Mothdouble> a,__MothArray<__Mothdouble> b){
 if (__MothBaseNOT_EQUAL(a.shape,b.shape)){
-MoththrowErr("Shapes not equal in \\dot\n");
+MoththrowErr(convString("Shapes not equal in \\dot\n"));
 
 }
 
@@ -406,69 +423,27 @@ return __MothBaseSLASH((__Mothdouble)(inp),CLOCKS_PER_SEC);
 
 }
 
-class __MothObjectmpi_comm{
+class __MothObjectcomplex_test{
 public:
-MPI_Comm raw_comm;__Mothvoid Moth__init__(MPI_Comm w_comm){
-raw_comm = w_comm;
+__Mothint real;__Mothint imag;__Mothvoid Moth__init__(){
+
+}
+
+__Mothvoid Moth__print__(){
+__MothPrint(real);__MothPrint(convString(" + "));__MothPrint(imag);__MothPrint(convString("i"));
 
 }
 
 
 };
-__Mothvoid __MothmpiMothinit(__MothArray<__Mothint> argc,__MothArray<__Mothchar> argv){
-MPI_Init(NULL,NULL);
-
-}
-
-__Mothvoid __MothmpiMothinit(){
-MPI_Init(NULL,NULL);
-
-}
-
-__MothObjectmpi_comm __MothmpiMothget_comm_world(){
-__MothObjectmpi_comm out;out.Moth__init__(MPI_COMM_WORLD);
-return out;
-
-}
-
-__Mothint __MothmpiMothcomm_size(__MothObjectmpi_comm w_comm){
-__Mothint world_size;world_size = 0;
-MPI_Comm_size(w_comm.raw_comm,&world_size);
-return world_size;
-
-}
-
-__Mothint __MothmpiMothcomm_rank(__MothObjectmpi_comm w_comm){
-__Mothint world_rank;world_rank = 0;
-MPI_Comm_rank(w_comm.raw_comm,&world_rank);
-return world_rank;
-
-}
-
-__MothArray<__Mothint> __MothmpiMothdims_create(__Mothint world_size,__Mothint ndims){
-__MothArray<__Mothint> dims;dims = newArray<__Mothint>(1,ndims);
-dims.Mothzero();
-MPI_Dims_create(world_size,ndims,dims.raw.get());
-return dims;
-
-}
-
-__Mothvoid __MothmpiMothfinalize(){
-MPI_Finalize();
-
-}
-
 __Mothint Mothmain(){
-__MothObjectmpi_comm comm;__Mothint world_size;__Mothint world_rank;__MothArray<__Mothint> dims;__MothmpiMothinit();
-comm = __MothmpiMothget_comm_world();
-world_size = __MothmpiMothcomm_size(comm);
-world_rank = __MothmpiMothcomm_rank(comm);
-dims = __MothmpiMothdims_create(world_size,3);
-__MothPrint("WORLD_SIZE = ");__MothPrint(world_size);__MothPrint("\n");
-__MothPrint("WORLD_RANK = ");__MothPrint(world_rank);__MothPrint("\n");
-__MothPrint("DIMS:\n");
-__MothPrint(dims);
-__MothmpiMothfinalize();
+__MothArray<__Mothint> a;__MothArray<__Mothint> i;a = __MothnmMotharange(10).Mothreshape(2,5);
+for (int i_MOTH_ITER = 0; i_MOTH_ITER < a.dims.get()[0]; i_MOTH_ITER++){
+i = __MothGetSlice(a,6,i_MOTH_ITER,i_MOTH_ITER,0,0,a.dims.get()[1],1);
+__MothPrint(i);
+
+}
+
 return 0;
 
 }

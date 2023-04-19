@@ -1,17 +1,30 @@
 include <numoth>
 include <math>
 include <timer>
-include <mpi>
+#include <mpi>
+
+class complex_test(type):
+    int real
+    int imag
+
+    def void __init__():
+        pass
     
+    def void __print__():
+        print(real," + ",imag,"i")
+
 def int main():
-    mpi.init()
-    mpi_comm comm = mpi.get_comm_world()
-    int world_size = mpi.comm_size(comm)
-    int world_rank = mpi.comm_rank(comm)
-    int[:] dims = mpi.dims_create(world_size,3)
-    print("WORLD_SIZE = ",world_size,"\n")
-    print("WORLD_RANK = ",world_rank,"\n")
-    print("DIMS:\n")
-    print(dims)
-    mpi.finalize()
+    #mpi.init()
+    #mpi_comm comm = mpi.get_comm_world()
+    #int world_size = mpi.comm_size(comm)
+    #int world_rank = mpi.comm_rank(comm)
+    #int[:] dims = mpi.dims_create(world_size,3)
+    #print("WORLD_SIZE = ",world_size,"\n")
+    #print("WORLD_RANK = ",world_rank,"\n")
+    #print("DIMS:\n")
+    #print(dims)
+    #mpi.finalize()
+    int[:,:] a = nm.arange(10).reshape(2,5)
+    for int[:] i in a:
+        print(i)
     return 0

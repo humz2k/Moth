@@ -2,13 +2,12 @@ include <numoth>
 include <math>
 include <timer>
 
-def void calc_acc(float[:,:] pos, float[:,:] acc):
-    for int i in range(pos.shape[0]):
-        float[:,:] diff = pos - pos[i,:]
-        float[:] rdist2 = 1/(diff[:,0]**2 + diff[:,1]**2 + diff[:,2]**2)
-        rdist2.inf2zero()
-        float[:,:] muls = diff * rdist2.reshape(rdist2.shape[0],1)
-        acc[i,:] += muls[:,0].sum(0)
+def kernel calc_acc[i: pos.shape[0]](float[:,:] pos, float[:,:] acc):
+    float[:,:] diff = pos - pos[i,:]
+    float[:] rdist2 = 1/(diff[:,0]**2 + diff[:,1]**2 + diff[:,2]**2)
+    rdist2.inf2zero()
+    float[:,:] muls = diff * rdist2.reshape(rdist2.shape[0],1)
+    acc[i,:] += muls[:,0].sum(0)
     
 def int main():
     float dt = 0.005

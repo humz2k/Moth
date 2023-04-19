@@ -67,7 +67,7 @@ class String(AstObj):
         return self
     
     def eval(self,parent,isRaw=False):
-        return self.value
+        return "convString(" + self.value + ")"
     
 class Char(AstObj):
     def __init__(self,token,lineno=None):
@@ -247,17 +247,19 @@ class Scope(AstObj):
         out += self.header.eval(parent) 
         is_class = False
         end = ""
-        if isinstance(self.header,ClassHeader):
+        if isinstance(self.header,ForHeader):
+            out += "{\n" + self.header.get_iter(parent,isRaw) + "\n"
+        elif isinstance(self.header,ClassHeader):
             is_class = True
         elif isinstance(self.header,KernelHeader):
             isKernel = True
-            end = "\ ".strip() + "\n"
-            out += "\n" + "{\ ".strip() + "\n"
+            end = "\n"
+            out += "\n" + "{".strip() + "\n"
             if self.header.raw_ptr == True:
                 isRaw = True
         else:
             if isKernel:
-                out += "{\ ".strip() + "\n"
+                out += "{".strip() + "\n"
             else:
                 out += "{\n"
         out += "".join([self.declarations[i].get_c() + " " + i + self.declarations[i].get_special(is_class) + ";" for i in self.declarations.keys() if not i in self.dont_declare]) + end
@@ -274,7 +276,7 @@ class Scope(AstObj):
         else:
             out += self.body.eval(self,isKernel=isKernel,isRaw = isRaw)
             if isKernel:
-                out += "}\ ".strip() + "\n" + "\ ".strip()
+                out += "}".strip() + "\n"
             else:
                 out += "\n}\n"
         return out
@@ -307,8 +309,8 @@ class ScopeBody(AstObj):
     def eval(self,parent,dont_declare=[],isKernel=False,isRaw=False):
         out = ""
         end = ""
-        if isKernel:
-            end = "\ ".strip()
+        #if isKernel:
+        #    end = "\ ".strip()
         for line in self.lines:
             if not (isinstance(line,Variable) or isinstance(line,Pass)):
                 if isinstance(line,Scope):
@@ -378,8 +380,15 @@ class KernelHeader(ScopeHeader):
         return self
     
     def eval(self,parent,isRaw=False):
-        c_header = "#define Moth" + self.name.value + "(" + ",".join([i[1].eval(parent) for i in self.inputs.items]) + r") \ ".strip()
+        c_header = "inline __Mothvoid Moth" + self.name.value
+        inputs = [i for i in self.inputs.items if i[0].get_c() != "__Mothdtype"]
+        templates = [i for i in self.inputs.items if i[0].get_c() == "__Mothdtype"]
+        if len(templates) != 0:
+            c_header = "template <" + ",".join(["class " + i[1].c_str for i in templates]) + ">\n" + c_header
+        c_header += "(" + ",".join([i[0].get_c() + " " + i[1].c_str for i in inputs]) + ")"
         return c_header
+        #c_header = "#define Moth" + self.name.value + "(" + ",".join([i[1].eval(parent) for i in self.inputs.items]) + r") \ ".strip()
+        #return c_header
     
     def get_fors(self,parent):
         for_loops = []
@@ -398,7 +407,7 @@ class KernelHeader(ScopeHeader):
                     declares += "__Mothint " + name + "_idx" + str(dim) + " = " + name + ".muls.get()[" + str(dim) + "];"
         
         for_loops = [(idx+1)*"\t" + i for idx,i in enumerate(for_loops)]
-        c_header = ("{\ ".strip()+"\n").join(for_loops) + "{\ ".strip() + "\n"
+        c_header = ("{".strip()+"\n").join(for_loops) + "{".strip() + "\n"
         if self.target == "OPENMP":
             local_vars = [i for i in list(parent.declarations.keys()) if not i in [j.eval(parent) for j in self.iterators]] #+ [j.eval(parent) for j in self.inputs]
             private = (",".join([i.eval(parent) for i in self.iterators[1:]])).strip()
@@ -409,8 +418,8 @@ class KernelHeader(ScopeHeader):
                 thread_private = (",".join(local_vars)).strip()
                 if len(thread_private) != 0:
                     thread_private = " threadprivate(" + thread_private + ")"
-            c_header = '_Pragma("omp parallel for' + private + thread_private + '")' + "\ ".strip() + "\n" + c_header # + 'printf("%d",omp_get_num_threads());\ '.strip() + "\n"
-        return declares + "\ ".strip() + "\n" + c_header
+            c_header = '_Pragma("omp parallel for' + private + thread_private + '")' + "\n" + c_header # + 'printf("%d",omp_get_num_threads());\ '.strip() + "\n"
+        return declares + "\n" + c_header
 
 class ClassHeader(ScopeHeader):
     def __init__(self,name,inherits=None,lineno = None):
@@ -528,7 +537,29 @@ class ForHeader(ScopeHeader):
         return self
     
     def eval(self,parent,isRaw=False):
-        return "for (" + self.var.c_str + " = " + self.range_obj.start.eval(parent,isRaw=isRaw) + ";" + self.var.c_str + " < " + self.range_obj.end.eval(parent,isRaw=isRaw) + ";" + self.var.c_str + " = " + self.var.c_str + " + " + self.range_obj.step.eval(parent,isRaw=isRaw) + ")"
+        if isinstance(self.range_obj,RangeObj):
+            return "for (" + self.var.c_str + " = " + self.range_obj.start.eval(parent,isRaw=isRaw) + ";" + self.var.c_str + " < " + self.range_obj.end.eval(parent,isRaw=isRaw) + ";" + self.var.c_str + " = " + self.var.c_str + " + " + self.range_obj.step.eval(parent,isRaw=isRaw) + ")"
+        else:
+            if isinstance(self.range_obj.moth_type,ListType):
+                return "for (int " + self.var.eval(parent) + "_MOTH_ITER = 0; " + self.var.eval(parent) + "_MOTH_ITER < " + self.range_obj.eval(parent) + ".Mothlen(); " + self.var.eval(parent) + "_MOTH_ITER++)"
+            if isinstance(self.range_obj.moth_type,ArrayType):
+                return "for (int " + self.var.eval(parent) + "_MOTH_ITER = 0; " + self.var.eval(parent) + "_MOTH_ITER < " + self.range_obj.eval(parent) + ".dims.get()[0]; " + self.var.eval(parent) + "_MOTH_ITER++)"
+            throwError("ITERATORS NOT IMPLEMENTER","IMPLEMT",self.lineno)
+    
+    def get_iter(self,parent,isRaw=False):
+        if isinstance(self.range_obj,RangeObj):
+            return ""
+        else:
+            if isinstance(self.range_obj.moth_type,ListType):
+                return self.var.eval(parent,isRaw=isRaw) + " = " + self.range_obj.eval(parent,isRaw=isRaw) + ".findIndex(" + self.var.eval(parent) + "_MOTH_ITER,0);"
+            if isinstance(self.range_obj.moth_type,ArrayType):
+                var = Variable(self.var.eval(parent,isRaw=isRaw) + "_MOTH_ITER",self.var.eval(parent,isRaw=isRaw) + "_MOTH_ITER","int",Type(Token("TYPE_NAME","int")))
+                ref = ArrayReference(self.range_obj,var)
+                for i in range(self.range_obj.moth_type.dimensions-1):
+                    ref.add(SliceRange(Number(Token("NUMBER","0")),None,Number(Token("NUMBER","1"))))
+                    ref.is_slice = True
+                return Assign(self.var,ref).eval(parent) + ";"
+            throwError("ITERATORS NOT IMPLEMENTER","IMPLEMT",self.lineno)
 
 class RangeObj(AstObj):
     def __init__(self,start,end,step,lineno = None):
@@ -845,12 +876,18 @@ class ArrayReference(AstObj):
                     if isinstance(i,SliceRange):
                         slice_inputs.append(i.start.eval(parent))
                         if type(i.end) == type(None):
-                            slice_inputs.append(self.name.eval(parent) + ".dims.get()[" + str(idx) + "]")
+                            if isinstance(self.name.moth_type,ListType):
+                                slice_inputs.append(self.name.eval(parent) + ".Mothlen()")
+                            else:
+                                slice_inputs.append(self.name.eval(parent) + ".dims.get()[" + str(idx) + "]")
                         else:
                             slice_inputs.append(i.end.eval(parent))
                         slice_inputs.append(i.step.eval(parent))
                     else:
                         slice_inputs += [i.eval(parent),i.eval(parent),"0"]
+                if isinstance(self.name.moth_type,ListType):
+                    if len(slice_inputs) != 3:
+                        throwError("Too many inputs to List slice","ListSliceErr",self.lineno)
                 return "__MothGetSlice(" + self.name.eval(parent) + "," + str(len(slice_inputs)) + "," + ",".join(slice_inputs) + ")"
             else:
                 size = str(len(self.index))
