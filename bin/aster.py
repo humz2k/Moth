@@ -1099,6 +1099,9 @@ class Ctype(Ctypes):
     
     def get_raw(self,parent=None):
         return self.get_c()
+    
+    def get_special(self,parent=None):
+        return ""
 
 class Clit(Ctypes):
     def __init__(self,val,lineno=None):

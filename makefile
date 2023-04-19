@@ -1,5 +1,5 @@
 main:
-	moth test.moth -o test -keep_temp
+	moth test.moth -o test -keep_temp -ccmpic++
 
 leak:
 	leaks -atExit -- ./test | grep LEAK:
@@ -9,6 +9,9 @@ nbody:
 	moth nbody_slow.moth -o nbody_slow
 	moth nbody_semi_slow.moth -o nbody_semi_slow
 	moth nbody_broadcast.moth -o nbody_broadcast
+
+run:
+	mpirun -n 8 ./test
 
 clean:
 	rm test

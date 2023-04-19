@@ -111,9 +111,12 @@ if __name__ == "__main__":
 
     with open(tmp_file,"w") as f:
         f.write(out)
-    os.system(flags["cc"] + ' ' + tmp_file + ' -o ' + out_file + " " + " ".join(flags["includes"]) + " " + " ".join(flags["links"]) + " " + " ".join(flags["fs"]) + " " + " ".join(flags["os"]))
+    prior = ""
+    if flags["cc"] == "mpic++":
+        prior = "export OMPI_CXX=g++-12;"
+    os.system(prior + flags["cc"] + ' ' + tmp_file + ' -o ' + out_file + " " + " ".join(flags["includes"]) + " " + " ".join(flags["links"]) + " " + " ".join(flags["fs"]) + " " + " ".join(flags["os"]) + " -Wno-c++11-extensions")
     if flags["printCompileLine"]:
-        print(flags["cc"] + ' ' + tmp_file + ' -o ' + out_file + " " + " ".join(flags["includes"]) + " " + " ".join(flags["links"]) + " " + " ".join(flags["fs"]) + " " + " ".join(flags["os"]))
+        print(prior + flags["cc"] + ' ' + tmp_file + ' -o ' + out_file + " " + " ".join(flags["includes"]) + " " + " ".join(flags["links"]) + " " + " ".join(flags["fs"]) + " " + " ".join(flags["os"]) + " -Wno-c++11-extensions")
     if not flags["keep_temp"]:
         os.remove(tmp_file)
 

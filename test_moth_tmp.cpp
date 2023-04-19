@@ -2,6 +2,7 @@
 
 
 #include <time.h>
+#include <mpi.h>
 
 template <class arr_t>
 __MothArray<arr_t> __MothnmMothzeros(__MothTuple<__Mothint> shape){
@@ -405,38 +406,69 @@ return __MothBaseSLASH((__Mothdouble)(inp),CLOCKS_PER_SEC);
 
 }
 
-__Mothvoid Mothcalc_acc(__MothArray<__Mothfloat> pos,__MothArray<__Mothfloat> acc){
-__Mothint i;for (i = 0;i < __MothTupleINDEX(pos.shape,1,0);i = i + 1){
-__MothArray<__Mothfloat> diff;__MothArray<__Mothfloat> rdist2;__MothArray<__Mothfloat> muls;diff = __MothBaseMINUS(pos,__MothGetSlice(pos,6,i,i,0,0,pos.dims.get()[1],1));
-rdist2 = __MothBaseSLASH(1,__MothBasePLUS(__MothBasePLUS(__MothBaseSTARSTAR(__MothGetSlice(diff,6,0,diff.dims.get()[0],1,0,0,0),2),__MothBaseSTARSTAR(__MothGetSlice(diff,6,0,diff.dims.get()[0],1,1,1,0),2)),__MothBaseSTARSTAR(__MothGetSlice(diff,6,0,diff.dims.get()[0],1,2,2,0),2)));
-rdist2.Mothinf2zero();
-muls = __MothBaseSTAR(diff,rdist2.Mothreshape(__MothTupleINDEX(rdist2.shape,1,0),1));
-__MothGetSlice(acc,6,i,i,0,0,acc.dims.get()[1],1) = __MothBasePLUS(__MothGetSlice(acc,6,i,i,0,0,acc.dims.get()[1],1),__MothGetSlice(muls,6,0,muls.dims.get()[0],1,0,0,0).Mothsum(0));
+class __MothObjectmpi_comm{
+public:
+MPI_Comm raw_comm;__Mothvoid Moth__init__(MPI_Comm w_comm){
+raw_comm = w_comm;
 
 }
 
 
+};
+__Mothvoid __MothmpiMothinit(__MothArray<__Mothint> argc,__MothArray<__Mothchar> argv){
+MPI_Init(NULL,NULL);
+
 }
+
+__Mothvoid __MothmpiMothinit(){
+MPI_Init(NULL,NULL);
+
+}
+
+__MothObjectmpi_comm __MothmpiMothget_comm_world(){
+__MothObjectmpi_comm out;out.Moth__init__(MPI_COMM_WORLD);
+return out;
+
+}
+
+__Mothint __MothmpiMothcomm_size(__MothObjectmpi_comm w_comm){
+__Mothint world_size;world_size = 0;
+MPI_Comm_size(w_comm.raw_comm,&world_size);
+return world_size;
+
+}
+
+__Mothint __MothmpiMothcomm_rank(__MothObjectmpi_comm w_comm){
+__Mothint world_rank;world_rank = 0;
+MPI_Comm_rank(w_comm.raw_comm,&world_rank);
+return world_rank;
+
+}
+
+__MothArray<__Mothint> __MothmpiMothdims_create(__Mothint world_size,__Mothint ndims){
+__MothArray<__Mothint> dims;dims = newArray<__Mothint>(1,ndims);
+dims.Mothzero();
+MPI_Dims_create(world_size,ndims,dims.raw.get());
+return dims;
+
+}
+
+__Mothvoid __MothmpiMothfinalize(){
+MPI_Finalize();
+
+}
+
 __Mothint Mothmain(){
-__Mothfloat dt;__Mothint nsteps;__Mothint np;__MothArray<__Mothfloat> pos;__MothArray<__Mothfloat> acc;__MothArray<__Mothfloat> vel;__Mothint start;__Mothint i;__Mothint end;dt = 0.005;
-nsteps = 10;
-np = 100;
-pos = __MothnmMotharange(__MothBaseSTAR(np,3)).Mothreshape(np,3);
-acc = __MothnmMothzeros(newTuple<__Mothint>(2,np,3));
-vel = __MothnmMothzeros(newTuple<__Mothint>(2,np,3));
-start = __MothtimerMothclock();
-Mothcalc_acc(pos,acc);
-for (i = 0;i < nsteps;i = i + 1){
-vel = __MothBasePLUS(vel,__MothBaseSTAR(acc,__MothBaseSTAR(0.5,dt)));
-pos = __MothBasePLUS(pos,__MothBaseSTAR(vel,dt));
-Mothcalc_acc(pos,acc);
-vel = __MothBasePLUS(vel,__MothBaseSTAR(acc,__MothBaseSTAR(0.5,dt)));
-
-}
-
-end = __MothtimerMothclock();
-__MothPrint(pos);
-__MothPrint(__MothtimerMothto_seconds(__MothBaseMINUS(end,start)));__MothPrint("seconds\n");
+__MothObjectmpi_comm comm;__Mothint world_size;__Mothint world_rank;__MothArray<__Mothint> dims;__MothmpiMothinit();
+comm = __MothmpiMothget_comm_world();
+world_size = __MothmpiMothcomm_size(comm);
+world_rank = __MothmpiMothcomm_rank(comm);
+dims = __MothmpiMothdims_create(world_size,3);
+__MothPrint("WORLD_SIZE = ");__MothPrint(world_size);__MothPrint("\n");
+__MothPrint("WORLD_RANK = ");__MothPrint(world_rank);__MothPrint("\n");
+__MothPrint("DIMS:\n");
+__MothPrint(dims);
+__MothmpiMothfinalize();
 return 0;
 
 }
