@@ -127,6 +127,22 @@ class nm(static):
             out[i] = i*scale + start
         return out
 
+    @overload
+    def double max(double[:] arr):
+        int start = arr[0]
+        for int i in range(arr.shape[0]):
+            if arr[i] > start:
+                start = arr[i]
+        return start
+
+    @overload
+    def double min(double[:] arr):
+        int start = arr[0]
+        for int i in range(arr.shape[0]):
+            if arr[i] < start:
+                start = arr[i]
+        return start
+
 @overload
 def double dot(double[:] a, double[:] b):
     if a.shape != b.shape:

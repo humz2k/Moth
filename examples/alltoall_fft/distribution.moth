@@ -1,0 +1,93 @@
+include <numoth>
+include <mpi>
+include pencils
+include changefastaxis
+
+class Distribution:
+    int ng
+    int world_size
+    int world_rank
+    int nlocal
+    bool verbose
+    int[:] dims
+    int[:] coords
+    int[:] local_grid_size
+    int[:] local_coordinates_start
+    mpi_datatype fft_t
+    mpi_comm comm_world
+
+    def int[:] get_coords():
+        int[:] out = int array(3)
+        out[0] = world_rank / (dims[1]*dims[2])
+        out[1] = (world_rank - (out[0]*(dims[1]*dims[2]))) / dims[2]
+        out[2] = (world_rank - (out[0]*(dims[1]*dims[2]))) - (out[1]*dims[2])
+        return out
+    
+    def int[:] get_local_grid():
+        return ng/dims
+    
+    def int[:] get_local_grid_start():
+        return local_grid_size * coords
+    
+    def void getZPencils(double[:,:] buff1, double[:,:] buff2):
+        int nsends = ((local_grid_size[0] * local_grid_size[1])/world_size) * local_grid_size[2]
+        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
+        z_a2a_to_z_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims)
+
+    def void returnZPencils(double[:,:] buff1, double[:,:] buff2):
+        int nsends = ((local_grid_size[0] * local_grid_size[1])/world_size) * local_grid_size[2]
+        z_pencils_to_z_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims)
+        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
+
+    def void getXPencils(double[:,:] buff1, double[:,:] buff2):
+        int nsends = ((local_grid_size[2] * local_grid_size[1])/world_size) * local_grid_size[0]
+        fast_z_to_x(buff2,buff1,local_grid_size)
+        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
+        x_a2a_to_x_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims)
+    
+    def void returnXPencils(double[:,:] buff1, double[:,:] buff2):
+        int nsends = ((local_grid_size[2] * local_grid_size[1])/world_size) * local_grid_size[0]
+        x_pencils_to_x_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims)
+        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
+
+    def void getYPencils(double[:,:] buff1, double[:,:] buff2):
+        int nsends = ((local_grid_size[2] * local_grid_size[0])/world_size) * local_grid_size[1]
+        fast_x_to_y(buff2,buff1,local_grid_size)
+        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
+        y_a2a_to_y_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims)
+    
+    def void returnYPencils(double[:,:] buff1, double[:,:] buff2):
+        int nsends = ((local_grid_size[2] * local_grid_size[0])/world_size) * local_grid_size[1]
+        y_pencils_to_y_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims)
+        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
+        fast_y_to_z(buff2,buff1,local_grid_size)
+
+    def void __init__(int input_ng):
+
+        verbose = False
+        comm_world = mpi.get_comm_world()
+        ng = input_ng
+        world_size = mpi.comm_size(comm_world)
+        world_rank = mpi.comm_rank(comm_world)
+        dims = mpi.dims_create(world_size,3)
+        coords = get_coords()
+        local_grid_size = get_local_grid()
+        local_coordinates_start = get_local_grid_start()
+        nlocal = local_grid_size[0] * local_grid_size[1] * local_grid_size[2]
+
+        fft_t = mpi.type_contiguous(8*2)
+
+        if verbose:
+            if world_rank == 0:
+                print("World Size: ",world_size,"\n")
+                print("Ng: ",ng,"\n")
+                print("Dims: [",dims[0],",",dims[1],",",dims[2],"]\n")
+                print("Grid: [",local_grid_size[0],",",local_grid_size[1],",",local_grid_size[2],"]\n")
+                print("nlocal: ",nlocal,"\n")
+            mpi.barrier(comm_world)
+            for int rank in range(world_size):
+                if (rank == world_rank):
+                    print("Rank ",rank,":\n   Coords: ",coords)
+                    print("   Start: ",local_coordinates_start)
+                mpi.barrier(comm_world)
+            mpi.barrier(comm_world)

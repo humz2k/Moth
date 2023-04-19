@@ -1,0 +1,19 @@
+def kernel fast_z_to_x[ijk: local_grid_size[2],local_grid_size[1],local_grid_size[0]](double[:,:] source, double[:,:] dest, int[:] local_grid_size) _rawptr:
+    int d = i*(local_grid_size[1])*(local_grid_size[0]) + j*(local_grid_size[0]) + k
+    int s = k*(local_grid_size[1])*(local_grid_size[2]) + j*(local_grid_size[2]) + i
+    dest[d,0] = source[s,0]
+    dest[d,1] = source[s,1]
+
+def kernel fast_x_to_y[ijk: local_grid_size[0],local_grid_size[2],local_grid_size[1]](double[:,:] source, double[:,:] dest, int[:] local_grid_size) _rawptr:
+    int d = i*(local_grid_size[2])*(local_grid_size[1]) + j*(local_grid_size[1]) + k
+    int s = j*(local_grid_size[0])*(local_grid_size[1]) + k*(local_grid_size[0]) + i
+    dest[d,0] = source[s,0]
+    dest[d,1] = source[s,1]
+
+def kernel fast_y_to_z[ijk: local_grid_size[0],local_grid_size[1],local_grid_size[2]](double[:,:] source, double[:,:] dest, int[:] local_grid_size) _rawptr:
+    int d = i*(local_grid_size[1])*(local_grid_size[2]) + j*(local_grid_size[2]) + k
+    int s = i*(local_grid_size[1])*(local_grid_size[2]) + k*(local_grid_size[1]) + j
+    dest[d,0] = source[s,0]
+    dest[d,1] = source[s,1]
+
+

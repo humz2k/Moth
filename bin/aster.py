@@ -210,6 +210,7 @@ class Scope(AstObj):
                             #throwError("Redefined function " + self.header.name.value + "." + i.header.name.value,"RedefineMemFunc",self.lineno)
                         self.functions[i.header.name.value] = i.header.return_type
                         out[i.header.name.value] = i.header.return_type
+                        i.functions = out
         
         else:
             self.functions = out
@@ -678,6 +679,10 @@ class FunctionCall(AstObj):
         if len(templates) != 0:
             out += "<" + ",".join([i.eval(parent,isRaw=isRaw) for i in templates]) + ">"
         out += "(" + ",".join([i.eval(parent,isRaw=isRaw) for i in inputs]) + ")"
+        #if "MothNg" in out:
+        #    print(out)
+        #    print(inputs[0].value)
+        #    exit()
         return out
 
 class Lines(Container):
@@ -951,6 +956,8 @@ class AllocObject(AstObj):
         self.lineno = lineno
     
     def find_variables(self,parent):
+        #self.objname = self.objname.find_variables(parent)
+        self.objname.inputs = [i.find_variables(parent) for i in self.objname.inputs]
         return self
     
     def eval(self,var,parent,isRaw=False):

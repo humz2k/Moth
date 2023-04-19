@@ -1,5 +1,11 @@
 cinclude <mpi.h>
 
+class mpi_datatype(type):
+    __c_type(MPI_Datatype) raw_type
+
+    def void set(__c_type(MPI_Datatype) input):
+        raw_type = input
+
 class mpi_comm(type):
     __c_type(MPI_Comm) raw_comm
     def void __init__(__c_type(MPI_Comm) w_comm):
@@ -35,17 +41,28 @@ class mpi(static):
         __c_call(MPI_Dims_create,__c_val(world_size),__c_val(ndims),__c_ptr(dims))
         return dims
     
-    #def void type_contiguous(object MPI self, int size, object mpi_datatype type):
-    #    __c_call(MPI_Type_contiguous,__c_val(size),__c_lit(MPI_BYTE),__c_ptr(type.raw_type))
+    def mpi_datatype type_contiguous(int size):
+        mpi_datatype mpitype
+        __c_call(MPI_Type_contiguous,__c_val(size),__c_lit(MPI_BYTE),__c_ptr(mpitype.raw_type))
+        __c_call(MPI_Type_commit,__c_ptr(mpitype.raw_type))
+        return mpitype
     
-    #def void type_commit(object MPI self, object mpi_datatype type):
-    #    __c_call(MPI_Type_commit,__c_ptr(type.raw_type))
+    def void type_commit(mpi_datatype mpitype):
+        __c_call(MPI_Type_commit,__c_ptr(mpitype.raw_type))
 
-    #def void barrier(object MPI self, object comm w_comm):
-    #    __c_call(MPI_Barrier,__c_val(w_comm.raw_comm))
+    def void type_free(mpi_datatype mpitype):
+        __c_call(MPI_Type_free,__c_ptr(mpitype.raw_type))
 
-    #def void alltoall(object MPI self, double[:,:] input, int nsends1, object mpi_datatype type1, double[:,:] output, int nsends2, object mpi_datatype type2, object comm w_comm):
-    #    __c_call(MPI_Alltoall,__c_ptr(input),__c_val(nsends1),__c_val(type1.raw_type),__c_ptr(output),__c_val(nsends2),__c_val(type2.raw_type),__c_val(w_comm.raw_comm))
+    def void barrier(mpi_comm w_comm):
+        __c_call(MPI_Barrier,__c_val(w_comm.raw_comm))
+
+    @overload
+    def void alltoall(double[:] input, int nsends1, mpi_datatype type1, double[:] output, int nsends2, mpi_datatype type2, mpi_comm w_comm):
+        __c_call(MPI_Alltoall,__c_ptr(input),__c_val(nsends1),__c_val(type1.raw_type),__c_ptr(output),__c_val(nsends2),__c_val(type2.raw_type),__c_val(w_comm.raw_comm))
+
+    @overload
+    def void alltoall(int[:] input, int nsends1, mpi_datatype type1, int[:] output, int nsends2, mpi_datatype type2, mpi_comm w_comm):
+        __c_call(MPI_Alltoall,__c_ptr(input),__c_val(nsends1),__c_val(type1.raw_type),__c_ptr(output),__c_val(nsends2),__c_val(type2.raw_type),__c_val(w_comm.raw_comm))
     
     def void finalize():
         __c_call(MPI_Finalize)

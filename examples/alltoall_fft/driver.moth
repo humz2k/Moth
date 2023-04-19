@@ -1,0 +1,40 @@
+include <math>
+include <mpi>
+include <fftw>
+include dfft
+
+def int main():
+    mpi.init()
+
+    int Ng = 8
+
+    object Distribution dist = new Distribution(Ng)
+    object Dfft dfft = new Dfft(dist)
+
+    double[:,:] buff1 = nm.zeros((dfft.dist.nlocal,2))
+    double[:,:] buff2 = nm.zeros((dfft.dist.nlocal,2))
+
+    dfft.make_plans(buff1,buff2)
+
+    if dfft.dist.world_rank == 0:
+        buff1[0,0] = 1
+        print("TESTING\n")
+
+    dfft.forward(buff1,buff2)
+
+    if dist.world_rank == 0:
+        print("K-SPACE\n")
+        print("Real in: [",nm.min(buff1[:,0]),",",nm.max(buff1[:,0]),"], Imag in: [",nm.min(buff1[:,1]),",",nm.max(buff1[:,1]),"]\n")
+
+    dfft.backward(buff1,buff2)
+
+    if dist.world_rank == 0:
+        print("R-SPACE\n")
+        print("Real in: [",nm.min(buff1[:,0]),",",nm.max(buff1[:,0]),"], Imag in: [",nm.min(buff1[:,1]),",",nm.max(buff1[:,1]),"]\n")
+        print("[0,0,0] = ",buff1[0,0]," + ",buff1[0,1], "i\n")
+
+    dfft.finalize()
+
+    mpi.finalize()
+
+    return 0

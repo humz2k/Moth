@@ -1,5 +1,5 @@
 main:
-	moth test.moth -o test -keep_temp -ccg++-12
+	moth test.moth -o test -keep_temp -ccmpic++
 
 leak:
 	leaks -atExit -- ./test | grep LEAK:
