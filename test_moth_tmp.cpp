@@ -423,27 +423,9 @@ return __MothBaseSLASH((__Mothdouble)(inp),CLOCKS_PER_SEC);
 
 }
 
-class __MothObjectcomplex_test{
-public:
-__Mothint real;__Mothint imag;__Mothvoid Moth__init__(){
-
-}
-
-__Mothvoid Moth__print__(){
-__MothPrint(real);__MothPrint(convString(" + "));__MothPrint(imag);__MothPrint(convString("i"));
-
-}
-
-
-};
 __Mothint Mothmain(){
-__MothArray<__Mothint> a;__MothArray<__Mothint> i;a = __MothnmMotharange(10).Mothreshape(2,5);
-for (int i_MOTH_ITER = 0; i_MOTH_ITER < a.dims.get()[0]; i_MOTH_ITER++){
-i = __MothGetSlice(a,6,i_MOTH_ITER,i_MOTH_ITER,0,0,a.dims.get()[1],1);
-__MothPrint(i);
-
-}
-
+__Mothcomplexf a;a = __MothBasePLUS(1,I);
+__MothPrint(a);
 return 0;
 
 }

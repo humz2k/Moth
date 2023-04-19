@@ -6,6 +6,7 @@ class mpi_comm(type):
         raw_comm = w_comm
 
 class mpi(static):
+
     @overload
     def void init(int[:] argc, char[:] argv):
         __c_call(MPI_Init,__c_lit(NULL),__c_lit(NULL))

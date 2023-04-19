@@ -1,17 +1,8 @@
 include <numoth>
 include <math>
 include <timer>
+#include <complex>
 #include <mpi>
-
-class complex_test(type):
-    int real
-    int imag
-
-    def void __init__():
-        pass
-    
-    def void __print__():
-        print(real," + ",imag,"i")
 
 def int main():
     #mpi.init()
@@ -24,7 +15,6 @@ def int main():
     #print("DIMS:\n")
     #print(dims)
     #mpi.finalize()
-    int[:,:] a = nm.arange(10).reshape(2,5)
-    for int[:] i in a:
-        print(i)
+    complexf a = 1+I
+    print(a)
     return 0
