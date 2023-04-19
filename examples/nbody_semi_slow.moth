@@ -19,9 +19,6 @@ def kernel add[i: f.shape[0]](float[:,:] f, float[:,:] s, float mul):
     s[i,1] += f[i,1] * mul
     s[i,2] += f[i,2] * mul
 
-def void test():
-    pass
-
 def int main():
     float dt = 0.005
     int nsteps = 10
@@ -40,6 +37,4 @@ def int main():
     int end = timer.clock()
     print(pos)
     print(timer.to_seconds(end-start)," s\n")
-        #print(pos)
-    #print(acc)
     return 0

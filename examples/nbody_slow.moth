@@ -11,9 +11,6 @@ def kernel calc_acc[ij: parts.shape[0],parts.shape[0]](float[:,:] parts, float[:
 def kernel add[i: f.shape[0]](float[:,:] f, float[:,:] s, float mul):
     s[i,:] += f[i,:] * mul
 
-def void test():
-    pass
-
 def int main():
     float dt = 0.005
     int nsteps = 10
@@ -32,6 +29,4 @@ def int main():
     int end = timer.clock()
     print(pos)
     print(timer.to_seconds(end-start)," s\n")
-        #print(pos)
-    #print(acc)
     return 0
