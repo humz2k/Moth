@@ -1,5 +1,5 @@
 main:
-	moth test.moth -o test -keep_temp -fopenmp -L/opt/homebrew/opt/libomp/lib -I/opt/homebrew/opt/libomp/include -lomp
+	moth test.moth -o test -keep_temp
 
 leak:
 	leaks -atExit -- ./test | grep LEAK:

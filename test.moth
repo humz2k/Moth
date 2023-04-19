@@ -2,32 +2,35 @@ include moth-libs/numoth
 include moth-libs/math
 include moth-libs/timer
 
-def kernel cdist[ij: 5000,5000](parts,out) target="C":
-    #out[i] = parts[i,0]
-    out[i] += math.sqrtf(((parts[i,0] - parts[j,0])**2) + ((parts[i,1] - parts[j,1])**2) + ((parts[i,2] - parts[j,2])**2))
+def kernel calc_acc[ij: parts.shape[0],parts.shape[0]](parts,out) target="C":
+    float[:] diff = parts[j,:] - parts[i,:]
+    float dist2 = diff[0]**2 + diff[1]**2 + diff[2]**2
+    if (dist2 != 0):
+        out[i,:] += (1/dist2) * diff
 
-def kernel ompdist[ij: 5000, 5000](parts,out) target="OPENMP":
-    #out[i] = parts[i,0]
-    out[i] += math.sqrtf(((parts[i,0] - parts[j,0])**2) + ((parts[i,1] - parts[j,1])**2) + ((parts[i,2] - parts[j,2])**2))
+def kernel add[i: f.shape[0]](f,s,mul):
+    s[i,:] += f[i,:] * mul
 
+def void test():
+    pass
 
 def int main():
-    int n_parts = 5000
-
-    float[:,:] particles = nm.arange(n_parts*3).reshape(n_parts,3)
-    float[:] distances = nm.zeros((n_parts,))
-
+    float dt = 0.005
+    int nsteps = 100
+    int np = 100
+    float[:,:] pos = nm.arange(np*3).reshape(np,3)
+    float[:,:] acc = nm.zeros((np,3))
+    float[:,:] vel = nm.zeros((np,3))
     int start = timer.clock()
-    cdist(particles,distances)
+    calc_acc(pos,acc)
+    for int i in range(nsteps):
+        add(acc,vel,0.5*dt)
+        add(vel,pos,dt)
+        acc.zero()
+        calc_acc(pos,acc)
+        add(acc,vel,0.5*dt)
     int end = timer.clock()
-
-    print(timer.to_seconds(end-start)," seconds\n")
-
-    float[:] distances = nm.zeros((n_parts,))
-
-    int start = timer.clock()
-    ompdist(particles,distances)
-    int end = timer.clock()
-    #print(distances)
-    print(timer.to_seconds(end-start)," seconds\n")
+    print(timer.to_seconds(end-start),"seconds\n")
+        #print(pos)
+    #print(acc)
     return 0

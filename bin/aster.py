@@ -185,14 +185,14 @@ class Scope(AstObj):
                     throwError("Function [\033[1;34m" + self.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedFunc",self.lineno)
             out[self.header.name.value] = self.header.return_type
             self.functions = out
-            return
+            
         
         if isinstance(self.header,KernelHeader):
             if self.header.name.value in out.keys():
                 throwError("Kernel [\033[1;34m" + self.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedKernel",self.lineno)
             out["Moth" + self.header.name.value] = Type(Token("TYPE_NAME","void"))
             self.functions = out
-            return
+            
         
         if isinstance(self.header,ClassHeader):
             self.functions = {}
@@ -203,10 +203,21 @@ class Scope(AstObj):
                         if i.header.name.value in self.functions:
                             if not i.header.overload:
                                 throwError("Function [\033[1;34m" + self.header.name.value + "." + i.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedMemFunc",i.lineno)
+                        for j in i.body.lines.items:
+                            if isinstance(j,Scope):
+                                if not (isinstance(j.header,ClassHeader) or isinstance(j.header,FunctionHeader) or isinstance(j.header,KernelHeader)):
+                                    j.find_functions(out)
                             #throwError("Redefined function " + self.header.name.value + "." + i.header.name.value,"RedefineMemFunc",self.lineno)
                         self.functions[i.header.name.value] = i.header.return_type
                         out[i.header.name.value] = i.header.return_type
-            return
+        
+        else:
+            self.functions = out
+        
+        for i in self.body.lines.items:
+            if isinstance(i,Scope):
+                if not (isinstance(i.header,ClassHeader) or isinstance(i.header,FunctionHeader) or isinstance(i.header,KernelHeader)):
+                    i.find_functions(out)
     
     def find_declarations(self,declarations,dont_declare=[]):
         self.dont_declare = dont_declare[:]
@@ -243,7 +254,10 @@ class Scope(AstObj):
             end = "\ ".strip() + "\n"
             out += "\n" + "{\ ".strip() + "\n"
         else:
-            out += "{\n"
+            if isKernel:
+                out += "{\ ".strip() + "\n"
+            else:
+                out += "{\n"
         out += "".join([self.declarations[i].get_c() + " " + i + self.declarations[i].get_special(is_class) + ";" for i in self.declarations.keys() if not i in self.dont_declare]) + end
         if isinstance(self.header,ClassHeader):
             out += self.body.eval(self,self.declarations)
@@ -257,7 +271,10 @@ class Scope(AstObj):
             out += "}" * len(self.header.iterators) + "}\n" + "\n"
         else:
             out += self.body.eval(self,isKernel=isKernel)
-            out += "\n}\n"
+            if isKernel:
+                out += "}\ ".strip() + "\n" + "\ ".strip()
+            else:
+                out += "\n}\n"
         return out
 
 class ScopeBody(AstObj):
@@ -295,9 +312,9 @@ class ScopeBody(AstObj):
                 if isinstance(line,Scope):
                     if isinstance(line.header,FunctionHeader):
                         #line.header.name.value = "OBJECT_" + parent.header.name.value+"_"+line.header.name.value
-                        out += line.eval(parent,dont_declare) + end + "\n"
+                        out += line.eval(parent,dont_declare,isKernel=isKernel) + "\n"
                     else:
-                        out += line.eval(parent) + end + "\n"
+                        out += line.eval(parent,isKernel=isKernel) + "\n"
                 else:
                     out += line.eval(parent) + ";" + end + "\n"
         return out
@@ -556,6 +573,8 @@ class FunctionCall(AstObj):
                     self.moth_type.dimensions = len(self.inputs)
                 elif self.name.child.value == "sum":
                     self.moth_type = self.name.parent.moth_type.name
+                elif self.name.child.value == "zero":
+                    self.moth_type = Type(Token("TYPE_NAME","void"))
                 #elif self.name.child.value == "ndims":
                 #    self.moth_type = Type(Token("TYPE_NAME","int"))
                 #elif self.name.child.value == "shape":

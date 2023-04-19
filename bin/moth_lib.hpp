@@ -451,6 +451,12 @@ class __MothArray {
             return total;
         }
 
+        void Mothzero(){
+            for (int i = 0; i < size; i++){
+                raw.get()[i] = 0;
+            }
+        }
+
         T* Mothcptr(){
             return raw.get();
         }
