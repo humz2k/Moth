@@ -9,6 +9,7 @@ def void calc_acc(float[:,:] pos, float[:,:] acc):
         rdist2.inf2zero()
         float[:,:] muls = diff * rdist2.reshape(rdist2.shape[0],1)
         acc[i,:] += muls[:,0].sum(0)
+        
     
 def int main():
     float dt = 0.005
