@@ -1,0 +1,37 @@
+include <numoth>
+include <math>
+include <timer>
+
+def void calc_acc(float[:,:] pos, float[:,:] acc):
+    for int i in range(pos.shape[0]):
+        float[:,:] diff = pos - pos[i,:]
+        float[:] rdist2 = 1/(diff[:,0]**2 + diff[:,1]**2 + diff[:,2]**2)
+        rdist2.inf2zero()
+        float[:,:] muls = diff * rdist2.reshape(rdist2.shape[0],1)
+        float[:] tmp = muls[:,0]
+        acc[i,0] += tmp.sum()
+        tmp = muls[:,1]
+        acc[i,1] += tmp.sum()
+        tmp = muls[:,2]
+        acc[i,2] += tmp.sum()
+    
+def int main():
+    float dt = 0.005
+    int nsteps = 10
+    int np = 100
+    float[:,:] pos = nm.arange(np*3).reshape(np,3)
+    float[:,:] acc = nm.zeros((np,3))
+    float[:,:] vel = nm.zeros((np,3))
+    
+    int start = timer.clock()
+    calc_acc(pos,acc)
+    for int i in range(nsteps):
+        vel += acc * (0.5*dt)
+        pos += vel * dt
+        calc_acc(pos,acc)
+        vel += acc * (0.5*dt)
+    int end = timer.clock()
+    print(pos)
+    print(timer.to_seconds(end-start),"seconds\n")
+
+    return 0

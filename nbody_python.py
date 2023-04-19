@@ -1,6 +1,10 @@
 import numpy as np
 import time
 
+a = np.ones((10,3))
+print(np.sum(a,0))
+
+'''
 def calcAcc(pos,acc):
     for i in range(pos.shape[0]):
         for j in range(pos.shape[0]):
@@ -35,3 +39,4 @@ print((end-start)*1e-9)
 
 
 
+'''

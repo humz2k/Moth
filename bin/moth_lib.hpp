@@ -451,6 +451,53 @@ class __MothArray {
             return total;
         }
 
+        __MothArray<T> Mothsum(int axis){
+            if (axis < 0){
+                axis += ndims;
+            }
+            if ((axis < 0) || (axis >= ndims)){
+                MothRuntimeError("BroadcastAxis","Axis %d is out of range\n",axis);
+            }
+            int* new_dims = (int*)malloc(ndims*sizeof(int));
+            int* index = (int*)malloc(ndims*sizeof(int));
+            int* new_index = (int*)malloc(ndims*sizeof(int));
+            for (int i = 0; i < ndims; i++){
+                new_dims[i] = dims.get()[i];
+                index[i] = 0;
+                new_index[i] = 0;
+            }
+            new_dims[axis] = 1;
+            __MothArray<T> out(ndims);
+            out.init(new_dims);
+            out.Mothzero();
+
+            for (int i = 0; i < size; i++){
+                out.raw.get()[out.get_index_from_ptr(ndims,new_index)] += raw.get()[get_index_from_ptr(ndims,index)];
+                index[ndims-1]++;
+                for (int j = ndims-1; j > 0; j--){
+                    if (index[j] == dims.get()[j]){
+                        index[j] = 0;
+                        index[j-1]++;
+                    }
+                }
+                if (index[0] == dims.get()[0]){
+                    break;
+                }
+                for (int j = 0; j < ndims; j++){
+                    if(index[j] >= new_dims[j]){
+                        new_index[j] = new_dims[j]-1;
+                    }else{
+                        new_index[j] = index[j];
+                    }
+                }
+            }
+
+            free(new_dims);
+            free(index);
+            free(new_index);
+            return out;
+        }
+
         void Mothzero(){
             for (int i = 0; i < size; i++){
                 raw.get()[i] = 0;
@@ -494,6 +541,21 @@ class __MothArray {
         }
         
         int get_index(int nargs, int idx[]) const {
+            int out = 0;
+            if (nargs != ndims){
+                //MothRuntimeError("ArrayIndexError: Tried to index %d dimensional array with %d dimensional index\n",ndims, nargs);
+            }
+            for (int i = 0; i < ndims; i++){
+                if (idx[i] >= dims.get()[i]){
+                    //MothRuntimeError("ArrayIndexError: Index %d in dimension %d is out of bounds for dimension with size %d\n",idx[i],i,dims[i]);
+                }
+                int dimidx = (idx[i] % dims.get()[i] + dims.get()[i]) % dims.get()[i];
+                out = out + dimidx * muls.get()[i];
+            }
+            return out;
+        }
+
+        int get_index_from_ptr(int nargs, int idx[]) const {
             int out = 0;
             if (nargs != ndims){
                 //MothRuntimeError("ArrayIndexError: Tried to index %d dimensional array with %d dimensional index\n",ndims, nargs);
@@ -749,6 +811,51 @@ class __MothArraySlice {
                 }
             }
             free(indexes);
+        }
+
+        __MothArray<T> Mothcopy(){
+            __MothArray<T> out = newArray<T>(0,shape);
+            int* indexes = (int*)malloc(ndims*sizeof(int));
+            for (int i = 0; i < ndims; i++){
+                indexes[i] = 0;
+            }
+            for (int j = 0; j < out.size; j++){
+                out.raw.get()[j] = parent.raw.get()[get_index_from_ptr(ndims,indexes)];
+                indexes[ndims-1]++;
+                for (int i = ndims-1; i > 0; i--){
+                    if (indexes[i] == dims.get()[i]){
+                        indexes[i] = 0;
+                        indexes[i-1]++;
+                    }
+                }
+                if (indexes[0] == dims.get()[0]){
+                    break;
+                }
+            }
+            free(indexes);
+            return out;
+        }
+
+        template <class... Args>
+        __MothArray<T> Mothreshape(Args&&... args){
+            __MothArray<T> out = Mothcopy();
+            return out.Mothreshape(args...);
+        }
+
+        __MothArray<T> Mothreshape(__MothTuple<int> input_shape){
+            __MothArray<T> out = Mothcopy();
+            return out.Mothreshape(input_shape);
+
+        }
+
+        __MothArray<T> Mothsum(int axis){
+            __MothArray<T> out = Mothcopy();
+            return out.Mothsum(axis);
+        }
+
+        T Mothsum(){
+            __MothArray<T> out = Mothcopy();
+            return out.Mothsum();
         }
 
         template<class T1>

@@ -594,11 +594,16 @@ class FunctionCall(AstObj):
                     self.moth_type = ArrayType(self.name.parent.moth_type.name)
                     self.moth_type.dimensions = len(self.inputs)
                 elif self.name.child.value == "sum":
-                    self.moth_type = self.name.parent.moth_type.name
+                    if len(self.inputs) == 0:
+                        self.moth_type = self.name.parent.moth_type.name
+                    else:
+                        self.moth_type = self.name.parent.moth_type
                 elif self.name.child.value == "zero":
                     self.moth_type = Type(Token("TYPE_NAME","void"))
                 elif self.name.child.value == "inf2zero":
                     self.moth_type = Type(Token("TYPE_NAME","void"))
+                elif self.name.child.value == "copy":
+                    self.moth_type = self.name.parent.moth_type
                 #elif self.name.child.value == "ndims":
                 #    self.moth_type = Type(Token("TYPE_NAME","int"))
                 #elif self.name.child.value == "shape":

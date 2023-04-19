@@ -1,8 +1,8 @@
-include moth-libs/numoth
-include moth-libs/math
-include moth-libs/timer
+include <numoth>
+include <math>
+include <timer>
 
-def kernel calc_acc[ij: parts.shape[0],parts.shape[0]](float[:,:] parts, float[:,:] out) _rawptr:
+def kernel calc_acc[ij: parts.shape[0],parts.shape[0]](float[:,:] parts, float[:,:] out):
     float diffx = parts[j,0] - parts[i,0]
     float diffy = parts[j,1] - parts[i,1]
     float diffz = parts[j,2] - parts[i,2]
@@ -14,7 +14,7 @@ def kernel calc_acc[ij: parts.shape[0],parts.shape[0]](float[:,:] parts, float[:
         out[i,1] += rdist2 * diffy
         out[i,2] += rdist2 * diffz
 
-def kernel add[i: f.shape[0]](float[:,:] f, float[:,:] s, float mul) _rawptr:
+def kernel add[i: f.shape[0]](float[:,:] f, float[:,:] s, float mul):
     s[i,0] += f[i,0] * mul
     s[i,1] += f[i,1] * mul
     s[i,2] += f[i,2] * mul

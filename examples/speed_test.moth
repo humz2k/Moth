@@ -1,6 +1,5 @@
-include moth-libs/numoth
-include moth-libs/math
-include moth-libs/timer
+include <numoth>
+include <timer>
 
 def kernel add[i: c.shape[0]](int[:] a, int[:] b, int[:] c):
     c[i] = a[i] + b[i]
@@ -19,7 +18,7 @@ def int main():
     int end
 
     start = timer.clock()
-    c = a + b[:]
+    c = a + b
     end = timer.clock()
 
     print(timer.to_seconds(end-start)," s\n")

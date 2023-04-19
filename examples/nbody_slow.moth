@@ -1,6 +1,6 @@
-include moth-libs/numoth
-include moth-libs/math
-include moth-libs/timer
+include <numoth>
+include <math>
+include <timer>
 
 def kernel calc_acc[ij: parts.shape[0],parts.shape[0]](float[:,:] parts, float[:,:] out):
     float[:] diff = parts[j,:] - parts[i,:]

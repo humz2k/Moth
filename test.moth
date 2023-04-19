@@ -1,11 +1,6 @@
-include moth-libs/numoth
-include moth-libs/math
-include moth-libs/timer
-
-
-include moth-libs/numoth
-include moth-libs/math
-include moth-libs/timer
+include <numoth>
+include <math>
+include <timer>
 
 def void calc_acc(float[:,:] pos, float[:,:] acc):
     for int i in range(pos.shape[0]):
@@ -13,12 +8,7 @@ def void calc_acc(float[:,:] pos, float[:,:] acc):
         float[:] rdist2 = 1/(diff[:,0]**2 + diff[:,1]**2 + diff[:,2]**2)
         rdist2.inf2zero()
         float[:,:] muls = diff * rdist2.reshape(rdist2.shape[0],1)
-        float[:] tmp = muls[:,0]
-        acc[i,0] += tmp.sum()
-        tmp = muls[:,1]
-        acc[i,1] += tmp.sum()
-        tmp = muls[:,2]
-        acc[i,2] += tmp.sum()
+        acc[i,:] += muls[:,0].sum(0)
     
 def int main():
     float dt = 0.005

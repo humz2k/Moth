@@ -62,6 +62,7 @@ if __name__ == "__main__":
 
     token_file = "/".join(os.path.realpath(__file__).split("/")[:-1]) + "/tokens.txt"
     header_file = '#include "' + "/".join(os.path.realpath(__file__).split("/")[:-1]) + '/moth_lib.hpp"' + "\n"
+    moth_lib_dir = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/moth-libs/"
     
     if len(args) == 0:
         print("USAGE: moth inputfile [flags]")
@@ -79,7 +80,7 @@ if __name__ == "__main__":
         raw = f.read()
     original_len = len(raw.split("\n"))
     #print(original_len)
-    raw,headers,tmp = resolve_imports.resolve(raw)
+    raw,headers,tmp = resolve_imports.resolve(raw,moth_lib_dir = moth_lib_dir)
     new_len = len(raw.split("\n"))
 
     raw = lex.remove_comments(raw)
