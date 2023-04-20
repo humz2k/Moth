@@ -470,6 +470,14 @@ class __MothArray {
             initialized = 0;
         }
 
+        std::vector<T> Mothtovector(){
+            std::vector<T> out;
+            for (int i = 0; i < size; i++){
+                out.push_back(raw.get()[i]);
+            }
+            return out;
+        }
+
         T Mothsum(){
             T total = 0;
             for (int i = 0; i < size; i++){

@@ -1,11 +1,17 @@
 include <numoth>
 include <math>
 include <timer>
+include <matplotlib>
 #include <complex>
 #include <mpi>
 
 def int main():
-    int[:] a = nm.arange(9).reshape(3,3)
-    print(a.min())
-    print(a.max())
+    int[:] xs = nm.arange(9)
+    int[:] ys = nm.ones(9)
+    #plt.figure_size(1280,720)
+    str label = "ASD"
+    plt.plot_legend(label,xs,ys)
+    plt.title("HELLO!")
+    plt.legend()
+    plt.show()
     return 0

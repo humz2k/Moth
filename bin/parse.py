@@ -588,6 +588,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
         return aster.Cptr(p[2],lineno=p[0].source_pos)
     
     @pg.production('c_call : C_CALL OPEN_PAREN identifier CLOSE_PAREN')
+    @pg.production('c_call : C_CALL OPEN_PAREN c_raw CLOSE_PAREN')
     def c_call(p):
         return aster.Ccall(p[2],lineno=p[0].source_pos)
     
@@ -617,6 +618,11 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_call')
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_lit')
     @pg.production('c_call_open : C_CALL OPEN_PAREN identifier COMMA c_raw')
+    @pg.production('c_call_open : C_CALL OPEN_PAREN c_raw COMMA c_val')
+    @pg.production('c_call_open : C_CALL OPEN_PAREN c_raw COMMA c_ptr')
+    @pg.production('c_call_open : C_CALL OPEN_PAREN c_raw COMMA c_call')
+    @pg.production('c_call_open : C_CALL OPEN_PAREN c_raw COMMA c_lit')
+    @pg.production('c_call_open : C_CALL OPEN_PAREN c_raw COMMA c_raw')
     def c_call_open(p):
         tmp = aster.Ccall(p[2],lineno=p[0].source_pos)
         return tmp.add(p[4])

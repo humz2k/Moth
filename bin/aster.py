@@ -640,6 +640,8 @@ class FunctionCall(AstObj):
                         self.moth_type = self.name.parent.moth_type.name
                     else:
                         self.moth_type = self.name.parent.moth_type
+                elif self.name.child.value == "tovector":
+                    self.moth_type = Type(Token("TYPE_NAME","void"))
                 elif self.name.child.value == "zero":
                     self.moth_type = Type(Token("TYPE_NAME","void"))
                 elif self.name.child.value == "inf2zero":
@@ -1109,6 +1111,8 @@ class Craw(Ctypes):
         self.string = string
         self.val = val
         self.lineno = lineno
+        if isinstance(self.string,String):
+            self.value = self.string.value[1:-1]
 
     def find_variables(self,parent):
         self.val = self.val.find_variables(parent)

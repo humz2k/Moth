@@ -2,6 +2,7 @@
 
 
 #include <time.h>
+#include <matplotlibcpp.h>
 
 template <class arr_t>
 __MothArray<arr_t> __MothnmMothzeros(__MothTuple<__Mothint> shape){
@@ -455,10 +456,49 @@ return __MothBaseSLASH((__Mothdouble)(inp),CLOCKS_PER_SEC);
 
 }
 
+__Mothvoid __MothpltMothplot(__MothArray<__Mothdouble> arr){
+matplotlibcpp::plot(arr.Mothtovector());
+
+}
+
+__Mothvoid __MothpltMothplot(__MothArray<__Mothdouble> xs,__MothArray<__Mothdouble> ys){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector());
+
+}
+
+__Mothvoid __MothpltMothplot_legend(__Mothstr label,__MothArray<__Mothdouble> xs,__MothArray<__Mothdouble> ys){
+matplotlibcpp::named_plot(label,xs.Mothtovector(),ys.Mothtovector());
+
+}
+
+__Mothvoid __MothpltMothshow(){
+matplotlibcpp::show();
+
+}
+
+__Mothvoid __MothpltMothfigure_size(__Mothint x,__Mothint y){
+matplotlibcpp::figure_size(x,y);
+
+}
+
+__Mothvoid __MothpltMothtitle(__Mothstr name){
+matplotlibcpp::title(name);
+
+}
+
+__Mothvoid __MothpltMothlegend(){
+matplotlibcpp::legend();
+
+}
+
 __Mothint Mothmain(){
-__MothArray<__Mothint> a;a = __MothnmMotharange(9).Mothreshape(3,3);
-__MothPrint(a.Mothmin());
-__MothPrint(a.Mothmax());
+__MothArray<__Mothint> xs;__MothArray<__Mothint> ys;__Mothstr label;xs = __MothnmMotharange(9);
+ys = __MothnmMothones(9);
+label = convString("ASD");
+__MothpltMothplot_legend(label,xs,ys);
+__MothpltMothtitle(convString("HELLO!"));
+__MothpltMothlegend();
+__MothpltMothshow();
 return 0;
 
 }

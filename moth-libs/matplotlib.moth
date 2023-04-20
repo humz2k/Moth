@@ -1,0 +1,27 @@
+cinclude <matplotlibcpp.h>
+
+class plt(static):
+
+    @overload
+    def void plot(double[:] arr):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(arr.tovector()))
+
+    @overload
+    def void plot(double[:] xs, double[:] ys):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()))
+
+    @overload
+    def void plot_legend(str label, double[:] xs, double[:] ys):
+        __c_call(__c_raw("matplotlibcpp::named_plot"),__c_val(label),__c_val(xs.tovector()),__c_val(ys.tovector()))
+
+    def void show():
+        __c_call(__c_raw("matplotlibcpp::show"))
+
+    def void figure_size(int x, int y):
+        __c_call(__c_raw("matplotlibcpp::figure_size"),__c_val(x),__c_val(y))
+
+    def void title(str name):
+        __c_call(__c_raw("matplotlibcpp::title"),__c_val(name))
+
+    def void legend():
+        __c_call(__c_raw("matplotlibcpp::legend"))
