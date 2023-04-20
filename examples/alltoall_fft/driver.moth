@@ -44,9 +44,9 @@ def int main():
 
         time = end-start
 
-        max_time = mpi.allmax(time,dist.comm_world)
-        min_time = mpi.allmin(time,dist.comm_world)
-        mean_time = mpi.allsum(time,dist.comm_world) / dist.world_size
+        max_time = mpi.reduce.max(time,mpi.comm_world)
+        min_time = mpi.reduce.min(time,mpi.comm_world)
+        mean_time = mpi.reduce.sum(time,mpi.comm_world) / dist.world_size
 
         if dist.world_rank == 0:
             print("FORWARD   max ",max_time,"s  avg: ",mean_time,"s  min ",min_time," s\n\n")
@@ -54,10 +54,10 @@ def int main():
         minimum = buff1.min(0).reshape(2)
         maximum = buff1.max(0).reshape(2)
 
-        float min_real = mpi.allmin(minimum[0],dist.comm_world)
-        float max_real = mpi.allmax(maximum[0],dist.comm_world)
-        float min_imag = mpi.allmin(minimum[1],dist.comm_world)
-        float max_imag = mpi.allmax(maximum[1],dist.comm_world)
+        float min_real = mpi.reduce.min(minimum[0],mpi.comm_world)
+        float max_real = mpi.reduce.max(maximum[0],mpi.comm_world)
+        float min_imag = mpi.reduce.min(minimum[1],mpi.comm_world)
+        float max_imag = mpi.reduce.max(maximum[1],mpi.comm_world)
 
         if dist.world_rank == 0:
             print("k-space\n")
@@ -72,9 +72,9 @@ def int main():
 
         time = end-start
 
-        max_time = mpi.allmax(time,dist.comm_world)
-        min_time = mpi.allmin(time,dist.comm_world)
-        mean_time = mpi.allsum(time,dist.comm_world) / dist.world_size
+        max_time = mpi.reduce.max(time,mpi.comm_world)
+        min_time = mpi.reduce.min(time,mpi.comm_world)
+        mean_time = mpi.reduce.sum(time,mpi.comm_world) / dist.world_size
 
         if dist.world_rank == 0:
             print("BACKWARD   max ",max_time,"s  avg: ",mean_time,"s  min ",min_time," s\n\n")
@@ -86,10 +86,10 @@ def int main():
             minimum = buff1.min(0).reshape(2)
             maximum = buff1.max(0).reshape(2)
 
-        float min_real = mpi.allmin(minimum[0],dist.comm_world)
-        float max_real = mpi.allmax(maximum[0],dist.comm_world)
-        float min_imag = mpi.allmin(minimum[1],dist.comm_world)
-        float max_imag = mpi.allmax(maximum[1],dist.comm_world)
+        float min_real = mpi.reduce.min(minimum[0],mpi.comm_world)
+        float max_real = mpi.reduce.max(maximum[0],mpi.comm_world)
+        float min_imag = mpi.reduce.min(minimum[1],mpi.comm_world)
+        float max_imag = mpi.reduce.max(maximum[1],mpi.comm_world)
 
         if dist.world_rank == 0:
             print("r-space\n")

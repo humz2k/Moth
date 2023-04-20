@@ -2,7 +2,6 @@
 
 
 #include <time.h>
-#include <matplotlibcpp.h>
 
 template <class arr_t>
 __MothArray<arr_t> __MothnmMothzeros(__MothTuple<__Mothint> shape){
@@ -456,51 +455,21 @@ return __MothBaseSLASH((__Mothdouble)(inp),CLOCKS_PER_SEC);
 
 }
 
-__Mothvoid __MothpltMothplot(__MothArray<__Mothdouble> arr){
-matplotlibcpp::plot(arr.Mothtovector());
+__Mothint __MothtestMothstatic_var;__Mothvoid __MothtestMothsay(__Mothstr line){
+__MothPrint(convString("test: "));__MothPrint(line);__MothPrint(convString("\n"));
 
 }
 
-__Mothvoid __MothpltMothplot(__MothArray<__Mothdouble> xs,__MothArray<__Mothdouble> ys){
-matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector());
-
-}
-
-__Mothvoid __MothpltMothplot_legend(__Mothstr label,__MothArray<__Mothdouble> xs,__MothArray<__Mothdouble> ys){
-matplotlibcpp::named_plot(label,xs.Mothtovector(),ys.Mothtovector());
-
-}
-
-__Mothvoid __MothpltMothshow(){
-matplotlibcpp::show();
-
-}
-
-__Mothvoid __MothpltMothfigure_size(__Mothint x,__Mothint y){
-matplotlibcpp::figure_size(x,y);
-
-}
-
-__Mothvoid __MothpltMothtitle(__Mothstr name){
-matplotlibcpp::title(name);
-
-}
-
-__Mothvoid __MothpltMothlegend(){
-matplotlibcpp::legend();
+__Mothvoid __MothtestMoth__init__(){
+__MothtestMothstatic_var = 10;
 
 }
 
 __Mothint Mothmain(){
-__MothArray<__Mothint> xs;__MothArray<__Mothint> ys;__Mothstr label;xs = __MothnmMotharange(9);
-ys = __MothnmMothones(9);
-label = convString("ASD");
-__MothpltMothplot_legend(label,xs,ys);
-__MothpltMothtitle(convString("HELLO!"));
-__MothpltMothlegend();
-__MothpltMothshow();
+__MothtestMothsay(convString("Hello"));
+__MothPrint(__MothtestMothstatic_var);
 return 0;
 
 }
 
-int main() {I.real = 0; I.imag = 1; return Mothmain();}
+int main() {I.real = 0; I.imag = 1;__MothtestMoth__init__(); return Mothmain();}

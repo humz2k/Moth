@@ -14,7 +14,6 @@ class Distribution:
     int[:] local_grid_size
     int[:] local_coordinates_start
     mpi_datatype fft_t
-    mpi_comm comm_world
 
     def int[:] get_coords():
         int[:] out = int array(3)
@@ -31,44 +30,44 @@ class Distribution:
     
     def void getZPencils(double[:,:] buff1, double[:,:] buff2):
         int nsends = ((local_grid_size[0] * local_grid_size[1])/world_size) * local_grid_size[2]
-        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
+        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,mpi.comm_world)
         launch_z_a2a_to_z_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims)
 
     def void returnZPencils(double[:,:] buff1, double[:,:] buff2):
         int nsends = ((local_grid_size[0] * local_grid_size[1])/world_size) * local_grid_size[2]
         launch_z_pencils_to_z_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims)
-        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
+        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,mpi.comm_world)
 
     def void getXPencils(double[:,:] buff1, double[:,:] buff2):
         int nsends = ((local_grid_size[2] * local_grid_size[1])/world_size) * local_grid_size[0]
         fast_z_to_x(buff2,buff1,local_grid_size)
-        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
+        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,mpi.comm_world)
         launch_x_a2a_to_x_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims)
     
     def void returnXPencils(double[:,:] buff1, double[:,:] buff2):
         int nsends = ((local_grid_size[2] * local_grid_size[1])/world_size) * local_grid_size[0]
         launch_x_pencils_to_x_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims)
-        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
+        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,mpi.comm_world)
 
     def void getYPencils(double[:,:] buff1, double[:,:] buff2):
         int nsends = ((local_grid_size[2] * local_grid_size[0])/world_size) * local_grid_size[1]
         fast_x_to_y(buff2,buff1,local_grid_size)
-        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
+        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,mpi.comm_world)
         launch_y_a2a_to_y_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims)
     
     def void returnYPencils(double[:,:] buff1, double[:,:] buff2):
         int nsends = ((local_grid_size[2] * local_grid_size[0])/world_size) * local_grid_size[1]
         launch_y_pencils_to_y_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims)
-        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
+        mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,mpi.comm_world)
         fast_y_to_z(buff2,buff1,local_grid_size)
 
     def void __init__(int input_ng):
 
         verbose = False
-        comm_world = mpi.get_comm_world()
+        #mpi.comm_world = mpi.get_comm_world()
         ng = input_ng
-        world_size = mpi.comm_size(comm_world)
-        world_rank = mpi.comm_rank(comm_world)
+        world_size = mpi.comm_size(mpi.comm_world)
+        world_rank = mpi.comm_rank(mpi.comm_world)
         dims = mpi.dims_create(world_size,3)
         coords = get_coords()
         local_grid_size = get_local_grid()
@@ -84,13 +83,13 @@ class Distribution:
                 print("Dims: [",dims[0],",",dims[1],",",dims[2],"]\n")
                 print("Grid: [",local_grid_size[0],",",local_grid_size[1],",",local_grid_size[2],"]\n")
                 print("nlocal: ",nlocal,"\n")
-            mpi.barrier(comm_world)
+            mpi.barrier(mpi.comm_world)
             for int rank in range(world_size):
                 if (rank == world_rank):
                     print("Rank ",rank,":\n   Coords: ",coords)
                     print("   Start: ",local_coordinates_start)
-                mpi.barrier(comm_world)
-            mpi.barrier(comm_world)
+                mpi.barrier(mpi.comm_world)
+            mpi.barrier(mpi.comm_world)
 
     def void finalize():
         mpi.type_free(fft_t)

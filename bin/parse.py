@@ -243,6 +243,9 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('declaration : type template_t')
     @pg.production('declaration : array_template_type template_t')
     @pg.production('declaration : template_t template_t')
+    @pg.production('declaration : type static_function')
+    @pg.production('declaration : array_template_type static_function')
+    @pg.production('declaration : template_t static_function')
     def declaration(p):
         return aster.Declaration(p[0],p[1],lineno=p[0].lineno)
     
@@ -659,7 +662,11 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def pass_break(p):
         return aster.Break(lineno=p[0].source_pos)
     
-    @pg.production('reference : static_object PERIOD identifier')
+    @pg.production('reference : static_function')
+    def ret_static_func(p):
+        return p[0]
+    
+    @pg.production('static_function : static_object PERIOD identifier')
     def reference2(p):
         return aster.StaticFunction(p[0],p[2],lineno=p[1].source_pos)
     

@@ -480,6 +480,28 @@ raw_op = w_op;
 
 
 };
+class __MothObjectmpi_allreduce{
+public:
+__Mothvoid Moth__init__(){
+
+}
+
+__Mothdouble Mothmin(__Mothdouble val,__MothObjectmpi_comm w_comm){
+__Mothdouble inp;__Mothdouble out;inp = val;
+out = 0;
+MPI_Allreduce(&inp,&out,1,MPI_DOUBLE,MPI_MIN,w_comm.raw_comm);
+return out;
+
+}
+
+
+};
+__MothObjectmpi_comm __MothmpiMothcomm_world;__MothObjectmpi_allreduce __MothmpiMothreduce;__Mothvoid __MothmpiMoth__init__(){
+__MothmpiMothcomm_world.Moth__init__(MPI_COMM_WORLD);
+__MothmpiMothreduce.Moth__init__();
+
+}
+
 __Mothvoid __MothmpiMothinit(__MothArray<__Mothint> argc,__MothArray<__Mothchar> argv){
 MPI_Init(NULL,NULL);
 
@@ -487,12 +509,6 @@ MPI_Init(NULL,NULL);
 
 __Mothvoid __MothmpiMothinit(){
 MPI_Init(NULL,NULL);
-
-}
-
-__MothObjectmpi_comm __MothmpiMothget_comm_world(){
-__MothObjectmpi_comm out;out.Moth__init__(MPI_COMM_WORLD);
-return out;
 
 }
 
@@ -615,7 +631,7 @@ MPI_Finalize();
 
 class __MothObjectDistribution{
 public:
-__Mothint ng;__Mothint world_size;__Mothint world_rank;__Mothint nlocal;__Mothbool verbose;__MothArray<__Mothint> dims;__MothArray<__Mothint> coords;__MothArray<__Mothint> local_grid_size;__MothArray<__Mothint> local_coordinates_start;__MothObjectmpi_datatype fft_t;__MothObjectmpi_comm comm_world;__MothArray<__Mothint> Mothget_coords(){
+__Mothint ng;__Mothint world_size;__Mothint world_rank;__Mothint nlocal;__Mothbool verbose;__MothArray<__Mothint> dims;__MothArray<__Mothint> coords;__MothArray<__Mothint> local_grid_size;__MothArray<__Mothint> local_coordinates_start;__MothObjectmpi_datatype fft_t;__MothArray<__Mothint> Mothget_coords(){
 __MothArray<__Mothint> out;out = newArray<__Mothint>(1,3);
 __MothArrayINDEX(out,1,0) = __MothBaseSLASH(world_rank,__MothBaseSTAR(__MothArrayINDEX(dims,1,1),__MothArrayINDEX(dims,1,2)));
 __MothArrayINDEX(out,1,1) = __MothBaseSLASH(__MothBaseMINUS(world_rank,__MothBaseSTAR(__MothArrayINDEX(out,1,0),__MothBaseSTAR(__MothArrayINDEX(dims,1,1),__MothArrayINDEX(dims,1,2)))),__MothArrayINDEX(dims,1,2));
@@ -636,7 +652,7 @@ return __MothBaseSTAR(local_grid_size,coords);
 
 __Mothvoid MothgetZPencils(__MothArray<__Mothdouble> buff1,__MothArray<__Mothdouble> buff2){
 __Mothint nsends;nsends = __MothBaseSTAR(__MothBaseSLASH(__MothBaseSTAR(__MothArrayINDEX(local_grid_size,1,0),__MothArrayINDEX(local_grid_size,1,1)),world_size),__MothArrayINDEX(local_grid_size,1,2));
-__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world);
+__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,__MothmpiMothcomm_world);
 Mothlaunch_z_a2a_to_z_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims);
 
 }
@@ -644,14 +660,14 @@ Mothlaunch_z_a2a_to_z_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims
 __Mothvoid MothreturnZPencils(__MothArray<__Mothdouble> buff1,__MothArray<__Mothdouble> buff2){
 __Mothint nsends;nsends = __MothBaseSTAR(__MothBaseSLASH(__MothBaseSTAR(__MothArrayINDEX(local_grid_size,1,0),__MothArrayINDEX(local_grid_size,1,1)),world_size),__MothArrayINDEX(local_grid_size,1,2));
 Mothlaunch_z_pencils_to_z_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims);
-__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world);
+__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,__MothmpiMothcomm_world);
 
 }
 
 __Mothvoid MothgetXPencils(__MothArray<__Mothdouble> buff1,__MothArray<__Mothdouble> buff2){
 __Mothint nsends;nsends = __MothBaseSTAR(__MothBaseSLASH(__MothBaseSTAR(__MothArrayINDEX(local_grid_size,1,2),__MothArrayINDEX(local_grid_size,1,1)),world_size),__MothArrayINDEX(local_grid_size,1,0));
 Mothfast_z_to_x(buff2,buff1,local_grid_size);
-__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world);
+__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,__MothmpiMothcomm_world);
 Mothlaunch_x_a2a_to_x_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims);
 
 }
@@ -659,14 +675,14 @@ Mothlaunch_x_a2a_to_x_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims
 __Mothvoid MothreturnXPencils(__MothArray<__Mothdouble> buff1,__MothArray<__Mothdouble> buff2){
 __Mothint nsends;nsends = __MothBaseSTAR(__MothBaseSLASH(__MothBaseSTAR(__MothArrayINDEX(local_grid_size,1,2),__MothArrayINDEX(local_grid_size,1,1)),world_size),__MothArrayINDEX(local_grid_size,1,0));
 Mothlaunch_x_pencils_to_x_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims);
-__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world);
+__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,__MothmpiMothcomm_world);
 
 }
 
 __Mothvoid MothgetYPencils(__MothArray<__Mothdouble> buff1,__MothArray<__Mothdouble> buff2){
 __Mothint nsends;nsends = __MothBaseSTAR(__MothBaseSLASH(__MothBaseSTAR(__MothArrayINDEX(local_grid_size,1,2),__MothArrayINDEX(local_grid_size,1,0)),world_size),__MothArrayINDEX(local_grid_size,1,1));
 Mothfast_x_to_y(buff2,buff1,local_grid_size);
-__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world);
+__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,__MothmpiMothcomm_world);
 Mothlaunch_y_a2a_to_y_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims);
 
 }
@@ -674,17 +690,16 @@ Mothlaunch_y_a2a_to_y_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims
 __Mothvoid MothreturnYPencils(__MothArray<__Mothdouble> buff1,__MothArray<__Mothdouble> buff2){
 __Mothint nsends;nsends = __MothBaseSTAR(__MothBaseSLASH(__MothBaseSTAR(__MothArrayINDEX(local_grid_size,1,2),__MothArrayINDEX(local_grid_size,1,0)),world_size),__MothArrayINDEX(local_grid_size,1,1));
 Mothlaunch_y_pencils_to_y_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims);
-__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world);
+__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,__MothmpiMothcomm_world);
 Mothfast_y_to_z(buff2,buff1,local_grid_size);
 
 }
 
 __Mothvoid Moth__init__(__Mothint input_ng){
 verbose = false;
-comm_world = __MothmpiMothget_comm_world();
 ng = input_ng;
-world_size = __MothmpiMothcomm_size(comm_world);
-world_rank = __MothmpiMothcomm_rank(comm_world);
+world_size = __MothmpiMothcomm_size(__MothmpiMothcomm_world);
+world_rank = __MothmpiMothcomm_rank(__MothmpiMothcomm_world);
 dims = __MothmpiMothdims_create(world_size,3);
 coords = Mothget_coords();
 local_grid_size = Mothget_local_grid();
@@ -701,7 +716,7 @@ __MothPrint(convString("nlocal: "));__MothPrint(nlocal);__MothPrint(convString("
 
 }
 
-__MothmpiMothbarrier(comm_world);
+__MothmpiMothbarrier(__MothmpiMothcomm_world);
 for (rank = 0;rank < world_size;rank = rank + 1){
 
 if (__MothBaseEQUAL(rank,world_rank)){
@@ -710,11 +725,11 @@ __MothPrint(convString("   Start: "));__MothPrint(local_coordinates_start);
 
 }
 
-__MothmpiMothbarrier(comm_world);
+__MothmpiMothbarrier(__MothmpiMothcomm_world);
 
 }
 
-__MothmpiMothbarrier(comm_world);
+__MothmpiMothbarrier(__MothmpiMothcomm_world);
 
 }
 
@@ -848,9 +863,9 @@ start = __MothmpiMothwtime();
 dfft.Mothforward(buff1,buff2);
 end = __MothmpiMothwtime();
 time = __MothBaseMINUS(end,start);
-max_time = __MothmpiMothallmax(time,dist.comm_world);
-min_time = __MothmpiMothallmin(time,dist.comm_world);
-mean_time = __MothBaseSLASH(__MothmpiMothallsum(time,dist.comm_world),dist.world_size);
+max_time = __MothmpiMothallmax(time,__MothmpiMothcomm_world);
+min_time = __MothmpiMothallmin(time,__MothmpiMothcomm_world);
+mean_time = __MothBaseSLASH(__MothmpiMothallsum(time,__MothmpiMothcomm_world),dist.world_size);
 if (__MothBaseEQUAL(dist.world_rank,0)){
 __MothPrint(convString("FORWARD   max "));__MothPrint(max_time);__MothPrint(convString("s  avg: "));__MothPrint(mean_time);__MothPrint(convString("s  min "));__MothPrint(min_time);__MothPrint(convString(" s\n\n"));
 
@@ -858,10 +873,10 @@ __MothPrint(convString("FORWARD   max "));__MothPrint(max_time);__MothPrint(conv
 
 minimum = buff1.Mothmin(0).Mothreshape(2);
 maximum = buff1.Mothmax(0).Mothreshape(2);
-min_real = __MothmpiMothallmin(__MothArrayINDEX(minimum,1,0),dist.comm_world);
-max_real = __MothmpiMothallmax(__MothArrayINDEX(maximum,1,0),dist.comm_world);
-min_imag = __MothmpiMothallmin(__MothArrayINDEX(minimum,1,1),dist.comm_world);
-max_imag = __MothmpiMothallmax(__MothArrayINDEX(maximum,1,1),dist.comm_world);
+min_real = __MothmpiMothreduce.Mothmin(__MothArrayINDEX(minimum,1,0),__MothmpiMothcomm_world);
+max_real = __MothmpiMothallmax(__MothArrayINDEX(maximum,1,0),__MothmpiMothcomm_world);
+min_imag = __MothmpiMothallmin(__MothArrayINDEX(minimum,1,1),__MothmpiMothcomm_world);
+max_imag = __MothmpiMothallmax(__MothArrayINDEX(maximum,1,1),__MothmpiMothcomm_world);
 if (__MothBaseEQUAL(dist.world_rank,0)){
 __MothPrint(convString("k-space\n"));
 __MothPrint(convString("real in ["));__MothPrint(min_real);__MothPrint(convString(","));__MothPrint(max_real);__MothPrint(convString("]\n"));
@@ -873,9 +888,9 @@ start = __MothmpiMothwtime();
 dfft.Mothbackward(buff1,buff2);
 end = __MothmpiMothwtime();
 time = __MothBaseMINUS(end,start);
-max_time = __MothmpiMothallmax(time,dist.comm_world);
-min_time = __MothmpiMothallmin(time,dist.comm_world);
-mean_time = __MothBaseSLASH(__MothmpiMothallsum(time,dist.comm_world),dist.world_size);
+max_time = __MothmpiMothallmax(time,__MothmpiMothcomm_world);
+min_time = __MothmpiMothallmin(time,__MothmpiMothcomm_world);
+mean_time = __MothBaseSLASH(__MothmpiMothallsum(time,__MothmpiMothcomm_world),dist.world_size);
 if (__MothBaseEQUAL(dist.world_rank,0)){
 __MothPrint(convString("BACKWARD   max "));__MothPrint(max_time);__MothPrint(convString("s  avg: "));__MothPrint(mean_time);__MothPrint(convString("s  min "));__MothPrint(min_time);__MothPrint(convString(" s\n\n"));
 
@@ -893,10 +908,10 @@ maximum = buff1.Mothmax(0).Mothreshape(2);
 
 }
 
-min_real = __MothmpiMothallmin(__MothArrayINDEX(minimum,1,0),dist.comm_world);
-max_real = __MothmpiMothallmax(__MothArrayINDEX(maximum,1,0),dist.comm_world);
-min_imag = __MothmpiMothallmin(__MothArrayINDEX(minimum,1,1),dist.comm_world);
-max_imag = __MothmpiMothallmax(__MothArrayINDEX(maximum,1,1),dist.comm_world);
+min_real = __MothmpiMothallmin(__MothArrayINDEX(minimum,1,0),__MothmpiMothcomm_world);
+max_real = __MothmpiMothallmax(__MothArrayINDEX(maximum,1,0),__MothmpiMothcomm_world);
+min_imag = __MothmpiMothallmin(__MothArrayINDEX(minimum,1,1),__MothmpiMothcomm_world);
+max_imag = __MothmpiMothallmax(__MothArrayINDEX(maximum,1,1),__MothmpiMothcomm_world);
 if (__MothBaseEQUAL(dist.world_rank,0)){
 __MothPrint(convString("r-space\n"));
 __MothPrint(convString("a[0,0,0] = "));__MothPrint(__MothGetSlice(buff1,6,0,0,0,0,buff1.dims.get()[1],1));
@@ -914,4 +929,4 @@ return 0;
 
 }
 
-int main() {I.real = 0; I.imag = 1; return Mothmain();}
+int main() {I.real = 0; I.imag = 1;__MothmpiMoth__init__(); return Mothmain();}

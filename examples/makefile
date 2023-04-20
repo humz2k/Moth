@@ -1,4 +1,4 @@
-main: hello_world fibonacci arrays lists nbody speed_test
+main: hello_world fibonacci arrays lists nbody speed_test plotting
 
 hello_world:
 	moth hello_world.moth -o hello_world.o
@@ -20,6 +20,9 @@ speed_test:
 
 lists:
 	moth lists.moth -o lists.o
+
+plotting:
+	moth plotting.moth -o plotting.o -ccg++-12 -I/Library/Frameworks/Python.framework/Versions/3.9/include/python3.9 -I/Users/humzaqureshi/GitHub/Moth/moth-libs -L/Library/Frameworks/Python.framework/Versions/3.9/lib -lpython3.9
 
 clean:
 	rm *.o

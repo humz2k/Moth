@@ -159,7 +159,16 @@ class Program(Container):
         out = ""
         for scope in self.items:
             out += scope.eval(self)
-        return HEADERS + out + "\nint main() {I.real = 0; I.imag = 1; return Mothmain();}\n"
+        inits = []
+        for name in self.classes.keys():
+            if self.classes[name].is_static:
+                if self.classes[name].has_init:
+                    evaluated = self.classes[name].init_func.header.name.value
+                    if self.classes[name].init_func.header.return_type.name.value != "void":
+                        throwError("Static __init__ doesn't return void.","StatInitErr",self.lineno)
+                    evaluated = evaluated + "();"
+                    inits.append(evaluated)
+        return HEADERS + out + "\nint main() {I.real = 0; I.imag = 1;" + "".join(inits) + " return Mothmain();}\n"
 
 class Scope(AstObj):
     def __init__(self,header,body,lineno=None):
@@ -196,6 +205,11 @@ class Scope(AstObj):
         
         if isinstance(self.header,ClassHeader):
             self.functions = {}
+            self.is_static = False
+            if self.header.inherits == "STATIC":
+                self.is_static = True
+            self.has_init = False
+            self.init_func = None
             for i in self.body.lines.items:
                 if isinstance(i,Scope):
                     i.classes = self.classes
@@ -208,6 +222,11 @@ class Scope(AstObj):
                                 if not (isinstance(j.header,ClassHeader) or isinstance(j.header,FunctionHeader) or isinstance(j.header,KernelHeader)):
                                     j.find_functions(out)
                             #throwError("Redefined function " + self.header.name.value + "." + i.header.name.value,"RedefineMemFunc",self.lineno)
+                        if i.header.name.value == "Moth__init__":
+                            if self.is_static:
+                                self.has_init = True
+                                self.init_func = i
+                        
                         self.functions[i.header.name.value] = i.header.return_type
                         out[i.header.name.value] = i.header.return_type
                         i.functions = out
@@ -595,9 +614,20 @@ class StaticFunction(AstObj):
         self.class_name = class_name
         self.function_name = function_name
         self.lineno = lineno
-    
+        self.value = "__Moth"+self.class_name.value+"Moth"+self.function_name.value
+
     def find_variables(self,parent):
+        my_class = parent.classes[self.class_name.value]
+        if self.value in my_class.functions.keys():
+            self.moth_type = my_class.functions[self.value]
+        elif self.value in my_class.declarations.keys():
+            self.moth_type = my_class.declarations[self.value]
+        else:
+            throwError("Static function or var " + self.class_name.value + "." + self.function_name.value + " not found in scope.","StatFunVarNotFound",self.lineno)
         return self
+    
+    def eval(self,parent=None,isRaw=False):
+        return self.value
 
 class FunctionCall(AstObj):
     def __init__(self,name,inp=None,lineno=None):

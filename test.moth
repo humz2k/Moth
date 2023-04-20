@@ -1,17 +1,18 @@
 include <numoth>
 include <math>
 include <timer>
-include <matplotlib>
-#include <complex>
-#include <mpi>
+
+class test(static):
+
+    int test.static_var
+
+    def void say(str line):
+        print("test: ",line,"\n")
+
+    def void __init__():
+        test.static_var = 10
 
 def int main():
-    int[:] xs = nm.arange(9)
-    int[:] ys = nm.ones(9)
-    #plt.figure_size(1280,720)
-    str label = "ASD"
-    plt.plot_legend(label,xs,ys)
-    plt.title("HELLO!")
-    plt.legend()
-    plt.show()
+    test.say("Hello")
+    print(test.static_var)
     return 0

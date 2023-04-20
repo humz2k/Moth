@@ -1,14 +1,11 @@
 main:
-	moth test.moth -o test -keep_temp -ccg++-12 -printCompileLine -I/Library/Frameworks/Python.framework/Versions/3.9/include/python3.9 -I/Users/humzaqureshi/GitHub/Moth/moth-libs -L/Library/Frameworks/Python.framework/Versions/3.9/lib -lpython3.9
+	moth test.moth -o test -keep_temp -ccg++-12
 
 leak:
 	leaks -atExit -- ./test | grep LEAK:
 
 run:
 	mpirun -n 8 ./test
-
-thing:
-	g++ thing.cpp -o thing -I/Library/Frameworks/Python.framework/Versions/3.9/include/python3.9 -I/Users/humzaqureshi/GitHub/Moth/moth-libs -lpython3.9
 
 clean:
 	rm test

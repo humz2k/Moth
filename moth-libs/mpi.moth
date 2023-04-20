@@ -16,7 +16,39 @@ class mpi_op(type):
     def void __init__(__c_type(MPI_Op) w_op):
         raw_op = w_op
 
+class mpi_allreduce:
+    def void __init__():
+        pass
+    
+    @overload
+    def double min(double val, mpi_comm w_comm):
+        double inp = val
+        double out = 0
+        __c_call(MPI_Allreduce,__c_ptr(inp),__c_ptr(out),__c_val(1),__c_lit(MPI_DOUBLE),__c_lit(MPI_MIN),__c_val(w_comm.raw_comm))
+        return out
+
+    @overload
+    def double max(double val, mpi_comm w_comm):
+        double inp = val
+        double out = 0
+        __c_call(MPI_Allreduce,__c_ptr(inp),__c_ptr(out),__c_val(1),__c_lit(MPI_DOUBLE),__c_lit(MPI_MAX),__c_val(w_comm.raw_comm))
+        return out
+
+    @overload
+    def double sum(double val, mpi_comm w_comm):
+        double inp = val
+        double out = 0
+        __c_call(MPI_Allreduce,__c_ptr(inp),__c_ptr(out),__c_val(1),__c_lit(MPI_DOUBLE),__c_lit(MPI_SUM),__c_val(w_comm.raw_comm))
+        return out
+
 class mpi(static):
+
+    mpi_comm mpi.comm_world
+    object mpi_allreduce mpi.reduce
+
+    def void __init__():
+        mpi.comm_world = new mpi_comm(__c_lit(MPI_COMM_WORLD))
+        mpi.reduce = new mpi_allreduce()
 
     @overload
     def void init(int[:] argc, char[:] argv):
@@ -26,9 +58,9 @@ class mpi(static):
     def void init():
         __c_call(MPI_Init,__c_lit(NULL),__c_lit(NULL))
 
-    def mpi_comm get_comm_world():
-        mpi_comm out = new mpi_comm(__c_lit(MPI_COMM_WORLD))
-        return out
+    #def mpi_comm get_comm_world():
+    #    mpi_comm out = new mpi_comm(__c_lit(MPI_COMM_WORLD))
+    #    return out
 
     def mpi_op op_min():
         mpi_op out = new mpi_op(__c_lit(MPI_MIN))
@@ -90,26 +122,26 @@ class mpi(static):
     def void allreduce(double[:] sendbuff, double[:] recvbuff, int count, mpi_datatype datat, mpi_op w_op, mpi_comm w_comm):
         __c_call(MPI_Allreduce,__c_ptr(sendbuff),__c_ptr(recvbuff),__c_val(count),__c_val(datat.raw_type),__c_val(w_op.raw_op),__c_val(w_comm.raw_comm))
 
-    @overload
-    def double allmin(double val, mpi_comm w_comm):
-        double inp = val
-        double out = 0
-        __c_call(MPI_Allreduce,__c_ptr(inp),__c_ptr(out),__c_val(1),__c_lit(MPI_DOUBLE),__c_lit(MPI_MIN),__c_val(w_comm.raw_comm))
-        return out
+    #@overload
+    #def double allmin(double val, mpi_comm w_comm):
+    #    double inp = val
+    #    double out = 0
+    #    __c_call(MPI_Allreduce,__c_ptr(inp),__c_ptr(out),__c_val(1),__c_lit(MPI_DOUBLE),__c_lit(MPI_MIN),__c_val(w_comm.raw_comm))
+    #    return out
 
-    @overload
-    def double allmax(double val, mpi_comm w_comm):
-        double inp = val
-        double out = 0
-        __c_call(MPI_Allreduce,__c_ptr(inp),__c_ptr(out),__c_val(1),__c_lit(MPI_DOUBLE),__c_lit(MPI_MAX),__c_val(w_comm.raw_comm))
-        return out
+    #@overload
+    #def double allmax(double val, mpi_comm w_comm):
+    #    double inp = val
+    #    double out = 0
+    #    __c_call(MPI_Allreduce,__c_ptr(inp),__c_ptr(out),__c_val(1),__c_lit(MPI_DOUBLE),__c_lit(MPI_MAX),__c_val(w_comm.raw_comm))
+    #    return out
 
-    @overload
-    def double allsum(double val, mpi_comm w_comm):
-        double inp = val
-        double out = 0
-        __c_call(MPI_Allreduce,__c_ptr(inp),__c_ptr(out),__c_val(1),__c_lit(MPI_DOUBLE),__c_lit(MPI_SUM),__c_val(w_comm.raw_comm))
-        return out
+    #@overload
+    #def double allsum(double val, mpi_comm w_comm):
+    #    double inp = val
+    #    double out = 0
+    #    __c_call(MPI_Allreduce,__c_ptr(inp),__c_ptr(out),__c_val(1),__c_lit(MPI_DOUBLE),__c_lit(MPI_SUM),__c_val(w_comm.raw_comm))
+    #    return out
 
     def double wtime():
         return __c_call(MPI_Wtime)
