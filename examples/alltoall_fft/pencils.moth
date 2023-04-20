@@ -1,115 +1,115 @@
-def void z_a2a_to_z_pencils(double[:,:] source, double[:,:] dest, int world_size, int n_cells, int[:] local_grid_size, int[:] dims):
+def kernel z_a2a_to_z_pencils[i: n_cells](double[:,:] source, double[:,:] dest, int n_cells, int n_cells_per_rank, int n_cells_mini_pencils, int n_mini_pencils_per_rank, int n_mini_pencils_stacked) _rawptr:
+    int rank = i / n_cells_per_rank
+    int mini_pencil_id = (i / n_cells_mini_pencils) % (n_mini_pencils_per_rank)
+    int mini_pencil_offset = (rank % n_mini_pencils_stacked) * n_cells_mini_pencils
+    int stack_id = i / (n_mini_pencils_stacked * n_cells_per_rank)
+    int offset = stack_id * n_mini_pencils_stacked * n_cells_per_rank
+    int new_idx = offset + mini_pencil_offset + mini_pencil_id * n_mini_pencils_stacked * n_cells_mini_pencils + (i % n_cells_mini_pencils)
+    
+    dest[new_idx,0] = source[i,0]
+    dest[new_idx,1] = source[i,1]
+
+def void launch_z_a2a_to_z_pencils(double[:,:] source, double[:,:] dest, int world_size, int n_cells, int[:] local_grid_size, int[:] dims):
     int n_cells_per_rank = n_cells / world_size
     int n_cells_mini_pencils = local_grid_size[2]
     int n_mini_pencils_per_rank = n_cells_per_rank / n_cells_mini_pencils
     int n_mini_pencils_stacked = dims[2]
+    z_a2a_to_z_pencils(source, dest, n_cells, n_cells_per_rank, n_cells_mini_pencils, n_mini_pencils_per_rank, n_mini_pencils_stacked)
 
-    for int idx in range(n_cells):
+def kernel z_pencils_to_z_a2a[i: n_cells](double[:,:] source, double[:,:] dest, int n_cells, int n_cells_per_rank, int n_cells_mini_pencils, int n_mini_pencils_per_rank, int n_mini_pencils_stacked) _rawptr:
+    int stack_id = i / (n_mini_pencils_stacked * n_cells_per_rank)
+    int mini_pencil_id = (i / n_cells_mini_pencils) % (n_mini_pencils_stacked)
+    int rank = stack_id * n_mini_pencils_stacked + mini_pencil_id
+    int pencil_id = (i / (n_cells_mini_pencils * n_mini_pencils_stacked)) % (n_mini_pencils_per_rank)
+    int pencil_offset = pencil_id * n_cells_mini_pencils
+    int offset = rank * n_cells_per_rank
+    int new_idx = offset + pencil_offset + (i % n_cells_mini_pencils)
 
-        int rank = idx / n_cells_per_rank
-        int mini_pencil_id = (idx / n_cells_mini_pencils) % (n_mini_pencils_per_rank)
-        int mini_pencil_offset = (rank % n_mini_pencils_stacked) * n_cells_mini_pencils
-        int stack_id = idx / (n_mini_pencils_stacked * n_cells_per_rank)
-        int offset = stack_id * n_mini_pencils_stacked * n_cells_per_rank
-        int new_idx = offset + mini_pencil_offset + mini_pencil_id * n_mini_pencils_stacked * n_cells_mini_pencils + (idx % n_cells_mini_pencils)
-        
-        dest[new_idx,0] = source[idx,0]
-        dest[new_idx,1] = source[idx,1]
+    dest[new_idx,0] = source[i,0]
+    dest[new_idx,1] = source[i,1]
 
-def void z_pencils_to_z_a2a(double[:,:] source, double[:,:] dest, int world_size, int n_cells, int[:] local_grid_size, int[:] dims):
+def void launch_z_pencils_to_z_a2a(double[:,:] source, double[:,:] dest, int world_size, int n_cells, int[:] local_grid_size, int[:] dims):
     int n_cells_per_rank = n_cells / world_size
     int n_cells_mini_pencils = local_grid_size[2]
     int n_mini_pencils_per_rank = n_cells_per_rank / n_cells_mini_pencils
     int n_mini_pencils_stacked = dims[2]
+    z_pencils_to_z_a2a(source, dest, n_cells, n_cells_per_rank, n_cells_mini_pencils, n_mini_pencils_per_rank, n_mini_pencils_stacked)
 
-    for int idx in range(n_cells):
+def kernel x_a2a_to_x_pencils[i: n_cells](double[:,:] source, double[:,:] dest, int n_cells, int n_cells_per_rank, int n_cells_mini_pencils, int n_mini_pencils_per_rank, int n_mini_pencils_stacked, int n_cells_per_stack) _rawptr:
+    int mini_pencil_id = (i / n_cells_mini_pencils) % (n_cells_per_stack / n_cells_mini_pencils)
+    int stack_id = i / n_cells_per_stack
+    int mini_pencil_offset = mini_pencil_id * n_mini_pencils_stacked * n_cells_mini_pencils
+    int offset = stack_id * n_cells_mini_pencils
+    int new_idx = offset + mini_pencil_offset + (i % n_cells_mini_pencils)
 
-        int stack_id = idx / (n_mini_pencils_stacked * n_cells_per_rank)
-        int mini_pencil_id = (idx / n_cells_mini_pencils) % (n_mini_pencils_stacked)
-        int rank = stack_id * n_mini_pencils_stacked + mini_pencil_id
-        int pencil_id = (idx / (n_cells_mini_pencils * n_mini_pencils_stacked)) % (n_mini_pencils_per_rank)
-        int pencil_offset = pencil_id * n_cells_mini_pencils
-        int offset = rank * n_cells_per_rank
-        int new_idx = offset + pencil_offset + (idx % n_cells_mini_pencils)
+    dest[new_idx,0] = source[i,0]
+    dest[new_idx,1] = source[i,1]
 
-        dest[new_idx,0] = source[idx,0]
-        dest[new_idx,1] = source[idx,1]
-
-def void x_a2a_to_x_pencils(double[:,:] source, double[:,:] dest, int world_size, int n_cells, int[:] local_grid_size, int[:] dims):
+def void launch_x_a2a_to_x_pencils(double[:,:] source, double[:,:] dest, int world_size, int n_cells, int[:] local_grid_size, int[:] dims):
     int n_cells_per_rank = n_cells / world_size
     int n_cells_mini_pencils = local_grid_size[0]
     int n_mini_pencils_per_rank = n_cells_per_rank / n_cells_mini_pencils
     int n_mini_pencils_stacked = dims[0]
     int n_cells_per_stack = n_cells / n_mini_pencils_stacked
+    x_a2a_to_x_pencils(source,dest,n_cells,n_cells_per_rank,n_cells_mini_pencils,n_mini_pencils_per_rank,n_mini_pencils_stacked,n_cells_per_stack)
 
-    for int idx in range(n_cells):
+def kernel x_pencils_to_x_a2a[i: n_cells](double[:,:] source, double[:,:] dest, int n_cells, int n_cells_per_rank, int n_cells_mini_pencils, int n_mini_pencils_per_rank, int n_mini_pencils_stacked, int n_cells_per_stack) _rawptr:
+    int mini_pencil_id = (i / n_cells_mini_pencils)
+    int stack_id = mini_pencil_id % n_mini_pencils_stacked
+    int rank = (i / (n_cells_per_rank * n_mini_pencils_stacked)) + stack_id * (n_cells_per_stack / n_cells_per_rank)
+    int pencil_id = (i / (n_mini_pencils_stacked * n_cells_mini_pencils)) % n_mini_pencils_per_rank
+    int mini_pencil_offset = pencil_id * n_cells_mini_pencils
+    int offset = rank * n_cells_per_rank
+    int new_idx = offset + mini_pencil_offset + (i % n_cells_mini_pencils)
 
-        int mini_pencil_id = (idx / n_cells_mini_pencils) % (n_cells_per_stack / n_cells_mini_pencils)
-        int stack_id = idx / n_cells_per_stack
-        int mini_pencil_offset = mini_pencil_id * n_mini_pencils_stacked * n_cells_mini_pencils
-        int offset = stack_id * n_cells_mini_pencils
-        int new_idx = offset + mini_pencil_offset + (idx % n_cells_mini_pencils)
+    dest[new_idx,0] = source[i,0]
+    dest[new_idx,1] = source[i,1]
 
-        dest[new_idx,0] = source[idx,0]
-        dest[new_idx,1] = source[idx,1]
-
-def void x_pencils_to_x_a2a(double[:,:] source, double[:,:] dest, int world_size, int n_cells, int[:] local_grid_size, int[:] dims):
+def void launch_x_pencils_to_x_a2a(double[:,:] source, double[:,:] dest, int world_size, int n_cells, int[:] local_grid_size, int[:] dims):
     int n_cells_per_rank = n_cells / world_size
     int n_cells_mini_pencils = local_grid_size[0]
     int n_mini_pencils_per_rank = n_cells_per_rank / n_cells_mini_pencils
     int n_mini_pencils_stacked = dims[0]
     int n_cells_per_stack = n_cells / n_mini_pencils_stacked
+    x_pencils_to_x_a2a(source,dest,n_cells,n_cells_per_rank,n_cells_mini_pencils,n_mini_pencils_per_rank,n_mini_pencils_stacked,n_cells_per_stack)
 
-    for int idx in range(n_cells):
+def kernel y_a2a_to_y_pencils[i: n_cells](double[:,:] source, double[:,:] dest, int n_cells, int n_cells_per_rank, int n_cells_mini_pencils, int n_mini_pencils_per_rank, int n_mini_pencils_stacked, int n_ranks_per_stack, int n_ranks_per_tower) _rawptr:
+    int mini_pencil_id = (i / n_cells_mini_pencils) % ((n_ranks_per_tower * n_mini_pencils_per_rank))
+    int stack_id = i / (n_ranks_per_tower * n_mini_pencils_stacked * n_cells_per_rank)
+    int local_stack_id = (i / (n_ranks_per_tower * n_cells_per_rank)) % n_mini_pencils_stacked
+    int mini_pencil_offset = mini_pencil_id * n_mini_pencils_stacked * n_cells_mini_pencils + local_stack_id * n_cells_mini_pencils
+    int offset = stack_id * n_ranks_per_tower * n_mini_pencils_stacked * n_cells_per_rank
+    int new_idx = mini_pencil_offset + offset + (i % n_cells_mini_pencils)
 
-        int mini_pencil_id = (idx / n_cells_mini_pencils)
-        int stack_id = mini_pencil_id % n_mini_pencils_stacked
-        int rank = (idx / (n_cells_per_rank * n_mini_pencils_stacked)) + stack_id * (n_cells_per_stack / n_cells_per_rank)
-        int pencil_id = (idx / (n_mini_pencils_stacked * n_cells_mini_pencils)) % n_mini_pencils_per_rank
-        int mini_pencil_offset = pencil_id * n_cells_mini_pencils
-        int offset = rank * n_cells_per_rank
-        int new_idx = offset + mini_pencil_offset + (idx % n_cells_mini_pencils)
+    dest[new_idx,0] = source[i,0]
+    dest[new_idx,1] = source[i,1]
 
-        dest[new_idx,0] = source[idx,0]
-        dest[new_idx,1] = source[idx,1]
-
-def void y_a2a_to_y_pencils(double[:,:] source, double[:,:] dest, int world_size, int n_cells, int[:] local_grid_size, int[:] dims):
+def void launch_y_a2a_to_y_pencils(double[:,:] source, double[:,:] dest, int world_size, int n_cells, int[:] local_grid_size, int[:] dims):
     int n_cells_per_rank = n_cells / world_size
     int n_cells_mini_pencils = local_grid_size[1]
     int n_mini_pencils_per_rank = n_cells_per_rank / n_cells_mini_pencils
     int n_mini_pencils_stacked = dims[1]
     int n_ranks_per_stack = world_size / n_mini_pencils_stacked
     int n_ranks_per_tower = (n_ranks_per_stack / dims[0])
+    y_a2a_to_y_pencils(source,dest,n_cells,n_cells_per_rank,n_cells_mini_pencils,n_mini_pencils_per_rank,n_mini_pencils_stacked,n_ranks_per_stack,n_ranks_per_tower)
 
-    for int idx in range(n_cells):
+def kernel y_pencils_to_y_a2a[i: n_cells](double[:,:] source, double[:,:] dest, int n_cells, int n_cells_per_rank, int n_cells_mini_pencils, int n_mini_pencils_per_rank, int n_mini_pencils_stacked, int n_ranks_per_stack, int n_ranks_per_tower) _rawptr:
+    int mini_pencil_id = (i / n_cells_mini_pencils) % ((n_ranks_per_tower * n_mini_pencils_per_rank))
+    int stack_id = i / (n_ranks_per_tower * n_mini_pencils_stacked * n_cells_per_rank)
+    int local_stack_id = (i / (n_ranks_per_tower * n_cells_per_rank)) % n_mini_pencils_stacked
+    int mini_pencil_offset = mini_pencil_id * n_mini_pencils_stacked * n_cells_mini_pencils + local_stack_id * n_cells_mini_pencils
+    int offset = stack_id * n_ranks_per_tower * n_mini_pencils_stacked * n_cells_per_rank
+    int new_idx = mini_pencil_offset + offset + (i % n_cells_mini_pencils)
 
-        int mini_pencil_id = (idx / n_cells_mini_pencils) % ((n_ranks_per_tower * n_mini_pencils_per_rank))
-        int stack_id = idx / (n_ranks_per_tower * n_mini_pencils_stacked * n_cells_per_rank)
-        int local_stack_id = (idx / (n_ranks_per_tower * n_cells_per_rank)) % n_mini_pencils_stacked
-        int mini_pencil_offset = mini_pencil_id * n_mini_pencils_stacked * n_cells_mini_pencils + local_stack_id * n_cells_mini_pencils
-        int offset = stack_id * n_ranks_per_tower * n_mini_pencils_stacked * n_cells_per_rank
-        int new_idx = mini_pencil_offset + offset + (idx % n_cells_mini_pencils)
+    dest[i,0] = source[new_idx,0]
+    dest[i,1] = source[new_idx,1]
 
-        dest[new_idx,0] = source[idx,0]
-        dest[new_idx,1] = source[idx,1]
-
-def void y_pencils_to_y_a2a(double[:,:] source, double[:,:] dest, int world_size, int n_cells, int[:] local_grid_size, int[:] dims):
+def void launch_y_pencils_to_y_a2a(double[:,:] source, double[:,:] dest, int world_size, int n_cells, int[:] local_grid_size, int[:] dims):
     int n_cells_per_rank = n_cells / world_size
     int n_cells_mini_pencils = local_grid_size[1]
     int n_mini_pencils_per_rank = n_cells_per_rank / n_cells_mini_pencils
     int n_mini_pencils_stacked = dims[1]
     int n_ranks_per_stack = world_size / n_mini_pencils_stacked
     int n_ranks_per_tower = (n_ranks_per_stack / dims[0])
-
-    for int idx in range(n_cells):
-
-        int mini_pencil_id = (idx / n_cells_mini_pencils) % ((n_ranks_per_tower * n_mini_pencils_per_rank))
-        int stack_id = idx / (n_ranks_per_tower * n_mini_pencils_stacked * n_cells_per_rank)
-        int local_stack_id = (idx / (n_ranks_per_tower * n_cells_per_rank)) % n_mini_pencils_stacked
-        int mini_pencil_offset = mini_pencil_id * n_mini_pencils_stacked * n_cells_mini_pencils + local_stack_id * n_cells_mini_pencils
-        int offset = stack_id * n_ranks_per_tower * n_mini_pencils_stacked * n_cells_per_rank
-        int new_idx = mini_pencil_offset + offset + (idx % n_cells_mini_pencils)
-
-        dest[idx,0] = source[new_idx,0]
-        dest[idx,1] = source[new_idx,1]
+    y_pencils_to_y_a2a(source,dest,n_cells,n_cells_per_rank,n_cells_mini_pencils,n_mini_pencils_per_rank,n_mini_pencils_stacked,n_ranks_per_stack,n_ranks_per_tower)
 

@@ -43,3 +43,4 @@ class Dfft:
     def void finalize():
         fftw.destroy_plan(f12)
         fftw.destroy_plan(b12)
+        dist.finalize()

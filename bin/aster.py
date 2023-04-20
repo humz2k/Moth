@@ -630,6 +630,16 @@ class FunctionCall(AstObj):
                         self.moth_type = self.name.parent.moth_type.name
                     else:
                         self.moth_type = self.name.parent.moth_type
+                elif self.name.child.value == "min":
+                    if len(self.inputs) == 0:
+                        self.moth_type = self.name.parent.moth_type.name
+                    else:
+                        self.moth_type = self.name.parent.moth_type
+                elif self.name.child.value == "max":
+                    if len(self.inputs) == 0:
+                        self.moth_type = self.name.parent.moth_type.name
+                    else:
+                        self.moth_type = self.name.parent.moth_type
                 elif self.name.child.value == "zero":
                     self.moth_type = Type(Token("TYPE_NAME","void"))
                 elif self.name.child.value == "inf2zero":

@@ -2,7 +2,6 @@
 
 
 #include <time.h>
-#include <mpi.h>
 
 template <class arr_t>
 __MothArray<arr_t> __MothnmMothzeros(__MothTuple<__Mothint> shape){
@@ -225,6 +224,38 @@ return out;
 
 }
 
+__Mothdouble __MothnmMothmax(__MothArray<__Mothdouble> arr){
+__Mothint start;__Mothint i;start = __MothArrayINDEX(arr,1,0);
+for (i = 0;i < __MothTupleINDEX(arr.shape,1,0);i = i + 1){
+
+if (__MothBaseGREATER(__MothArrayINDEX(arr,1,i),start)){
+start = __MothArrayINDEX(arr,1,i);
+
+}
+
+
+}
+
+return start;
+
+}
+
+__Mothdouble __MothnmMothmin(__MothArray<__Mothdouble> arr){
+__Mothint start;__Mothint i;start = __MothArrayINDEX(arr,1,0);
+for (i = 0;i < __MothTupleINDEX(arr.shape,1,0);i = i + 1){
+
+if (__MothBaseLESS(__MothArrayINDEX(arr,1,i),start)){
+start = __MothArrayINDEX(arr,1,i);
+
+}
+
+
+}
+
+return start;
+
+}
+
 __Mothdouble Mothdot(__MothArray<__Mothdouble> a,__MothArray<__Mothdouble> b){
 if (__MothBaseNOT_EQUAL(a.shape,b.shape)){
 MoththrowErr(convString("Shapes not equal in \\dot\n"));
@@ -424,130 +455,10 @@ return __MothBaseSLASH((__Mothdouble)(inp),CLOCKS_PER_SEC);
 
 }
 
-class __MothObjectmpi_datatype{
-public:
-MPI_Datatype raw_type;__Mothvoid Mothset(MPI_Datatype input){
-raw_type = input;
-
-}
-
-
-};
-class __MothObjectmpi_comm{
-public:
-MPI_Comm raw_comm;__Mothvoid Moth__init__(MPI_Comm w_comm){
-raw_comm = w_comm;
-
-}
-
-
-};
-__Mothvoid __MothmpiMothinit(__MothArray<__Mothint> argc,__MothArray<__Mothchar> argv){
-MPI_Init(NULL,NULL);
-
-}
-
-__Mothvoid __MothmpiMothinit(){
-MPI_Init(NULL,NULL);
-
-}
-
-__MothObjectmpi_comm __MothmpiMothget_comm_world(){
-__MothObjectmpi_comm out;out.Moth__init__(MPI_COMM_WORLD);
-return out;
-
-}
-
-__Mothint __MothmpiMothcomm_size(__MothObjectmpi_comm w_comm){
-__Mothint world_size;world_size = 0;
-MPI_Comm_size(w_comm.raw_comm,&world_size);
-return world_size;
-
-}
-
-__Mothint __MothmpiMothcomm_rank(__MothObjectmpi_comm w_comm){
-__Mothint world_rank;world_rank = 0;
-MPI_Comm_rank(w_comm.raw_comm,&world_rank);
-return world_rank;
-
-}
-
-__MothArray<__Mothint> __MothmpiMothdims_create(__Mothint world_size,__Mothint ndims){
-__MothArray<__Mothint> dims;dims = newArray<__Mothint>(1,ndims);
-dims.Mothzero();
-MPI_Dims_create(world_size,ndims,dims.raw.get());
-return dims;
-
-}
-
-__MothObjectmpi_datatype __MothmpiMothtype_contiguous(__Mothint size){
-__MothObjectmpi_datatype mpitype;MPI_Type_contiguous(size,MPI_BYTE,&mpitype.raw_type);
-MPI_Type_commit(&mpitype.raw_type);
-return mpitype;
-
-}
-
-__Mothvoid __MothmpiMothtype_commit(__MothObjectmpi_datatype mpitype){
-MPI_Type_commit(&mpitype.raw_type);
-
-}
-
-__Mothvoid __MothmpiMothtype_free(__MothObjectmpi_datatype mpitype){
-MPI_Type_free(&mpitype.raw_type);
-
-}
-
-__Mothvoid __MothmpiMothbarrier(__MothObjectmpi_comm w_comm){
-MPI_Barrier(w_comm.raw_comm);
-
-}
-
-__Mothvoid __MothmpiMothalltoall(__MothArray<__Mothdouble> input,__Mothint nsends1,__MothObjectmpi_datatype type1,__MothArray<__Mothdouble> output,__Mothint nsends2,__MothObjectmpi_datatype type2,__MothObjectmpi_comm w_comm){
-MPI_Alltoall(input.raw.get(),nsends1,type1.raw_type,output.raw.get(),nsends2,type2.raw_type,w_comm.raw_comm);
-
-}
-
-__Mothvoid __MothmpiMothalltoall(__MothArray<__Mothint> input,__Mothint nsends1,__MothObjectmpi_datatype type1,__MothArray<__Mothint> output,__Mothint nsends2,__MothObjectmpi_datatype type2,__MothObjectmpi_comm w_comm){
-MPI_Alltoall(input.raw.get(),nsends1,type1.raw_type,output.raw.get(),nsends2,type2.raw_type,w_comm.raw_comm);
-
-}
-
-__Mothvoid __MothmpiMothfinalize(){
-MPI_Finalize();
-
-}
-
 __Mothint Mothmain(){
-__MothObjectmpi_comm comm;__Mothint world_size;__Mothint world_rank;__MothArray<__Mothint> dims;__MothObjectmpi_datatype fft_t;__MothArray<__Mothdouble> buff1;__MothArray<__Mothdouble> buff2;__Mothint nsends;__MothmpiMothinit();
-comm = __MothmpiMothget_comm_world();
-world_size = __MothmpiMothcomm_size(comm);
-world_rank = __MothmpiMothcomm_rank(comm);
-dims = __MothmpiMothdims_create(world_size,3);
-fft_t = __MothmpiMothtype_contiguous(__MothBaseSTAR(8,2));
-if (__MothBaseEQUAL(world_rank,0)){
-__MothPrint(convString("WORLD_SIZE = "));__MothPrint(world_size);__MothPrint(convString("\n"));
-__MothPrint(convString("WORLD_RANK = "));__MothPrint(world_rank);__MothPrint(convString("\n"));
-__MothPrint(convString("DIMS:\n"));
-__MothPrint(dims);
-
-}
-
-buff1 = __MothnmMotharange(__MothBaseSTAR(64,2));
-buff2 = __MothnmMothzeros(__MothBaseSTAR(64,2));
-if (__MothBaseEQUAL(world_rank,0)){
-__MothPrint(buff1);
-
-}
-
-nsends = 8;
-__MothmpiMothalltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm);
-if (__MothBaseEQUAL(world_rank,5)){
-__MothPrint(buff2);
-
-}
-
-__MothmpiMothtype_free(fft_t);
-__MothmpiMothfinalize();
+__MothArray<__Mothint> a;a = __MothnmMotharange(9).Mothreshape(3,3);
+__MothPrint(a.Mothmin());
+__MothPrint(a.Mothmax());
 return 0;
 
 }

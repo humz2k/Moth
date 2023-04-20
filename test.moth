@@ -2,32 +2,10 @@ include <numoth>
 include <math>
 include <timer>
 #include <complex>
-include <mpi>
+#include <mpi>
 
 def int main():
-    mpi.init()
-    mpi_comm comm = mpi.get_comm_world()
-    int world_size = mpi.comm_size(comm)
-    int world_rank = mpi.comm_rank(comm)
-    int[:] dims = mpi.dims_create(world_size,3)
-
-    mpi_datatype fft_t = mpi.type_contiguous(8*2)
-
-    if world_rank == 0:
-        print("WORLD_SIZE = ",world_size,"\n")
-        print("WORLD_RANK = ",world_rank,"\n")
-        print("DIMS:\n")
-        print(dims)
-
-    double[:] buff1 = nm.arange(64*2)
-    double[:] buff2 = nm.zeros(64*2)
-    if world_rank == 0:
-        print(buff1)
-    int nsends = 8
-    mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm)
-    if world_rank == 5:
-        print(buff2)
-    
-    mpi.type_free(fft_t)
-    mpi.finalize()
+    int[:] a = nm.arange(9).reshape(3,3)
+    print(a.min())
+    print(a.max())
     return 0

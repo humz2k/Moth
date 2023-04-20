@@ -1,36 +1,102 @@
 include <mpi>
 include <fftw>
+#include <timer>
 include dfft
 
 def int main():
     mpi.init()
 
-    int Ng = 8
+    int Ng = 128
+    int ntests = 5
 
     object Distribution dist = new Distribution(Ng)
     object Dfft dfft = new Dfft(dist)
 
+    if dist.world_rank == 0:
+        print("distribution 3D: ",dist.dims)
+        print("Ng: ",Ng,"\n\n")
+
     double[:,:] buff1 = nm.zeros((dfft.dist.nlocal,2))
     double[:,:] buff2 = nm.zeros((dfft.dist.nlocal,2))
 
+    double[:] minimum
+    double[:] maximum
+    double start
+    double end
+    double time
+    double mean_time
+    double max_time
+    double min_time
+
     dfft.make_plans(buff1,buff2)
+    for int i in range(ntests):
+        buff1.zero()
+        buff2.zero()
+        if dfft.dist.world_rank == 0:
+            buff1[0,0] = 1
+            print("TESTING ",i,"\n\n")
 
-    if dfft.dist.world_rank == 0:
-        buff1[0,0] = 1
-        print("TESTING\n")
+        start = mpi.wtime()
 
-    dfft.forward(buff1,buff2)
+        dfft.forward(buff1,buff2)
 
-    if dist.world_rank == 0:
-        print("K-SPACE\n")
-        print("Real in: [",nm.min(buff1[:,0]),",",nm.max(buff1[:,0]),"], Imag in: [",nm.min(buff1[:,1]),",",nm.max(buff1[:,1]),"]\n")
+        end = mpi.wtime()
 
-    dfft.backward(buff1,buff2)
+        time = end-start
 
-    if dist.world_rank == 0:
-        print("R-SPACE\n")
-        print("Real in: [",nm.min(buff1[:,0]),",",nm.max(buff1[:,0]),"], Imag in: [",nm.min(buff1[:,1]),",",nm.max(buff1[:,1]),"]\n")
-        print("[0,0,0] = ",buff1[0,0]," + ",buff1[0,1], "i\n")
+        max_time = mpi.allmax(time,dist.comm_world)
+        min_time = mpi.allmin(time,dist.comm_world)
+        mean_time = mpi.allsum(time,dist.comm_world) / dist.world_size
+
+        if dist.world_rank == 0:
+            print("FORWARD   max ",max_time,"s  avg: ",mean_time,"s  min ",min_time," s\n\n")
+
+        minimum = buff1.min(0).reshape(2)
+        maximum = buff1.max(0).reshape(2)
+
+        float min_real = mpi.allmin(minimum[0],dist.comm_world)
+        float max_real = mpi.allmax(maximum[0],dist.comm_world)
+        float min_imag = mpi.allmin(minimum[1],dist.comm_world)
+        float max_imag = mpi.allmax(maximum[1],dist.comm_world)
+
+        if dist.world_rank == 0:
+            print("k-space\n")
+            print("real in [",min_real,",",max_real,"]\n")
+            print("imag in [",min_imag,",",max_imag,"]\n\n")
+
+        start = mpi.wtime()
+
+        dfft.backward(buff1,buff2)
+
+        end = mpi.wtime()
+
+        time = end-start
+
+        max_time = mpi.allmax(time,dist.comm_world)
+        min_time = mpi.allmin(time,dist.comm_world)
+        mean_time = mpi.allsum(time,dist.comm_world) / dist.world_size
+
+        if dist.world_rank == 0:
+            print("BACKWARD   max ",max_time,"s  avg: ",mean_time,"s  min ",min_time," s\n\n")
+
+        if dist.world_rank == 0:
+            minimum = buff1[1:,:].min(0).reshape(2)
+            maximum = buff1[1:,:].max(0).reshape(2)
+        else:
+            minimum = buff1.min(0).reshape(2)
+            maximum = buff1.max(0).reshape(2)
+
+        float min_real = mpi.allmin(minimum[0],dist.comm_world)
+        float max_real = mpi.allmax(maximum[0],dist.comm_world)
+        float min_imag = mpi.allmin(minimum[1],dist.comm_world)
+        float max_imag = mpi.allmax(maximum[1],dist.comm_world)
+
+        if dist.world_rank == 0:
+            print("r-space\n")
+            print("a[0,0,0] = ",buff1[0,:])
+            print("real in [",min_real,",",max_real,"]\n")
+            print("imag in [",min_imag,",",max_imag,"]\n\n\n")
+        
 
     dfft.finalize()
 

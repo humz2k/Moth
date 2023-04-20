@@ -478,6 +478,132 @@ class __MothArray {
             return total;
         }
 
+        T Mothmin(){
+            T out = raw.get()[0];
+            for (int i = 0; i < size; i++){
+                if (out > raw.get()[i]){
+                    out = raw.get()[i];
+                }
+            }
+            return out;
+        }
+
+        T Mothmax(){
+            T out = raw.get()[0];
+            for (int i = 0; i < size; i++){
+                if (out < raw.get()[i]){
+                    out = raw.get()[i];
+                }
+            }
+            return out;
+        }
+
+        __MothArray<T> Mothmax(int axis){
+            if (axis < 0){
+                axis += ndims;
+            }
+            if ((axis < 0) || (axis >= ndims)){
+                MothRuntimeError("BroadcastAxis","Axis %d is out of range\n",axis);
+            }
+            int* new_dims = (int*)malloc(ndims*sizeof(int));
+            int* index = (int*)malloc(ndims*sizeof(int));
+            int* new_index = (int*)malloc(ndims*sizeof(int));
+            for (int i = 0; i < ndims; i++){
+                new_dims[i] = dims.get()[i];
+                index[i] = 0;
+                new_index[i] = 0;
+            }
+            new_dims[axis] = 1;
+            __MothArray<T> out(ndims);
+            out.init(new_dims);
+            //out.Mothzero();
+            T mymin = Mothmin();
+            for (int i = 0; i < out.size; i++){
+                out.raw.get()[i] = mymin;
+            }
+
+            for (int i = 0; i < size; i++){
+                if (out.raw.get()[out.get_index_from_ptr(ndims,new_index)] < raw.get()[get_index_from_ptr(ndims,index)]){
+                    out.raw.get()[out.get_index_from_ptr(ndims,new_index)] = raw.get()[get_index_from_ptr(ndims,index)];
+                }
+                index[ndims-1]++;
+                for (int j = ndims-1; j > 0; j--){
+                    if (index[j] == dims.get()[j]){
+                        index[j] = 0;
+                        index[j-1]++;
+                    }
+                }
+                if (index[0] == dims.get()[0]){
+                    break;
+                }
+                for (int j = 0; j < ndims; j++){
+                    if(index[j] >= new_dims[j]){
+                        new_index[j] = new_dims[j]-1;
+                    }else{
+                        new_index[j] = index[j];
+                    }
+                }
+            }
+
+            free(new_dims);
+            free(index);
+            free(new_index);
+            return out;
+        }
+
+        __MothArray<T> Mothmin(int axis){
+            if (axis < 0){
+                axis += ndims;
+            }
+            if ((axis < 0) || (axis >= ndims)){
+                MothRuntimeError("BroadcastAxis","Axis %d is out of range\n",axis);
+            }
+            int* new_dims = (int*)malloc(ndims*sizeof(int));
+            int* index = (int*)malloc(ndims*sizeof(int));
+            int* new_index = (int*)malloc(ndims*sizeof(int));
+            for (int i = 0; i < ndims; i++){
+                new_dims[i] = dims.get()[i];
+                index[i] = 0;
+                new_index[i] = 0;
+            }
+            new_dims[axis] = 1;
+            __MothArray<T> out(ndims);
+            out.init(new_dims);
+            //out.Mothzero();
+            T mymax = Mothmax();
+            for (int i = 0; i < out.size; i++){
+                out.raw.get()[i] = mymax;
+            }
+
+            for (int i = 0; i < size; i++){
+                if (out.raw.get()[out.get_index_from_ptr(ndims,new_index)] > raw.get()[get_index_from_ptr(ndims,index)]){
+                    out.raw.get()[out.get_index_from_ptr(ndims,new_index)] = raw.get()[get_index_from_ptr(ndims,index)];
+                }
+                index[ndims-1]++;
+                for (int j = ndims-1; j > 0; j--){
+                    if (index[j] == dims.get()[j]){
+                        index[j] = 0;
+                        index[j-1]++;
+                    }
+                }
+                if (index[0] == dims.get()[0]){
+                    break;
+                }
+                for (int j = 0; j < ndims; j++){
+                    if(index[j] >= new_dims[j]){
+                        new_index[j] = new_dims[j]-1;
+                    }else{
+                        new_index[j] = index[j];
+                    }
+                }
+            }
+
+            free(new_dims);
+            free(index);
+            free(new_index);
+            return out;
+        }
+
         __MothArray<T> Mothsum(int axis){
             if (axis < 0){
                 axis += ndims;
@@ -1198,6 +1324,26 @@ class __MothArraySlice {
         T Mothsum(){
             __MothArray<T> out = Mothcopy();
             return out.Mothsum();
+        }
+
+        __MothArray<T> Mothmin(int axis){
+            __MothArray<T> out = Mothcopy();
+            return out.Mothmin(axis);
+        }
+
+        T Mothmin(){
+            __MothArray<T> out = Mothcopy();
+            return out.Mothmin();
+        }
+
+        __MothArray<T> Mothmax(int axis){
+            __MothArray<T> out = Mothcopy();
+            return out.Mothmax(axis);
+        }
+
+        T Mothmax(){
+            __MothArray<T> out = Mothcopy();
+            return out.Mothmax();
         }
 
         template<class T1>

@@ -32,33 +32,33 @@ class Distribution:
     def void getZPencils(double[:,:] buff1, double[:,:] buff2):
         int nsends = ((local_grid_size[0] * local_grid_size[1])/world_size) * local_grid_size[2]
         mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
-        z_a2a_to_z_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims)
+        launch_z_a2a_to_z_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims)
 
     def void returnZPencils(double[:,:] buff1, double[:,:] buff2):
         int nsends = ((local_grid_size[0] * local_grid_size[1])/world_size) * local_grid_size[2]
-        z_pencils_to_z_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims)
+        launch_z_pencils_to_z_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims)
         mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
 
     def void getXPencils(double[:,:] buff1, double[:,:] buff2):
         int nsends = ((local_grid_size[2] * local_grid_size[1])/world_size) * local_grid_size[0]
         fast_z_to_x(buff2,buff1,local_grid_size)
         mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
-        x_a2a_to_x_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims)
+        launch_x_a2a_to_x_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims)
     
     def void returnXPencils(double[:,:] buff1, double[:,:] buff2):
         int nsends = ((local_grid_size[2] * local_grid_size[1])/world_size) * local_grid_size[0]
-        x_pencils_to_x_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims)
+        launch_x_pencils_to_x_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims)
         mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
 
     def void getYPencils(double[:,:] buff1, double[:,:] buff2):
         int nsends = ((local_grid_size[2] * local_grid_size[0])/world_size) * local_grid_size[1]
         fast_x_to_y(buff2,buff1,local_grid_size)
         mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
-        y_a2a_to_y_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims)
+        launch_y_a2a_to_y_pencils(buff2,buff1,world_size,nlocal,local_grid_size,dims)
     
     def void returnYPencils(double[:,:] buff1, double[:,:] buff2):
         int nsends = ((local_grid_size[2] * local_grid_size[0])/world_size) * local_grid_size[1]
-        y_pencils_to_y_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims)
+        launch_y_pencils_to_y_a2a(buff2,buff1,world_size,nlocal,local_grid_size,dims)
         mpi.alltoall(buff1,nsends,fft_t,buff2,nsends,fft_t,comm_world)
         fast_y_to_z(buff2,buff1,local_grid_size)
 
@@ -91,3 +91,6 @@ class Distribution:
                     print("   Start: ",local_coordinates_start)
                 mpi.barrier(comm_world)
             mpi.barrier(comm_world)
+
+    def void finalize():
+        mpi.type_free(fft_t)
