@@ -16,7 +16,7 @@ class fftw(static):
     def uint measure():
         return __c_lit(FFTW_MEASURE)
 
-    def plan plan_many_dft(int rank, int[:] n, int howmany, double[:,:] inp, int[:] inembed, int istride, int idist, double[:,:] out, int[:] onembed, int ostride, int odist, int sign, uint flags):
+    def plan plan_many_dft(int rank, int[:] n, int howmany, double[:,:] inp, int istride, int idist, double[:,:] out, int ostride, int odist, int sign, uint flags):
         plan new_plan = new plan()
         new_plan.raw = __c_call(fftw_plan_many_dft,__c_val(rank),__c_ptr(n),__c_val(howmany),__c_raw(__c_raw("reinterpret_cast<double(*)[2]>(",__c_ptr(inp)),__c_raw(")")),__c_lit(NULL),__c_val(istride),__c_val(idist),__c_raw(__c_raw("reinterpret_cast<double(*)[2]>(",__c_ptr(out)),__c_raw(")")),__c_lit(NULL),__c_val(ostride),__c_val(odist),__c_val(sign),__c_val(flags))
         return new_plan

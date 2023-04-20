@@ -3,8 +3,8 @@ include <math>
 include <timer>
 include <matplotlib>
 def int main():
-    int[:] xs = nm.arange(9)
-    int[:] ys = nm.arange(9)**2
+    double[:] xs = nm.arange(9)
+    double[:] ys = nm.arange(9)**2
     plt.plot(xs,ys)
     plt.title("Title")
     plt.legend()

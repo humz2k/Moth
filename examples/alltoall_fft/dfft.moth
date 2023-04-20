@@ -15,8 +15,8 @@ class Dfft:
         nFFTs = dist.nlocal/dist.ng
         n = nm.zeros(1)
         n[0] = dist.ng
-        f12 = fftw.plan_many_dft(1,n,nFFTs,buff1,NULL,1,dist.ng,buff2,NULL,1,dist.ng,fftw.forward(),fftw.measure())
-        b12 = fftw.plan_many_dft(1,n,nFFTs,buff1,NULL,1,dist.ng,buff2,NULL,1,dist.ng,fftw.backward(),fftw.measure())
+        f12 = fftw.plan_many_dft(1,n,nFFTs,buff1,1,dist.ng,buff2,1,dist.ng,fftw.forward(),fftw.measure())
+        b12 = fftw.plan_many_dft(1,n,nFFTs,buff1,1,dist.ng,buff2,1,dist.ng,fftw.backward(),fftw.measure())
 
     def void forward(double[:,:] buff1, double[:,:] buff2):
         dist.getZPencils(buff1,buff2)

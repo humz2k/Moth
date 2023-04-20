@@ -135,8 +135,9 @@ class Program(Container):
     
     def find_functions(self):
         self.functions = {}
+        self.function_inputs = {}
         for scope in self.items:
-            scope.find_functions(self.functions)
+            scope.find_functions(self.functions,self.function_inputs)
     
     def find_declarations(self):
         self.declarations = {}
@@ -179,6 +180,7 @@ class Scope(AstObj):
         self.variables = {}
         self.declarations = {}
         self.classes = {}
+        self.has_parent = False
 
     def find_classes(self,out):
         self.classes = out
@@ -187,24 +189,34 @@ class Scope(AstObj):
                 throwError("Class [\033[1;34m" + self.header.name.value + "\033[0;0m] is already defined","RedefinedClass",self.lineno)
             out[self.header.name.value] = self
     
-    def find_functions(self,out):
+    def find_functions(self,out,inputs):
         if isinstance(self.header,FunctionHeader):
+            self.has_parent = False
             if self.header.name.value in out.keys():
                 if not self.header.overload:
                     throwError("Function [\033[1;34m" + self.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedFunc",self.lineno)
-            out[self.header.name.value] = self.header.return_type
+                else:
+                    n_overloads = len([i for i in list(out.keys()) if i.split("-")[0] == self.header.name.value])
+                    out[self.header.name.value + "-" + str(n_overloads)] = self.header.return_type
+                    inputs[self.header.name.value + "-" + str(n_overloads)] = self.header.inputs
+            else:
+                out[self.header.name.value] = self.header.return_type
+                inputs[self.header.name.value] = self.header.inputs
             self.functions = out
-            
+            self.function_inputs = inputs
         
         if isinstance(self.header,KernelHeader):
             if self.header.name.value in out.keys():
                 throwError("Kernel [\033[1;34m" + self.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedKernel",self.lineno)
             out["Moth" + self.header.name.value] = Type(Token("TYPE_NAME","void"))
+            inputs["Moth" + self.header.name.value] = self.header.inputs
             self.functions = out
+            self.function_inputs = inputs
             
         
         if isinstance(self.header,ClassHeader):
             self.functions = {}
+            self.function_inputs = {}
             self.is_static = False
             if self.header.inherits == "STATIC":
                 self.is_static = True
@@ -214,30 +226,48 @@ class Scope(AstObj):
                 if isinstance(i,Scope):
                     i.classes = self.classes
                     if isinstance(i.header,FunctionHeader):
+                        if self.header.inherits != "STATIC":
+                            i.has_parent = True
+                        i.parent = self
                         if i.header.name.value in self.functions:
                             if not i.header.overload:
                                 throwError("Function [\033[1;34m" + self.header.name.value + "." + i.header.name.value[4:] + "\033[0;0m] is already defined","RedefinedMemFunc",i.lineno)
+                            else:
+                                n_overloads = len([j for j in list(self.functions.keys()) if j.split("-")[0] == i.header.name.value])
+                                self.functions[i.header.name.value + "-" + str(n_overloads)] = i.header.return_type
+                                out[self.header.name.value + i.header.name.value + "-" + str(n_overloads)] = i.header.return_type
+                                self.function_inputs[i.header.name.value + "-" + str(n_overloads)] = i.header.inputs
+                                inputs[self.header.name.value + i.header.name.value + "-" + str(n_overloads)] = i.header.inputs
+                        else:
+                            self.functions[i.header.name.value] = i.header.return_type
+                            #print(self.functions)
+                            out[self.header.name.value + i.header.name.value] = i.header.return_type
+                            self.function_inputs[i.header.name.value] = i.header.inputs
+                            inputs[self.header.name.value + i.header.name.value] = i.header.inputs
+                            #print(out)
                         for j in i.body.lines.items:
                             if isinstance(j,Scope):
                                 if not (isinstance(j.header,ClassHeader) or isinstance(j.header,FunctionHeader) or isinstance(j.header,KernelHeader)):
-                                    j.find_functions(out)
+                                    j.find_functions(out,inputs)
+                                    j.has_parent = True
+                                    j.parent = self
                             #throwError("Redefined function " + self.header.name.value + "." + i.header.name.value,"RedefineMemFunc",self.lineno)
                         if i.header.name.value == "Moth__init__":
                             if self.is_static:
                                 self.has_init = True
                                 self.init_func = i
                         
-                        self.functions[i.header.name.value] = i.header.return_type
-                        out[i.header.name.value] = i.header.return_type
                         i.functions = out
+                        i.function_inputs = inputs
         
         else:
             self.functions = out
+            self.function_inputs = inputs
         
         for i in self.body.lines.items:
             if isinstance(i,Scope):
                 if not (isinstance(i.header,ClassHeader) or isinstance(i.header,FunctionHeader) or isinstance(i.header,KernelHeader)):
-                    i.find_functions(out)
+                    i.find_functions(out,inputs)
     
     def find_declarations(self,declarations,dont_declare=[]):
         self.dont_declare = dont_declare[:]
@@ -684,24 +714,166 @@ class FunctionCall(AstObj):
                 #    self.moth_type = TupleType(Token("TYPE_NAME","int"))
                 else:
                     throwError("Array Type does not have function \033[1;34m" + self.name.child.value + "\033[0;0m", "ArrayFuncNotFound",self.lineno)
-            else:
-                print(self.name)
-                exit()
+            elif isinstance(self.name.parent.moth_type,TupleType):
+                if self.name.child.value == "len":
+                    self.moth_type = Type(Token("TYPE_NAME","int"))
+            elif isinstance(self.name.parent.moth_type,ListType):
+                if self.name.child.value == "len":
+                    self.moth_type = Type(Token("TYPE_NAME","int"))
+                elif self.name.child.value == "append":
+                    self.moth_type = Type(Token("TYPE_NAME","void"))
+                elif self.name.child.value == "pop":
+                    self.moth_type = self.name.parent.moth_type.name
+                elif self.name.child.value == "reset":
+                    self.moth_type = Type(Token("TYPE_NAME","void"))
+            elif isinstance(self.name.parent.moth_type,ObjectType):
+                if self.name.parent.moth_type.name.value in parent.classes:
+                    my_class = parent.classes[self.name.parent.moth_type.name.value]
+                    if "Moth"+self.name.child.value in my_class.functions:
+                        #print("YEET")
+                        candidates = [i for i in list(my_class.functions.keys()) if i.split("-")[0] == "Moth"+self.name.child.value]
+                        found = False
+                        for candidate in candidates:
+                            correct_inputs = my_class.function_inputs[candidate]
+                            correct_inputs = [i[0].get_compare() for i in correct_inputs.items]
+                            actual = [i.moth_type.get_compare() for i in self.inputs]
+                            while "c_type" in correct_inputs:
+                                try:
+                                    actual.pop(correct_inputs.index("c_type"))
+                                    correct_inputs.pop(correct_inputs.index("c_type"))
+                                except:
+                                    throwError("No overloads exist with inputs","NoOverload",self.lineno)
+                            if correct_inputs == actual:
+                                found = True
+                                self.moth_type = my_class.functions[candidate]
+                                break
+                                        
+                        if not found:
+                            throwError("No overloads exist with inputs","NoOverload",self.lineno)
+                        
+                        #print(correct_inputs.items)
+                        #print(self.inputs[0].moth_type.get_c())
+                        #exit()
+                        #self.moth_type = my_class.functions["Moth"+self.name.child.value]
+                        
+                    else:
+                        throwError("Function "+self.name.child.value+" not found in object "+self.name.parent.moth_type.name.value,"FuncNotFoundinObj",self.lineno)
+                else:
+                    throwError("Object "+self.name.parent.moth_type.name.value+" not found in scope","ObjNotFound",self.lineno)
         else:
+            found = False
             if isinstance(self.name,StaticFunction):
                 if self.name.class_name.value in parent.classes:
                     if "Moth" + self.name.function_name.value in parent.classes[self.name.class_name.value].functions:
-                        self.moth_type = parent.classes[self.name.class_name.value].functions["Moth" + self.name.function_name.value]
+                        candidates = [i for i in list(parent.classes[self.name.class_name.value].functions.keys()) if i.split("-")[0] == "Moth" + self.name.function_name.value]
+                        found = False
+                        for candidate in candidates:
+                            correct_inputs = parent.classes[self.name.class_name.value].function_inputs[candidate]
+                            correct_inputs = [i[0].get_compare() for i in correct_inputs.items]
+                            actual = [i.moth_type.get_compare() for i in self.inputs]
+                            while "c_type" in correct_inputs:
+                                try:
+                                    actual.pop(correct_inputs.index("c_type"))
+                                    correct_inputs.pop(correct_inputs.index("c_type"))
+                                except:
+                                    throwError("No overloads exist with inputs","NoOverload",self.lineno)
+                            if correct_inputs == actual:
+                                found = True
+                                self.moth_type = parent.classes[self.name.class_name.value].functions[candidate]
+                                break
+                        if not found:
+                            throwError("No overloads exist with inputs","NoOverload",self.lineno)
+                        #self.moth_type = parent.classes[self.name.class_name.value].functions["Moth" + self.name.function_name.value]
                     else:
                         throwError("Function [\033[1;34m" + self.name.class_name.value + "." + self.name.function_name.value + "\033[0;0m] not defined in scope ","FuncUnDefined",self.lineno)
                 else:
                     throwError("Class [\033[1;34m" + str(self.name.class_name) + "\033[0;0m] not defined in scope ","ClassUnDefined",self.lineno)
-            elif self.name.value in parent.functions:
-                self.moth_type = parent.functions[self.name.value]
+            elif isinstance(parent.header,FunctionHeader):
+                found = False
+                if parent.has_parent:
+                    if self.name.value in parent.parent.functions.keys():
+                        candidates = [i for i in list(parent.parent.functions.keys()) if i.split("-")[0] == self.name.value]
+                        for candidate in candidates:
+                            correct_inputs = parent.parent.function_inputs[candidate]
+                            correct_inputs = [i[0].get_compare() for i in correct_inputs.items]
+                            actual = [i.moth_type.get_compare() for i in self.inputs]
+                            while "c_type" in correct_inputs:
+                                try:
+                                    actual.pop(correct_inputs.index("c_type"))
+                                    correct_inputs.pop(correct_inputs.index("c_type"))
+                                except:
+                                    throwError("No overloads exist with inputs","NoOverload",self.lineno)
+                            if correct_inputs == actual:
+                                found = True
+                                self.moth_type = parent.parent.functions[candidate]
+                                break
+                        #self.moth_type = parent.parent.functions[self.name.value]
+                        #found = True
+                if not found:
+                    if self.name.value in parent.functions:
+                        found = False
+                        candidates = [i for i in list(parent.functions.keys()) if i.split("-")[0] == self.name.value]
+                        for candidate in candidates:
+                            correct_inputs = parent.function_inputs[candidate]
+                            correct_inputs = [i[0].get_compare() for i in correct_inputs.items]
+                            actual = [i.moth_type.get_compare() for i in self.inputs]
+                            while "c_type" in correct_inputs:
+                                try:
+                                    actual.pop(correct_inputs.index("c_type"))
+                                    correct_inputs.pop(correct_inputs.index("c_type"))
+                                except:
+                                    throwError("No overloads exist with inputs","NoOverload",self.lineno)
+                            if correct_inputs == actual:
+                                found = True
+                                self.moth_type = parent.functions[candidate]
+                                break
+                        if not found:
+                            throwError("No overloads exist with inputs","NoOverload",self.lineno)
+                    else:
+                        throwError("Function [\033[1;34m" + str(self.name) + "\033[0;0m] not defined in scope ","FuncUnDefined",self.lineno)
+            elif (self.name.value in parent.functions):
+                #self.moth_type = parent.functions[self.name.value]
+                found = False
+                candidates = [i for i in list(parent.functions.keys()) if i.split("-")[0] == self.name.value]
+                for candidate in candidates:
+                    correct_inputs = parent.function_inputs[candidate]
+                    correct_inputs = [i[0].get_compare() for i in correct_inputs.items]
+                    actual = [i.moth_type.get_compare() for i in self.inputs]
+                    while "c_type" in correct_inputs:
+                        try:
+                            actual.pop(correct_inputs.index("c_type"))
+                            correct_inputs.pop(correct_inputs.index("c_type"))
+                        except:
+                            throwError("No overloads exist with inputs","NoOverload",self.lineno)
+                    if correct_inputs == actual:
+                        found = True
+                        self.moth_type = parent.functions[candidate]
+                        break
+                if not found:
+                    throwError("No overloads exist with inputs","NoOverload",self.lineno)
             else:
                 if self.name.value == "MoththrowErr":
                     pass
                 else:
+                    if parent.has_parent:
+                        if self.name.value in parent.parent.functions.keys():
+                            candidates = [i for i in list(parent.parent.functions.keys()) if i.split("-")[0] == self.name.value]
+                            for candidate in candidates:
+                                correct_inputs = parent.parent.function_inputs[candidate]
+                                correct_inputs = [i[0].get_compare() for i in correct_inputs.items]
+                                actual = [i.moth_type.get_compare() for i in self.inputs]
+                                while "c_type" in correct_inputs:
+                                    try:
+                                        actual.pop(correct_inputs.index("c_type"))
+                                        correct_inputs.pop(correct_inputs.index("c_type"))
+                                    except:
+                                        throwError("No overloads exist with inputs","NoOverload",self.lineno)
+                                if correct_inputs == actual:
+                                    found = True
+                                    self.moth_type = parent.parent.functions[candidate]
+                                    return self
+                    #print(self.name.value)
+                    #exit()
                     throwError("Function [\033[1;34m" + str(self.name) + "\033[0;0m] not defined in scope ","FuncUnDefined",self.lineno)
         return self
 
@@ -733,10 +905,19 @@ class FunctionCall(AstObj):
 class Lines(Container):
     pass
 
+class DtypeType(AstObj):
+    def __init__(self):
+        self.name = Token("TYPE_NAME","dtype")
+    
+    def get_compare(self):
+        return "dtype"
+
+
 class BaseType(AstObj):
     def __init__(self,name,lineno = None):
         self.lineno = lineno
         self.name = name
+        self.moth_type = DtypeType()
 
     def find_variables(self,parent=None):
         return self
@@ -749,6 +930,19 @@ class BaseType(AstObj):
     
     def get_raw(self):
         return "Base"
+    
+    def get_compare(self):
+        if self.name.value in ["char","short","int","long"]:
+            return "int"
+        if self.name.value in ["uchar","ushort","uint","ulong"]:
+            return "uint"
+        if self.name.value in ["double","float"]:
+            return "double"
+        if self.name.value in ["str"]:
+            return "str"
+        if self.name.value in ["dtype"]:
+            return "dtype"
+        throwError("TYPE IS WRONG????","THISISBAD",self.lineno)
 
     def get_special(self,is_class=False):
         return ""
@@ -759,6 +953,9 @@ class Template(BaseType):
         super().__init__(name,lineno)
         self.value = name.value
         self.c_str = self.value
+
+    def get_compare(self):
+        return "dtype"
 
     def get_c(self,parent=None):
         if type(parent) != type(None):
@@ -784,6 +981,9 @@ class ListType(BaseType):
     
     def get_raw(self):
         return "ListContainer"
+    
+    def get_compare(self):
+        return "list" + self.name.get_compare()
 
     def get_special(self,is_class=False):
         if is_class:
@@ -796,6 +996,9 @@ class TupleType(BaseType):
     
     def get_raw(self):
         return "Tuple"
+    
+    def get_compare(self):
+        return self.name.get_compare()
 
     def get_special(self,is_class=False):
         if is_class:
@@ -811,6 +1014,7 @@ class TupleLiteral(Container):
     def __init__(self,dtype,item=None,lineno=None):
         super().__init__(item,lineno)
         self.dtype = dtype
+        self.moth_type = dtype
 
     def find_variables(self,parent):
         items = []
@@ -826,6 +1030,7 @@ class TupleLiteral(Container):
                     self.dtype = Type(Token("TYPE_NAME","float"))
                 else:
                     throwError("Only \033[1;34mint\033[0;0m or \033[1;34mfloat\033[0;0m is valid for type inferred tuple","TypeInferTupleErr",self.lineno)
+            self.moth_type = self.dtype
         return self
 
     def eval(self,parent,isRaw=False):
@@ -846,6 +1051,9 @@ class ObjectType(BaseType):
     def get_c(self,parent=None):
         return "__MothObject" + self.name.value
     
+    def get_compare(self):
+        return self.get_c()
+    
     def get_raw(self):
         return "Object"
 
@@ -858,6 +1066,9 @@ class ArrayType(BaseType):
         self.dimensions += 1
         return self
     
+    def get_compare(self):
+        return "array" + self.name.get_compare()
+
     def get_c(self,parent=None):
         return "__MothArray<" + self.name.get_c(parent) + ">"
 
@@ -1076,11 +1287,7 @@ class BinOp(AstObj):
     def find_variables(self,parent):
         self.left = self.left.find_variables(parent)
         self.right = self.right.find_variables(parent)
-        try:
-            self.moth_type = self.left.moth_type
-        except:
-            print(self.left)
-            exit()
+        self.moth_type = self.left.moth_type
         if self.right.moth_type.get_raw() == "Base":
             if self.right.moth_type.name.value == "float":
                 self.moth_type = self.right.moth_type
@@ -1155,6 +1362,9 @@ class Craw(Ctypes):
         self.val = self.val.find_variables(parent)
         self.string = self.string.find_variables(parent)
         return self
+    
+    def get_compare(self):
+        return "c_type"
 
     def get_c(self,parent=None):
         f = ""
@@ -1186,6 +1396,9 @@ class Ctype(Ctypes):
     def find_variables(self,parent):
         return self
     
+    def get_compare(self):
+        return "c_type"
+    
     def get_c(self,parent=None):
         try:
             return self.val.value
@@ -1203,6 +1416,9 @@ class Clit(Ctypes):
         self.lineno = lineno
         self.val = val
         self.moth_type = Type(Token("TYPE_NAME","int"))
+
+    def get_compare(self):
+        return "c_type"
     
     def find_variables(self,parent):
         return self
@@ -1221,6 +1437,9 @@ class Cval(Ctypes):
     def find_variables(self,parent):
         self.val = self.val.find_variables(parent)
         return self
+    
+    def get_compare(self):
+        return "c_type"
 
     def eval(self,parent,isRaw=False):
         return self.val.eval(parent,isRaw=isRaw)
@@ -1233,6 +1452,9 @@ class Cptr(Ctypes):
     def find_variables(self,parent):
         self.var = self.var.find_variables(parent)
         return self
+    
+    def get_compare(self):
+        return "c_type"
 
     def eval(self,parent,isRaw=False):
         if isinstance(self.var,Null):
@@ -1256,6 +1478,9 @@ class Ccall(Ctypes):
             inputs.append(i.find_variables(parent))
         self.inputs = inputs
         return self
+    
+    def get_compare(self):
+        return "c_type"
 
     def add(self,inp):
         self.inputs.append(inp)
@@ -1320,6 +1545,9 @@ class Null(AstObj):
     
     def find_variables(self,parent):
         return self
+    
+    def get_compare(self):
+        return "NULL"
     
     def eval(self,parent,isRaw=False):
         return "NULL"

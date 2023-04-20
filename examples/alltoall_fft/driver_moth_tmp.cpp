@@ -494,6 +494,22 @@ return out;
 
 }
 
+__Mothdouble Mothmax(__Mothdouble val,__MothObjectmpi_comm w_comm){
+__Mothdouble inp;__Mothdouble out;inp = val;
+out = 0;
+MPI_Allreduce(&inp,&out,1,MPI_DOUBLE,MPI_MAX,w_comm.raw_comm);
+return out;
+
+}
+
+__Mothdouble Mothsum(__Mothdouble val,__MothObjectmpi_comm w_comm){
+__Mothdouble inp;__Mothdouble out;inp = val;
+out = 0;
+MPI_Allreduce(&inp,&out,1,MPI_DOUBLE,MPI_SUM,w_comm.raw_comm);
+return out;
+
+}
+
 
 };
 __MothObjectmpi_comm __MothmpiMothcomm_world;__MothObjectmpi_allreduce __MothmpiMothreduce;__Mothvoid __MothmpiMoth__init__(){
@@ -592,30 +608,6 @@ MPI_Alltoall(input.raw.get(),nsends1,type1.raw_type,output.raw.get(),nsends2,typ
 
 __Mothvoid __MothmpiMothallreduce(__MothArray<__Mothdouble> sendbuff,__MothArray<__Mothdouble> recvbuff,__Mothint count,__MothObjectmpi_datatype datat,__MothObjectmpi_op w_op,__MothObjectmpi_comm w_comm){
 MPI_Allreduce(sendbuff.raw.get(),recvbuff.raw.get(),count,datat.raw_type,w_op.raw_op,w_comm.raw_comm);
-
-}
-
-__Mothdouble __MothmpiMothallmin(__Mothdouble val,__MothObjectmpi_comm w_comm){
-__Mothdouble inp;__Mothdouble out;inp = val;
-out = 0;
-MPI_Allreduce(&inp,&out,1,MPI_DOUBLE,MPI_MIN,w_comm.raw_comm);
-return out;
-
-}
-
-__Mothdouble __MothmpiMothallmax(__Mothdouble val,__MothObjectmpi_comm w_comm){
-__Mothdouble inp;__Mothdouble out;inp = val;
-out = 0;
-MPI_Allreduce(&inp,&out,1,MPI_DOUBLE,MPI_MAX,w_comm.raw_comm);
-return out;
-
-}
-
-__Mothdouble __MothmpiMothallsum(__Mothdouble val,__MothObjectmpi_comm w_comm){
-__Mothdouble inp;__Mothdouble out;inp = val;
-out = 0;
-MPI_Allreduce(&inp,&out,1,MPI_DOUBLE,MPI_SUM,w_comm.raw_comm);
-return out;
 
 }
 
@@ -766,7 +758,7 @@ return FFTW_MEASURE;
 
 }
 
-__MothObjectplan __MothfftwMothplan_many_dft(__Mothint rank,__MothArray<__Mothint> n,__Mothint howmany,__MothArray<__Mothdouble> inp,__MothArray<__Mothint> inembed,__Mothint istride,__Mothint idist,__MothArray<__Mothdouble> out,__MothArray<__Mothint> onembed,__Mothint ostride,__Mothint odist,__Mothint sign,__Mothuint flags){
+__MothObjectplan __MothfftwMothplan_many_dft(__Mothint rank,__MothArray<__Mothint> n,__Mothint howmany,__MothArray<__Mothdouble> inp,__Mothint istride,__Mothint idist,__MothArray<__Mothdouble> out,__Mothint ostride,__Mothint odist,__Mothint sign,__Mothuint flags){
 __MothObjectplan new_plan;new_plan.Moth__init__();
 new_plan.raw = fftw_plan_many_dft(rank,n.raw.get(),howmany,reinterpret_cast<double(*)[2]>(inp.raw.get()),NULL,istride,idist,reinterpret_cast<double(*)[2]>(out.raw.get()),NULL,ostride,odist,sign,flags);
 return new_plan;
@@ -794,8 +786,8 @@ __Mothvoid Mothmake_plans(__MothArray<__Mothdouble> buff1,__MothArray<__Mothdoub
 nFFTs = __MothBaseSLASH(dist.nlocal,dist.ng);
 n = __MothnmMothzeros(1);
 __MothArrayINDEX(n,1,0) = dist.ng;
-f12 = __MothfftwMothplan_many_dft(1,n,nFFTs,buff1,NULL,1,dist.ng,buff2,NULL,1,dist.ng,__MothfftwMothforward(),__MothfftwMothmeasure());
-b12 = __MothfftwMothplan_many_dft(1,n,nFFTs,buff1,NULL,1,dist.ng,buff2,NULL,1,dist.ng,__MothfftwMothbackward(),__MothfftwMothmeasure());
+f12 = __MothfftwMothplan_many_dft(1,n,nFFTs,buff1,1,dist.ng,buff2,1,dist.ng,__MothfftwMothforward(),__MothfftwMothmeasure());
+b12 = __MothfftwMothplan_many_dft(1,n,nFFTs,buff1,1,dist.ng,buff2,1,dist.ng,__MothfftwMothbackward(),__MothfftwMothmeasure());
 
 }
 
@@ -863,9 +855,9 @@ start = __MothmpiMothwtime();
 dfft.Mothforward(buff1,buff2);
 end = __MothmpiMothwtime();
 time = __MothBaseMINUS(end,start);
-max_time = __MothmpiMothallmax(time,__MothmpiMothcomm_world);
-min_time = __MothmpiMothallmin(time,__MothmpiMothcomm_world);
-mean_time = __MothBaseSLASH(__MothmpiMothallsum(time,__MothmpiMothcomm_world),dist.world_size);
+max_time = __MothmpiMothreduce.Mothmax(time,__MothmpiMothcomm_world);
+min_time = __MothmpiMothreduce.Mothmin(time,__MothmpiMothcomm_world);
+mean_time = __MothBaseSLASH(__MothmpiMothreduce.Mothsum(time,__MothmpiMothcomm_world),dist.world_size);
 if (__MothBaseEQUAL(dist.world_rank,0)){
 __MothPrint(convString("FORWARD   max "));__MothPrint(max_time);__MothPrint(convString("s  avg: "));__MothPrint(mean_time);__MothPrint(convString("s  min "));__MothPrint(min_time);__MothPrint(convString(" s\n\n"));
 
@@ -874,9 +866,9 @@ __MothPrint(convString("FORWARD   max "));__MothPrint(max_time);__MothPrint(conv
 minimum = buff1.Mothmin(0).Mothreshape(2);
 maximum = buff1.Mothmax(0).Mothreshape(2);
 min_real = __MothmpiMothreduce.Mothmin(__MothArrayINDEX(minimum,1,0),__MothmpiMothcomm_world);
-max_real = __MothmpiMothallmax(__MothArrayINDEX(maximum,1,0),__MothmpiMothcomm_world);
-min_imag = __MothmpiMothallmin(__MothArrayINDEX(minimum,1,1),__MothmpiMothcomm_world);
-max_imag = __MothmpiMothallmax(__MothArrayINDEX(maximum,1,1),__MothmpiMothcomm_world);
+max_real = __MothmpiMothreduce.Mothmax(__MothArrayINDEX(maximum,1,0),__MothmpiMothcomm_world);
+min_imag = __MothmpiMothreduce.Mothmin(__MothArrayINDEX(minimum,1,1),__MothmpiMothcomm_world);
+max_imag = __MothmpiMothreduce.Mothmax(__MothArrayINDEX(maximum,1,1),__MothmpiMothcomm_world);
 if (__MothBaseEQUAL(dist.world_rank,0)){
 __MothPrint(convString("k-space\n"));
 __MothPrint(convString("real in ["));__MothPrint(min_real);__MothPrint(convString(","));__MothPrint(max_real);__MothPrint(convString("]\n"));
@@ -888,9 +880,9 @@ start = __MothmpiMothwtime();
 dfft.Mothbackward(buff1,buff2);
 end = __MothmpiMothwtime();
 time = __MothBaseMINUS(end,start);
-max_time = __MothmpiMothallmax(time,__MothmpiMothcomm_world);
-min_time = __MothmpiMothallmin(time,__MothmpiMothcomm_world);
-mean_time = __MothBaseSLASH(__MothmpiMothallsum(time,__MothmpiMothcomm_world),dist.world_size);
+max_time = __MothmpiMothreduce.Mothmax(time,__MothmpiMothcomm_world);
+min_time = __MothmpiMothreduce.Mothmin(time,__MothmpiMothcomm_world);
+mean_time = __MothBaseSLASH(__MothmpiMothreduce.Mothsum(time,__MothmpiMothcomm_world),dist.world_size);
 if (__MothBaseEQUAL(dist.world_rank,0)){
 __MothPrint(convString("BACKWARD   max "));__MothPrint(max_time);__MothPrint(convString("s  avg: "));__MothPrint(mean_time);__MothPrint(convString("s  min "));__MothPrint(min_time);__MothPrint(convString(" s\n\n"));
 
@@ -908,10 +900,10 @@ maximum = buff1.Mothmax(0).Mothreshape(2);
 
 }
 
-min_real = __MothmpiMothallmin(__MothArrayINDEX(minimum,1,0),__MothmpiMothcomm_world);
-max_real = __MothmpiMothallmax(__MothArrayINDEX(maximum,1,0),__MothmpiMothcomm_world);
-min_imag = __MothmpiMothallmin(__MothArrayINDEX(minimum,1,1),__MothmpiMothcomm_world);
-max_imag = __MothmpiMothallmax(__MothArrayINDEX(maximum,1,1),__MothmpiMothcomm_world);
+min_real = __MothmpiMothreduce.Mothmin(__MothArrayINDEX(minimum,1,0),__MothmpiMothcomm_world);
+max_real = __MothmpiMothreduce.Mothmax(__MothArrayINDEX(maximum,1,0),__MothmpiMothcomm_world);
+min_imag = __MothmpiMothreduce.Mothmin(__MothArrayINDEX(minimum,1,1),__MothmpiMothcomm_world);
+max_imag = __MothmpiMothreduce.Mothmax(__MothArrayINDEX(maximum,1,1),__MothmpiMothcomm_world);
 if (__MothBaseEQUAL(dist.world_rank,0)){
 __MothPrint(convString("r-space\n"));
 __MothPrint(convString("a[0,0,0] = "));__MothPrint(__MothGetSlice(buff1,6,0,0,0,0,buff1.dims.get()[1],1));
