@@ -1,0 +1,33 @@
+class file(type):
+    __c_type(__c_raw("std::ofstream")) raw_write
+    __c_type(__c_raw("std::ifstream")) raw_read
+    int mode
+    str name
+    def void __init__(str filename):
+        name = filename
+        mode = -1
+
+    def void open(str in_mode):
+        if mode != -1:
+            if in_mode == "w":
+                mode = 0
+                __c_call(__c_raw("raw_write.open"),__c_val(name))
+                return
+            if in_mode == "r":
+                mode = 1
+                __c_call(__c_raw("raw_read.open"),__c_val(name))
+                return
+            throwErr("Invalid file mode\n")
+        else:
+            throwErr("File already open\n")
+
+    def void close():
+        if mode == 0:
+            mode = -1
+            __c_call(__c_raw("raw_write.close"),__c_val(name))
+            return
+        if mode == 1:
+            mode = -1
+            __c_call(__c_raw("raw_read.close"),__c_val(name))
+            return
+        throwErr("No file open\n")

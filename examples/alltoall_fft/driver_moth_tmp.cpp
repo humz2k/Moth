@@ -826,10 +826,16 @@ dist.Mothfinalize();
 
 
 };
-__Mothint Mothmain(){
-__Mothint Ng;__Mothint ntests;__MothObjectDistribution dist;__MothObjectDfft dfft;__MothArray<__Mothdouble> buff1;__MothArray<__Mothdouble> buff2;__MothArray<__Mothdouble> minimum;__MothArray<__Mothdouble> maximum;__Mothdouble start;__Mothdouble end;__Mothdouble time;__Mothdouble mean_time;__Mothdouble max_time;__Mothdouble min_time;__Mothint i;__MothmpiMothinit();
-Ng = 128;
-ntests = 5;
+__Mothint Mothmain(__MothListContainer<__Mothstr> argv){
+__Mothint Ng;__Mothint ntests;__MothObjectDistribution dist;__MothObjectDfft dfft;__MothArray<__Mothdouble> buff1;__MothArray<__Mothdouble> buff2;__MothArray<__Mothdouble> minimum;__MothArray<__Mothdouble> maximum;__Mothdouble start;__Mothdouble end;__Mothdouble time;__Mothdouble mean_time;__Mothdouble max_time;__Mothdouble min_time;__Mothint i;if (__MothBaseNOT_EQUAL(argv.Mothlen(),3)){
+__MothPrint(convString("USAGE: "));__MothPrint(__MothListContainerINDEX(argv,1,0));__MothPrint(convString(" n_repetitions ngx\n"));
+return 0;
+
+}
+
+__MothmpiMothinit();
+Ng = std::stoi(__MothListContainerINDEX(argv,1,2));
+ntests = std::stoi(__MothListContainerINDEX(argv,1,1));
 dist.Moth__init__(Ng);
 dfft.Moth__init__(dist);
 if (__MothBaseEQUAL(dist.world_rank,0)){
@@ -921,4 +927,4 @@ return 0;
 
 }
 
-int main() {I.real = 0; I.imag = 1;__MothmpiMoth__init__(); return Mothmain();}
+int main(int argc, char* argv[]) {I.real = 0; I.imag = 1;__MothmpiMoth__init__(); return Mothmain(argvToList(argc,argv));}

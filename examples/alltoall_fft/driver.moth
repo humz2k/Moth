@@ -3,11 +3,16 @@ include <fftw>
 #include <timer>
 include dfft
 
-def int main():
+def int main(list str argv):
+
+    if argv.len() != 3:
+        print("USAGE: ",argv[0]," n_repetitions ngx\n")
+        return 0
+
     mpi.init()
 
-    int Ng = 128
-    int ntests = 5
+    int Ng = int(argv[2])
+    int ntests = int(argv[1])
 
     object Distribution dist = new Distribution(Ng)
     object Dfft dfft = new Dfft(dist)

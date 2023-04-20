@@ -86,7 +86,21 @@ class Program(Container):
         for scope in self.items: #evaluates all scopes
             out += scope.eval(self)
         inits = self.find_static_inits() #This finds any static classes that have an __init__ method and puts then in main
-        return  out + "\nint main() {I.real = 0; I.imag = 1;" + "".join(inits) + " return Mothmain();}\n"
+        if "Mothmain" in self.functions:
+            if len(self.function_inputs["Mothmain"].items) == 0:
+                return out + "\nint main() {I.real = 0; I.imag = 1;" + "".join(inits) + " return Mothmain();}\n"
+            elif len(self.function_inputs["Mothmain"].items) == 1:
+                if isinstance(self.function_inputs["Mothmain"].items[0][0],ListType):
+                    if self.function_inputs["Mothmain"].items[0][0].name.get_c() != "__Mothstr":
+                        throwError("Args can only be list str","ArgsType",self.lineno)
+                    else:
+                        return out + "\nint main(int argc, char* argv[]) {I.real = 0; I.imag = 1;" + "".join(inits) + " return Mothmain(argvToList(argc,argv));}\n"
+                else:
+                    throwError("Args can only be list str","ArgsType",self.lineno)
+            else:
+                throwError("Too many arguments to main","MainArgs",self.lineno)
+        else:
+            return out
 
 class Scope(AstObj):
     def __init__(self,header,body,lineno=None):
@@ -1427,6 +1441,8 @@ class Craw(Ctypes):
         self.lineno = lineno
         if isinstance(self.string,String):
             self.value = self.string.value[1:-1]
+        else:
+            self.value = self.get_c()
 
     def find_variables(self,parent):
         self.val = self.val.find_variables(parent)
@@ -1607,7 +1623,15 @@ class Cast(AstObj):
         return self
     
     def eval(self,parent,isRaw=False):
-        return "(" + self.new_type.get_c() + ")" + "(" + self.expression.eval(parent,isRaw=isRaw) + ")"
+        if self.expression.moth_type.get_c() == "__Mothstr":
+            funcs = {"__Mothint": "std::stoi", "__Mothfloat": "std::stof","__Mothdouble": "std::stod","__Mothlong": "std::stol"}
+            t = self.new_type.get_c()
+            if t in funcs:
+                return funcs[t] + "(" + self.expression.eval(parent,isRaw=isRaw) + ")"
+            else:
+                throwError("No casting rule for string","CastRuleErr",self.lineno)
+        else:
+            return "(" + self.new_type.get_c() + ")" + "(" + self.expression.eval(parent,isRaw=isRaw) + ")"
     
 class Null(AstObj):
     def __init__(self,lineno=None):

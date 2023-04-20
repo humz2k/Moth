@@ -5,7 +5,7 @@ leak:
 	leaks -atExit -- ./driver.o | grep LEAK:
 
 run:
-	mpirun -n 8 ./driver.o
+	mpirun -n 8 ./driver.o 5 128
 
 clean:
 	rm driver.o

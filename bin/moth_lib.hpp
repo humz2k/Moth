@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <iostream>
+#include <fstream>
 
 #define MothRuntimeError(err_t,...) fprintf(stderr, "\033[1;33mMothRuntimeError\033[0;0m(\033[1;31m%s\033[0;0m):\n\t",err_t); fprintf(stderr, __VA_ARGS__); exit(1);
 
@@ -2273,6 +2275,15 @@ void __MothPrint(std::map<T1,T2> input){
             printf(", ");
         }
     }
+}
+
+__MothListContainer<__Mothstr> argvToList(int argc, char* argv[]){
+    __MothListContainer<__Mothstr> out;
+    for (int i = 0; i < argc; i++){
+        __Mothstr tmp = argv[i];
+        out.Mothappend(tmp);
+    }
+    return out;
 }
 
 //int main(){
