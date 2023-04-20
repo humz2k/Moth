@@ -396,6 +396,22 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def allocobj(p):
         return aster.AllocObject(p[1],lineno=p[0].source_pos)
     
+    @pg.production('map_literal : OPEN_CURL CLOSE_CURL')
+    def empty_map(p):
+        return aster.MapLiteral(lineno=p[0].source_pos)
+    
+    @pg.production('map_literal : map_literal_open CLOSE_CURL')
+    def close_map(p):
+        return p[0]
+    
+    @pg.production('map_literal_open : map_literal_open COMMA expression COLON expression')
+    def add_map(p):
+        return p[0].add((p[2],p[4]))
+    
+    @pg.production('map_literal_open : OPEN_CURL expression COLON expression')
+    def open_map(p):
+        return aster.MapLiteral((p[1],p[3]),lineno=p[0].source_pos)
+    
     @pg.production('tuple_literal : OPEN_PAREN COMMA CLOSE_PAREN')
     @pg.production('tuple_literal : type_name_base OPEN_PAREN COMMA CLOSE_PAREN')
     def empty_tuple(p):
@@ -462,11 +478,14 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('type_name_base : TYPE_NAME')
     @pg.production('type_name_base : DTYPE')
     @pg.production('type_name_base : OBJECT identifier')
+    @pg.production('type_name_base : MAP type_name ARROW type_name')
     def type_name(p):
         if len(p) == 1:
             return aster.Type(p[0],lineno=p[0].source_pos)
         if len(p) == 2:
             return aster.ObjectType(p[1],lineno=p[0].source_pos)
+        if len(p) == 4:
+            return aster.MapType(p[1],p[3],lineno=p[0].source_pos)
         
     @pg.production('template_t : TEMPLATE_T')
     def template_t_iden(p):
@@ -520,7 +539,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     def brackets(p):
         return p[1]
     
-    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null|c_lit|list_literal|c_raw|char|template_t|tuple_literal')
+    @pg.production('expression : number|string|identifier|function_call|bool|reference|alloc_array|cast|c_call|c_ptr|c_val|null|c_lit|list_literal|c_raw|char|template_t|tuple_literal|map_literal')
     def num_str_idn(p):
         return p[0]
     

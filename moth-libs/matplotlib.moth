@@ -7,12 +7,40 @@ class plt(static):
         __c_call(__c_raw("matplotlibcpp::plot"),__c_val(arr.tovector()))
 
     @overload
+    def void plot(float[:] xs, float[:] ys):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()))
+
+    @overload
     def void plot(double[:] xs, double[:] ys):
         __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()))
 
     @overload
-    def void plot_legend(str label, double[:] xs, double[:] ys):
-        __c_call(__c_raw("matplotlibcpp::named_plot"),__c_val(label),__c_val(xs.tovector()),__c_val(ys.tovector()))
+    def void plot(int[:] xs, int[:] ys):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()))
+
+    @overload
+    def void plot(long[:] xs, long[:] ys):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()))
+
+    @overload
+    def void plot(float[:] xs, float[:] ys, map str->str style):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_val(style))
+
+    @overload
+    def void plot(double[:] xs, double[:] ys, map str->str style):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_val(style))
+
+    @overload
+    def void plot(int[:] xs, int[:] ys, map str->str style):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_val(style))
+
+    @overload
+    def void plot(long[:] xs, long[:] ys, map str->str style):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_val(style))
+
+    #@overload
+    #def void plot_legend(str label, double[:] xs, double[:] ys):
+    #    __c_call(__c_raw("matplotlibcpp::named_plot"),__c_val(label),__c_val(xs.tovector()),__c_val(ys.tovector()))
 
     def void show():
         __c_call(__c_raw("matplotlibcpp::show"))

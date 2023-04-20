@@ -1,7 +1,7 @@
 from rply.token import Token
 import sys
 
-HEADERS = ''#include "moth_lib.hpp"\n\n'
+#HEADERS = ''#include "moth_lib.hpp"\n\n'
 LINEOFFSET = 0
 
 def throwError(err,err_t,lineno):
@@ -10,97 +10,9 @@ def throwError(err,err_t,lineno):
     print("   " + err,file=sys.stderr)
     exit()
 
-class Constant:
-    def __init__(self,c_str,c_type):
-        self.c_str = c_str
-        self.c_type = c_type
-
-class Variable:
-    def __init__(self,raw,c_str,c_type,moth_type):
-        self.raw = raw
-        self.c_str = c_str
-        self.c_type = c_type
-        self.moth_type = moth_type
-    
-    def eval(self,parent,isRaw=False):
-        return self.c_str
-
 class AstObj:
     def __init__(self,lineno=None):
         self.lineno = lineno
-
-class Identifier(AstObj):
-    def __init__(self,token,lineno = None):
-        self.token = token
-        self.value = self.token.value
-        self.name = self.token.name
-        self.lineno = lineno
-    
-    def find_variables(self,parent):
-        raw = self
-        c_str = self.value
-        try:
-            c_type = parent.declarations[c_str].get_c()
-        except:
-            if isinstance(parent.header,ClassHeader):
-                scope_t = "class [\033[1;33m" + parent.header.name.value + "\033[0;0m]"
-            elif isinstance(parent.header,FunctionHeader):
-                scope_t = "function [\033[1;33m" + parent.header.name.value[4:] + "\033[0;0m]"
-            else:
-                scope_t = "scope"
-            throwError("Name \033[1;34m" + c_str + "\033[0;0m not found in " + scope_t,"VarNotFound",self.lineno)
-        moth_type = parent.declarations[c_str]
-        return Variable(raw,c_str,c_type,moth_type)
-
-    def eval(self,parent=None,isRaw=False):
-        return "Moth" + self.value
-
-class String(AstObj):
-    def __init__(self,token,lineno=None):
-        self.token = token
-        self.value = self.token.value
-        self.name = self.token.name
-        self.lineno = lineno
-        self.moth_type = BaseType(Token("TYPE_NAME","str"))
-
-    def find_variables(self,parent):
-        return self
-    
-    def eval(self,parent,isRaw=False):
-        return "convString(" + self.value + ")"
-    
-class Char(AstObj):
-    def __init__(self,token,lineno=None):
-        self.token = token
-        self.value = self.token.value
-        self.name = self.token.name
-        self.lineno = lineno
-        self.moth_type = BaseType(Token("TYPE_NAME","char"))
-
-    def find_variables(self,parent):
-        return self
-    
-    def eval(self,parent,isRaw=False):
-        return self.value
-
-
-class Number(AstObj):
-    def __init__(self,token,lineno=None):
-        self.token = token
-        self.value = self.token.value
-        self.name = self.token.name
-        self.lineno = lineno
-        if "." in self.value:
-            self.moth_type = Type(Token("TYPE_NAME","float"))
-        else:
-            self.moth_type = Type(Token("TYPE_NAME","int"))
-        self.c_str = self.value
-    
-    def find_variables(self,parent):
-        return self
-
-    def eval(self,parent,isRaw=False):
-        return self.value
 
 class Container(AstObj):
     def __init__(self,item=None,lineno=None):
@@ -149,18 +61,9 @@ class Program(Container):
         for scope in self.items:
             scope.find_variables(self)
 
-    def eval(self, line_offset = 0,isRaw=False):
-        global HEADERS,LINEOFFSET
-        LINEOFFSET = line_offset
-        self.verify()
-        self.find_classes()
-        self.find_functions()
-        self.find_declarations()
-        self.find_variables()
-        out = ""
-        for scope in self.items:
-            out += scope.eval(self)
+    def find_static_inits(self):
         inits = []
+        #This finds any static classes that have an __init__ method
         for name in self.classes.keys():
             if self.classes[name].is_static:
                 if self.classes[name].has_init:
@@ -169,7 +72,21 @@ class Program(Container):
                         throwError("Static __init__ doesn't return void.","StatInitErr",self.lineno)
                     evaluated = evaluated + "();"
                     inits.append(evaluated)
-        return HEADERS + out + "\nint main() {I.real = 0; I.imag = 1;" + "".join(inits) + " return Mothmain();}\n"
+        return inits
+
+    def eval(self, line_offset = 0,isRaw=False):
+        global LINEOFFSET
+        LINEOFFSET = line_offset
+        self.verify() #makes sure that there are no lines on the top level
+        self.find_classes() #finds all classes
+        self.find_functions() #finds all functions
+        self.find_declarations() #finds all declarations
+        self.find_variables() #finds all variables, validates function calls etc
+        out = ""
+        for scope in self.items: #evaluates all scopes
+            out += scope.eval(self)
+        inits = self.find_static_inits() #This finds any static classes that have an __init__ method and puts then in main
+        return  out + "\nint main() {I.real = 0; I.imag = 1;" + "".join(inits) + " return Mothmain();}\n"
 
 class Scope(AstObj):
     def __init__(self,header,body,lineno=None):
@@ -177,10 +94,10 @@ class Scope(AstObj):
         self.header = header
         self.body = body
         self.functions = {}
-        self.variables = {}
+        self.variables = {} #local to the scope (passed to if/else/while)
         self.declarations = {}
         self.classes = {}
-        self.has_parent = False
+        self.has_parent = False #if this scope is part of a class, so has class functions
 
     def find_classes(self,out):
         self.classes = out
@@ -331,6 +248,95 @@ class Scope(AstObj):
                 out += "\n}\n"
         return out
 
+
+class Constant:
+    def __init__(self,c_str,c_type):
+        self.c_str = c_str
+        self.c_type = c_type
+
+class Variable:
+    def __init__(self,raw,c_str,c_type,moth_type):
+        self.raw = raw
+        self.c_str = c_str
+        self.c_type = c_type
+        self.moth_type = moth_type
+    
+    def eval(self,parent,isRaw=False):
+        return self.c_str
+
+class Identifier(AstObj):
+    def __init__(self,token,lineno = None):
+        self.token = token
+        self.value = self.token.value
+        self.name = self.token.name
+        self.lineno = lineno
+    
+    def find_variables(self,parent : Scope):
+        raw = self
+        c_str = self.value
+        try:
+            c_type = parent.declarations[c_str].get_c()
+        except:
+            #if isinstance(parent.header,ClassHeader):
+            #    scope_t = "class [\033[1;33m" + parent.header.name.value + "\033[0;0m]"
+            #elif isinstance(parent.header,FunctionHeader):
+            #    scope_t = "function [\033[1;33m" + parent.header.name.value[4:] + "\033[0;0m]"
+            #else:
+            #    scope_t = "scope"
+            throwError("Name \033[1;34m" + c_str + "\033[0;0m not found in " + get_scope_t(parent),"VarNotFound",self.lineno)
+        moth_type = parent.declarations[c_str]
+        return Variable(raw,c_str,c_type,moth_type)
+
+    def eval(self,parent=None,isRaw=False):
+        return "Moth" + self.value
+
+class String(AstObj):
+    def __init__(self,token,lineno=None):
+        self.token = token
+        self.value = self.token.value
+        self.name = self.token.name
+        self.lineno = lineno
+        self.moth_type = BaseType(Token("TYPE_NAME","str"))
+
+    def find_variables(self,parent):
+        return self
+    
+    def eval(self,parent,isRaw=False):
+        return "convString(" + self.value + ")"
+    
+class Char(AstObj):
+    def __init__(self,token,lineno=None):
+        self.token = token
+        self.value = self.token.value
+        self.name = self.token.name
+        self.lineno = lineno
+        self.moth_type = BaseType(Token("TYPE_NAME","char"))
+
+    def find_variables(self,parent):
+        return self
+    
+    def eval(self,parent,isRaw=False):
+        return self.value
+
+
+class Number(AstObj):
+    def __init__(self,token,lineno=None):
+        self.token = token
+        self.value = self.token.value
+        self.name = self.token.name
+        self.lineno = lineno
+        if "." in self.value:
+            self.moth_type = Type(Token("TYPE_NAME","float"))
+        else:
+            self.moth_type = Type(Token("TYPE_NAME","int"))
+        self.c_str = self.value
+    
+    def find_variables(self,parent):
+        return self
+
+    def eval(self,parent,isRaw=False):
+        return self.value
+
 class ScopeBody(AstObj):
     def __init__(self,lines,lineno=None):
         self.lineno = lineno
@@ -361,6 +367,7 @@ class ScopeBody(AstObj):
         end = ""
         #if isKernel:
         #    end = "\ ".strip()
+        last_scope = None
         for line in self.lines:
             if not (isinstance(line,Variable) or isinstance(line,Pass)):
                 if isinstance(line,Scope):
@@ -368,7 +375,18 @@ class ScopeBody(AstObj):
                         #line.header.name.value = "OBJECT_" + parent.header.name.value+"_"+line.header.name.value
                         out += line.eval(parent,dont_declare,isKernel=isKernel) + "\n"
                     else:
+                        if isinstance(line.header,ElifHeader):
+                            if type(last_scope) == type(None):
+                                throwError("Elif without previous Elif/If","ElifErr",self.lineno)
+                            elif not (isinstance(last_scope.header,IfHeader) or isinstance(last_scope.header,ElifHeader)):
+                                throwError("Elif without previous Elif/If","ElifErr",self.lineno)
+                        if isinstance(line.header,ElseHeader):
+                            if type(last_scope) == type(None):
+                                throwError("Else without previous Elif/If","ElseErr",self.lineno)
+                            elif not (isinstance(last_scope.header,IfHeader) or isinstance(last_scope.header,ElifHeader)):
+                                throwError("Else without previous Elif/If","ElseErr",self.lineno)
                         out += line.eval(parent,isKernel=isKernel,isRaw=isRaw) + "\n"
+                    last_scope = line
                 else:
                     out += line.eval(parent,isRaw=isRaw) + ";" + end + "\n"
         return out
@@ -1004,6 +1022,56 @@ class TupleType(BaseType):
         if is_class:
             return ""
         return ""
+    
+class MapType(AstObj):
+    def __init__(self,name,to,lineno = None):
+        self.lineno = lineno
+        self.name = name
+        self.to = to
+        self.moth_type = DtypeType()
+
+    def find_variables(self,parent=None):
+        return self
+    
+    def eval(self,parent=None,isRaw=False):
+        return self.get_c()
+    
+    def get_c(self,parent=None):
+        return "std::map<" + self.name.get_c(parent) + ", " + self.to.get_c(parent) + ">"
+    
+    def get_raw(self):
+        return "Base"
+    
+    def get_compare(self):
+        return "map" + self.name.get_compare() + "->" + self.to.get_compare()
+
+    def get_special(self,is_class=False):
+        return ""
+
+class MapLiteral(Container):
+    def find_variables(self,parent):
+        items = []
+        for i in self.items:
+            items.append((i[0].find_variables(parent),i[1].find_variables(parent)))
+        self.items = items
+        self.name_t = self.items[0][0].moth_type.get_c()
+        self.to_t = self.items[0][1].moth_type.get_c()
+        self.moth_type = MapType(self.items[0][0].moth_type,self.items[0][1].moth_type)
+        for i in self.items:
+            if (i[0].moth_type.get_c() != self.name_t) or (i[1].moth_type.get_c() != self.to_t):
+                throwError("can't infer map type","MapInferErr",self.lineno)
+        return self
+    
+    def eval(self,parent,isRaw=False):
+        items = []
+        for i in self.items:
+            items.append("{" + i[0].eval(parent) + "," + i[1].eval(parent) + "}")
+        return "{" + ",".join(items) + "}"
+        #out_map = var.eval(parent)
+        #outs = [out_map + ".clear()"]
+        #for i in self.items:
+        #    outs.append(out_map + "[" + i[0].eval(parent) + "] = " + i[1].eval(parent))
+        #return ";".join(outs)
 
 class ListLiteral(Container):
     def eval(self,var,parent,isRaw=False):
@@ -1188,6 +1256,8 @@ class Assign(AstObj):
             return self.expression.eval(self.var,parent,isRaw=isRaw)
         elif isinstance(self.expression,ListLiteral):
             return self.expression.eval(self.var,parent,isRaw=isRaw)
+        #elif isinstance(self.expression,MapLiteral):
+        #    return self.expression.eval(self.var,parent,isRaw=isRaw)
         elif isinstance(self.expression,AllocArray):
             if self.var.moth_type.dimensions == "inf":
                 pass
@@ -1551,3 +1621,12 @@ class Null(AstObj):
     
     def eval(self,parent,isRaw=False):
         return "NULL"
+    
+def get_scope_t(parent : Scope):
+    if isinstance(parent.header,ClassHeader):
+        scope_t = "class [\033[1;33m" + parent.header.name.value + "\033[0;0m]"
+    elif isinstance(parent.header,FunctionHeader):
+        scope_t = "function [\033[1;33m" + parent.header.name.value[4:] + "\033[0;0m]"
+    else:
+        scope_t = "scope"
+    return scope_t

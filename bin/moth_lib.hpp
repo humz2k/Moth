@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <map>
 
 #define MothRuntimeError(err_t,...) fprintf(stderr, "\033[1;33mMothRuntimeError\033[0;0m(\033[1;31m%s\033[0;0m):\n\t",err_t); fprintf(stderr, __VA_ARGS__); exit(1);
 
@@ -2254,6 +2255,24 @@ void __MothPrint(const __MothListContainer<T>& list){
 template<class T>
 void __MothPrint(const __MothTuple<T>& input){
     input.__print__();
+}
+
+template<class T1, class T2>
+void __MothPrint(std::map<T1,T2> input){
+    int size = input.size();
+    int count = 0;
+    printf("{");
+    for(auto it = input.cbegin(); it != input.cend(); ++it){
+        __MothPrint(it->first);
+        printf(": ");
+        __MothPrint(it->second);
+        count++;
+        if (count == size){
+            printf("}");
+        }else{
+            printf(", ");
+        }
+    }
 }
 
 //int main(){

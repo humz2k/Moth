@@ -11,6 +11,8 @@ STAR_EQUAL \*\=
 SLASH_EQUAL \/\=
 PERCENT_EQUAL \%\=
 
+ARROW \-\>
+
 PLUS \+
 MINUS \-
 STARSTAR \*\*
@@ -60,6 +62,7 @@ OVERLOAD \boverload\b
 KERNEL \bkernel\b
 TARGET \b\_target\b
 RAWPTR \b\_rawptr\b
+MAP \bmap\b
 
 C_VAL \b__c_val\b
 C_PTR \b__c_ptr\b
