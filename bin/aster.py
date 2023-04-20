@@ -684,6 +684,9 @@ class FunctionCall(AstObj):
                 #    self.moth_type = TupleType(Token("TYPE_NAME","int"))
                 else:
                     throwError("Array Type does not have function \033[1;34m" + self.name.child.value + "\033[0;0m", "ArrayFuncNotFound",self.lineno)
+            else:
+                print(self.name)
+                exit()
         else:
             if isinstance(self.name,StaticFunction):
                 if self.name.class_name.value in parent.classes:
@@ -1073,7 +1076,11 @@ class BinOp(AstObj):
     def find_variables(self,parent):
         self.left = self.left.find_variables(parent)
         self.right = self.right.find_variables(parent)
-        self.moth_type = self.left.moth_type
+        try:
+            self.moth_type = self.left.moth_type
+        except:
+            print(self.left)
+            exit()
         if self.right.moth_type.get_raw() == "Base":
             if self.right.moth_type.name.value == "float":
                 self.moth_type = self.right.moth_type
