@@ -24,10 +24,10 @@ class file(type):
     def void close():
         if mode == 0:
             mode = -1
-            __c_call(__c_raw("raw_write.close"),__c_val(name))
+            __c_call(__c_raw("raw_write.close"))
             return
         if mode == 1:
             mode = -1
-            __c_call(__c_raw("raw_read.close"),__c_val(name))
+            __c_call(__c_raw("raw_read.close"))
             return
         throwErr("No file open\n")

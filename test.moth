@@ -3,6 +3,6 @@ include <io>
 
 def int main():
     file f = new file("test.txt")
-    f.open()
+    f.open("w")
     f.close()
     return 0

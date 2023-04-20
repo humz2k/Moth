@@ -861,6 +861,8 @@ class FunctionCall(AstObj):
                                 break
                         if not found:
                             throwError("No overloads exist with inputs","NoOverload",self.lineno)
+                    elif self.name.value == "MoththrowErr":
+                        pass
                     else:
                         throwError("Function [\033[1;34m" + str(self.name) + "\033[0;0m] not defined in scope ","FuncUnDefined",self.lineno)
             elif (self.name.value in parent.functions):
