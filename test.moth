@@ -2,9 +2,10 @@ include <numoth>
 include <io>
 
 def int main():
-    file f = new file("test.bin")
-    f.open("w")
-    int[:] arr = nm.ones(10)
-    f.write_bytes(arr)
+    file f = new file("test.txt")
+    f.open("r")
+    #int[:] arr = nm.ones(10)
+    str lines = f.read()
+    print(lines)
     f.close()
     return 0

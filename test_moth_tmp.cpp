@@ -289,14 +289,14 @@ return ;
 }
 
 if (__MothBaseEQUAL(in_mode,convString("wb"))){
-mode = 0;
+mode = 2;
 raw_write.open(name,std::ios::out | std::ios::binary);
 return ;
 
 }
 
 if (__MothBaseEQUAL(in_mode,convString("rb"))){
-mode = 1;
+mode = 3;
 raw_read.open(name,std::ios::binary);
 return ;
 
@@ -323,6 +323,20 @@ return ;
 }
 
 if (__MothBaseEQUAL(mode,1)){
+mode = -1;
+raw_read.close();
+return ;
+
+}
+
+if (__MothBaseEQUAL(mode,2)){
+mode = -1;
+raw_write.close();
+return ;
+
+}
+
+if (__MothBaseEQUAL(mode,3)){
 mode = -1;
 raw_read.close();
 return ;
@@ -361,9 +375,109 @@ MoththrowErr(convString("File not in write mode\n"));
 
 }
 
+__MothListContainer<__Mothstr> Mothreadlines(){
+__Mothstr line;__MothListContainer<__Mothstr> out;out.Mothreset();;
+if (__MothBaseEQUAL(mode,1)){
+while (std::getline(raw_read,line)){
+out.Mothappend(line);
+
+}
+
+return out;
+
+}
+
+else{
+MoththrowErr(convString("File not in read mode\n"));
+return out;
+
+}
+
+
+}
+
+__Mothstr Mothread(){
+__Mothstr out;if (__MothBaseEQUAL(mode,1)){
+__MothListContainer<__Mothstr> lines;__Mothint i;lines = Mothreadlines();
+for (i = 0;i < __MothBaseMINUS(lines.Mothlen(),1);i = i + 1){
+
+out = __MothBasePLUS(out,__MothBasePLUS(__MothListContainerINDEX(lines,1,i),convString("\n")));
+
+}
+
+out = __MothBasePLUS(out,__MothListContainerINDEX(lines,1,-1));
+return out;
+
+}
+
+else{
+MoththrowErr(convString("File not in read mode\n"));
+return out;
+
+}
+
+
+}
+
+__Mothvoid Mothwrite_bytes(__MothArray<__Mothchar> arr){
+if (__MothBaseEQUAL(mode,2)){
+raw_write.write(reinterpret_cast<char*>(arr.Mothtovector().data()),arr.size*sizeof(__Mothchar));
+
+}
+
+else{
+MoththrowErr(convString("File not in write mode\n"));
+
+}
+
+
+}
+
 __Mothvoid Mothwrite_bytes(__MothArray<__Mothint> arr){
-if (__MothBaseEQUAL(mode,0)){
-raw_write.write(reinterpret_cast<char*>(arr.Mothtovector().data()),arr.size*sizeof(int));
+if (__MothBaseEQUAL(mode,2)){
+raw_write.write(reinterpret_cast<char*>(arr.Mothtovector().data()),arr.size*sizeof(__Mothint));
+
+}
+
+else{
+MoththrowErr(convString("File not in write mode\n"));
+
+}
+
+
+}
+
+__Mothvoid Mothwrite_bytes(__MothArray<__Mothfloat> arr){
+if (__MothBaseEQUAL(mode,2)){
+raw_write.write(reinterpret_cast<char*>(arr.Mothtovector().data()),arr.size*sizeof(__Mothfloat));
+
+}
+
+else{
+MoththrowErr(convString("File not in write mode\n"));
+
+}
+
+
+}
+
+__Mothvoid Mothwrite_bytes(__MothArray<__Mothdouble> arr){
+if (__MothBaseEQUAL(mode,2)){
+raw_write.write(reinterpret_cast<char*>(arr.Mothtovector().data()),arr.size*sizeof(__Mothdouble));
+
+}
+
+else{
+MoththrowErr(convString("File not in write mode\n"));
+
+}
+
+
+}
+
+__Mothvoid Mothwrite_bytes(__MothArray<__Mothlong> arr){
+if (__MothBaseEQUAL(mode,2)){
+raw_write.write(reinterpret_cast<char*>(arr.Mothtovector().data()),arr.size*sizeof(__Mothlong));
 
 }
 
@@ -378,10 +492,10 @@ MoththrowErr(convString("File not in write mode\n"));
 
 };
 __Mothint Mothmain(){
-__MothObjectfile f;__MothArray<__Mothint> arr;f.Moth__init__(convString("test.bin"));
-f.Mothopen(convString("w"));
-arr = __MothnmMothones(10);
-f.Mothwrite_bytes(arr);
+__MothObjectfile f;__Mothstr lines;f.Moth__init__(convString("test.txt"));
+f.Mothopen(convString("r"));
+lines = f.Mothread();
+__MothPrint(lines);
 f.Mothclose();
 return 0;
 
