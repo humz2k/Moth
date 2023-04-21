@@ -3,8 +3,36 @@ cinclude <matplotlibcpp.h>
 class plt(static):
 
     @overload
+    def void plot(float[:] arr):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(arr.tovector()))
+
+    @overload
     def void plot(double[:] arr):
         __c_call(__c_raw("matplotlibcpp::plot"),__c_val(arr.tovector()))
+
+    @overload
+    def void plot(int[:] arr):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(arr.tovector()))
+
+    @overload
+    def void plot(long[:] arr):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(arr.tovector()))
+
+    @overload
+    def void plot(float[:] arr, map str->str style):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(arr.tovector()),__c_val(style))
+
+    @overload
+    def void plot(double[:] arr, map str->str style):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(arr.tovector()),__c_val(style))
+
+    @overload
+    def void plot(int[:] arr, map str->str style):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(arr.tovector()),__c_val(style))
+
+    @overload
+    def void plot(long[:] arr, map str->str style):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(arr.tovector()),__c_val(style))
 
     @overload
     def void plot(float[:] xs, float[:] ys):
@@ -37,6 +65,40 @@ class plt(static):
     @overload
     def void plot(long[:] xs, long[:] ys, map str->str style):
         __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_val(style))
+
+    @overload
+    def void scatter(float[:] xs, float[:] ys):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_lit("."))
+
+    @overload
+    def void scatter(double[:] xs, double[:] ys):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_lit("."))
+
+    @overload
+    def void scatter(int[:] xs, int[:] ys):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_lit("."))
+
+    @overload
+    def void scatter(long[:] xs, long[:] ys):
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_lit("."))
+
+    @overload
+    def void scatter(float[:] xs, float[:] ys, map str->str style):
+        style["marker"] = "."
+        style["linestyle"] = "None"
+        __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_val(style))
+
+    #@overload
+    #def void scatter(double[:] xs, double[:] ys, map str->str style):
+    #    __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_lit("."),__c_val(style))
+
+    #@overload
+    #def void scatter(int[:] xs, int[:] ys, map str->str style):
+    #    __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_lit("."),__c_val(style))
+
+    #@overload
+    #def void scatter(long[:] xs, long[:] ys, map str->str style):
+    #    __c_call(__c_raw("matplotlibcpp::plot"),__c_val(xs.tovector()),__c_val(ys.tovector()),__c_lit("."),__c_val(style))
 
     #@overload
     #def void plot_legend(str label, double[:] xs, double[:] ys):

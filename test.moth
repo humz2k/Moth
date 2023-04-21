@@ -1,11 +1,12 @@
 include <numoth>
-include <io>
+include <matplotlib>
 
 def int main():
-    file f = new file("test.txt")
-    f.open("r")
-    #int[:] arr = nm.ones(10)
-    str lines = f.read()
-    print(lines)
-    f.close()
+    float[:] ys = nm.arange(10)
+    float[:] xs = nm.arange(10)
+    map str->str thing = {"label":"test"}
+    plt.scatter(xs,ys,thing)
+    plt.legend()
+    plt.show()
+    print(thing)
     return 0

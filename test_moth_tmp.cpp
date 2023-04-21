@@ -1,6 +1,6 @@
 #include "/Users/humzaqureshi/GitHub/Moth/bin/moth_lib.hpp"
 
-
+#include <matplotlibcpp.h>
 
 template <class arr_t>
 __MothArray<arr_t> __MothnmMothzeros(__MothTuple<__Mothint> shape){
@@ -264,239 +264,141 @@ MoththrowErr(convString("Shapes not equal in \\dot\n"));
 return __MothBaseSTAR(a,b).Mothsum();
 
 }
-class __MothObjectfile{
-public:
-std::ofstream raw_write;std::ifstream raw_read;__Mothint mode;__Mothstr name;__Mothvoid Moth__init__(__Mothstr filename){
-name = filename;
-mode = -1;
+__Mothvoid __MothpltMothplot(__MothArray<__Mothfloat> arr){
+matplotlibcpp::plot(arr.Mothtovector());
 
 }
 
-__Mothvoid Mothopen(__Mothstr in_mode){
-if (__MothBaseEQUAL(mode,-1)){
-if (__MothBaseEQUAL(in_mode,convString("w"))){
-mode = 0;
-raw_write.open(name);
-return ;
+__Mothvoid __MothpltMothplot(__MothArray<__Mothdouble> arr){
+matplotlibcpp::plot(arr.Mothtovector());
 
 }
 
-if (__MothBaseEQUAL(in_mode,convString("r"))){
-mode = 1;
-raw_read.open(name);
-return ;
+__Mothvoid __MothpltMothplot(__MothArray<__Mothint> arr){
+matplotlibcpp::plot(arr.Mothtovector());
 
 }
 
-if (__MothBaseEQUAL(in_mode,convString("wb"))){
-mode = 2;
-raw_write.open(name,std::ios::out | std::ios::binary);
-return ;
+__Mothvoid __MothpltMothplot(__MothArray<__Mothlong> arr){
+matplotlibcpp::plot(arr.Mothtovector());
 
 }
 
-if (__MothBaseEQUAL(in_mode,convString("rb"))){
-mode = 3;
-raw_read.open(name,std::ios::binary);
-return ;
+__Mothvoid __MothpltMothplot(__MothArray<__Mothfloat> arr,std::map<__Mothstr, __Mothstr> style){
+matplotlibcpp::plot(arr.Mothtovector(),style);
 
 }
 
-MoththrowErr(convString("Invalid file mode\n"));
+__Mothvoid __MothpltMothplot(__MothArray<__Mothdouble> arr,std::map<__Mothstr, __Mothstr> style){
+matplotlibcpp::plot(arr.Mothtovector(),style);
 
 }
 
-else{
-MoththrowErr(convString("File already open\n"));
+__Mothvoid __MothpltMothplot(__MothArray<__Mothint> arr,std::map<__Mothstr, __Mothstr> style){
+matplotlibcpp::plot(arr.Mothtovector(),style);
 
 }
 
+__Mothvoid __MothpltMothplot(__MothArray<__Mothlong> arr,std::map<__Mothstr, __Mothstr> style){
+matplotlibcpp::plot(arr.Mothtovector(),style);
 
 }
 
-__Mothvoid Mothclose(){
-if (__MothBaseEQUAL(mode,0)){
-mode = -1;
-raw_write.close();
-return ;
+__Mothvoid __MothpltMothplot(__MothArray<__Mothfloat> xs,__MothArray<__Mothfloat> ys){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector());
 
 }
 
-if (__MothBaseEQUAL(mode,1)){
-mode = -1;
-raw_read.close();
-return ;
+__Mothvoid __MothpltMothplot(__MothArray<__Mothdouble> xs,__MothArray<__Mothdouble> ys){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector());
 
 }
 
-if (__MothBaseEQUAL(mode,2)){
-mode = -1;
-raw_write.close();
-return ;
+__Mothvoid __MothpltMothplot(__MothArray<__Mothint> xs,__MothArray<__Mothint> ys){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector());
 
 }
 
-if (__MothBaseEQUAL(mode,3)){
-mode = -1;
-raw_read.close();
-return ;
+__Mothvoid __MothpltMothplot(__MothArray<__Mothlong> xs,__MothArray<__Mothlong> ys){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector());
 
 }
 
-MoththrowErr(convString("No file open\n"));
+__Mothvoid __MothpltMothplot(__MothArray<__Mothfloat> xs,__MothArray<__Mothfloat> ys,std::map<__Mothstr, __Mothstr> style){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector(),style);
 
 }
 
-__Mothvoid Mothwrite(__Mothstr line){
-if (__MothBaseEQUAL(mode,0)){
-raw_write << line;
+__Mothvoid __MothpltMothplot(__MothArray<__Mothdouble> xs,__MothArray<__Mothdouble> ys,std::map<__Mothstr, __Mothstr> style){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector(),style);
 
 }
 
-else{
-MoththrowErr(convString("File not in write mode\n"));
+__Mothvoid __MothpltMothplot(__MothArray<__Mothint> xs,__MothArray<__Mothint> ys,std::map<__Mothstr, __Mothstr> style){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector(),style);
 
 }
 
+__Mothvoid __MothpltMothplot(__MothArray<__Mothlong> xs,__MothArray<__Mothlong> ys,std::map<__Mothstr, __Mothstr> style){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector(),style);
 
 }
 
-__Mothvoid Mothwrite(__Mothint line){
-if (__MothBaseEQUAL(mode,0)){
-raw_write << line;
+__Mothvoid __MothpltMothscatter(__MothArray<__Mothfloat> xs,__MothArray<__Mothfloat> ys){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector(),".");
 
 }
 
-else{
-MoththrowErr(convString("File not in write mode\n"));
+__Mothvoid __MothpltMothscatter(__MothArray<__Mothdouble> xs,__MothArray<__Mothdouble> ys){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector(),".");
 
 }
 
+__Mothvoid __MothpltMothscatter(__MothArray<__Mothint> xs,__MothArray<__Mothint> ys){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector(),".");
 
 }
 
-__MothListContainer<__Mothstr> Mothreadlines(){
-__Mothstr line;__MothListContainer<__Mothstr> out;out.Mothreset();;
-if (__MothBaseEQUAL(mode,1)){
-while (std::getline(raw_read,line)){
-out.Mothappend(line);
+__Mothvoid __MothpltMothscatter(__MothArray<__Mothlong> xs,__MothArray<__Mothlong> ys){
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector(),".");
 
 }
 
-return out;
+__Mothvoid __MothpltMothscatter(__MothArray<__Mothfloat> xs,__MothArray<__Mothfloat> ys,std::map<__Mothstr, __Mothstr> style){
+__MothBaseINDEX(style,1,convString("marker")) = convString(".");
+__MothBaseINDEX(style,1,convString("linestyle")) = convString("None");
+matplotlibcpp::plot(xs.Mothtovector(),ys.Mothtovector(),style);
 
 }
 
-else{
-MoththrowErr(convString("File not in read mode\n"));
-return out;
+__Mothvoid __MothpltMothshow(){
+matplotlibcpp::show();
 
 }
 
+__Mothvoid __MothpltMothfigure_size(__Mothint x,__Mothint y){
+matplotlibcpp::figure_size(x,y);
 
 }
 
-__Mothstr Mothread(){
-__Mothstr out;if (__MothBaseEQUAL(mode,1)){
-__MothListContainer<__Mothstr> lines;__Mothint i;lines = Mothreadlines();
-for (i = 0;i < __MothBaseMINUS(lines.Mothlen(),1);i = i + 1){
-
-out = __MothBasePLUS(out,__MothBasePLUS(__MothListContainerINDEX(lines,1,i),convString("\n")));
+__Mothvoid __MothpltMothtitle(__Mothstr name){
+matplotlibcpp::title(name);
 
 }
 
-out = __MothBasePLUS(out,__MothListContainerINDEX(lines,1,-1));
-return out;
+__Mothvoid __MothpltMothlegend(){
+matplotlibcpp::legend();
 
 }
 
-else{
-MoththrowErr(convString("File not in read mode\n"));
-return out;
-
-}
-
-
-}
-
-__Mothvoid Mothwrite_bytes(__MothArray<__Mothchar> arr){
-if (__MothBaseEQUAL(mode,2)){
-raw_write.write(reinterpret_cast<char*>(arr.Mothtovector().data()),arr.size*sizeof(__Mothchar));
-
-}
-
-else{
-MoththrowErr(convString("File not in write mode\n"));
-
-}
-
-
-}
-
-__Mothvoid Mothwrite_bytes(__MothArray<__Mothint> arr){
-if (__MothBaseEQUAL(mode,2)){
-raw_write.write(reinterpret_cast<char*>(arr.Mothtovector().data()),arr.size*sizeof(__Mothint));
-
-}
-
-else{
-MoththrowErr(convString("File not in write mode\n"));
-
-}
-
-
-}
-
-__Mothvoid Mothwrite_bytes(__MothArray<__Mothfloat> arr){
-if (__MothBaseEQUAL(mode,2)){
-raw_write.write(reinterpret_cast<char*>(arr.Mothtovector().data()),arr.size*sizeof(__Mothfloat));
-
-}
-
-else{
-MoththrowErr(convString("File not in write mode\n"));
-
-}
-
-
-}
-
-__Mothvoid Mothwrite_bytes(__MothArray<__Mothdouble> arr){
-if (__MothBaseEQUAL(mode,2)){
-raw_write.write(reinterpret_cast<char*>(arr.Mothtovector().data()),arr.size*sizeof(__Mothdouble));
-
-}
-
-else{
-MoththrowErr(convString("File not in write mode\n"));
-
-}
-
-
-}
-
-__Mothvoid Mothwrite_bytes(__MothArray<__Mothlong> arr){
-if (__MothBaseEQUAL(mode,2)){
-raw_write.write(reinterpret_cast<char*>(arr.Mothtovector().data()),arr.size*sizeof(__Mothlong));
-
-}
-
-else{
-MoththrowErr(convString("File not in write mode\n"));
-
-}
-
-
-}
-
-
-};
 __Mothint Mothmain(){
-__MothObjectfile f;__Mothstr lines;f.Moth__init__(convString("test.txt"));
-f.Mothopen(convString("r"));
-lines = f.Mothread();
-__MothPrint(lines);
-f.Mothclose();
+__MothArray<__Mothfloat> ys;__MothArray<__Mothfloat> xs;std::map<__Mothstr, __Mothstr> thing;ys = __MothnmMotharange(10);
+xs = __MothnmMotharange(10);
+thing = {{convString("label"),convString("test")}};
+__MothpltMothscatter(xs,ys,thing);
+__MothpltMothlegend();
+__MothpltMothshow();
+__MothPrint(thing);
 return 0;
 
 }
