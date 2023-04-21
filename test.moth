@@ -1,8 +1,10 @@
-#include <numoth>
+include <numoth>
 include <io>
 
 def int main():
-    file f = new file("test.txt")
+    file f = new file("test.bin")
     f.open("w")
+    int[:] arr = nm.ones(10)
+    f.write_bytes(arr)
     f.close()
     return 0

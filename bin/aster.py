@@ -1443,8 +1443,8 @@ class Craw(Ctypes):
         self.lineno = lineno
         if isinstance(self.string,String):
             self.value = self.string.value[1:-1]
-        else:
-            self.value = self.get_c()
+        #else:
+        #    self.value = self.get_c()
 
     def find_variables(self,parent):
         self.val = self.val.find_variables(parent)
@@ -1625,13 +1625,16 @@ class Cast(AstObj):
         return self
     
     def eval(self,parent,isRaw=False):
-        if self.expression.moth_type.get_c() == "__Mothstr":
-            funcs = {"__Mothint": "std::stoi", "__Mothfloat": "std::stof","__Mothdouble": "std::stod","__Mothlong": "std::stol"}
-            t = self.new_type.get_c()
-            if t in funcs:
-                return funcs[t] + "(" + self.expression.eval(parent,isRaw=isRaw) + ")"
+        if not isinstance(self.expression,Ccall):
+            if self.expression.moth_type.get_c() == "__Mothstr":
+                funcs = {"__Mothint": "std::stoi", "__Mothfloat": "std::stof","__Mothdouble": "std::stod","__Mothlong": "std::stol"}
+                t = self.new_type.get_c()
+                if t in funcs:
+                    return funcs[t] + "(" + self.expression.eval(parent,isRaw=isRaw) + ")"
+                else:
+                    throwError("No casting rule for string","CastRuleErr",self.lineno)
             else:
-                throwError("No casting rule for string","CastRuleErr",self.lineno)
+                return "(" + self.new_type.get_c() + ")" + "(" + self.expression.eval(parent,isRaw=isRaw) + ")"
         else:
             return "(" + self.new_type.get_c() + ")" + "(" + self.expression.eval(parent,isRaw=isRaw) + ")"
     

@@ -225,6 +225,7 @@ def get_parser(filename="tokens.txt",user_types = ["USER_TYPE"], statics = ["STA
     @pg.production('line : return SEMI_COLON')
     @pg.production('line : print SEMI_COLON')
     @pg.production('line : c_call SEMI_COLON')
+    @pg.production('line : c_raw SEMI_COLON')
     @pg.production('line : scope')
     def line(p):
         return p[0]

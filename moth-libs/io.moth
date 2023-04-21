@@ -8,7 +8,7 @@ class file(type):
         mode = -1
 
     def void open(str in_mode):
-        if mode != -1:
+        if mode == -1:
             if in_mode == "w":
                 mode = 0
                 __c_call(__c_raw("raw_write.open"),__c_val(name))
@@ -16,6 +16,14 @@ class file(type):
             if in_mode == "r":
                 mode = 1
                 __c_call(__c_raw("raw_read.open"),__c_val(name))
+                return
+            if in_mode == "wb":
+                mode = 0
+                __c_call(__c_raw("raw_write.open"),__c_val(name),__c_raw("std::ios::out | std::ios::binary"))
+                return
+            if in_mode == "rb":
+                mode = 1
+                __c_call(__c_raw("raw_read.open"),__c_val(name),__c_raw("std::ios::binary"))
                 return
             throwErr("Invalid file mode\n")
         else:
@@ -31,3 +39,52 @@ class file(type):
             __c_call(__c_raw("raw_read.close"))
             return
         throwErr("No file open\n")
+
+    @overload
+    def void write(str line):
+        if mode == 0:
+            __c_raw("raw_write << ",__c_val(line))
+        else:
+            throwErr("File not in write mode\n")
+
+    @overload
+    def void write(int line):
+        if mode == 0:
+            __c_raw("raw_write << ",__c_val(line))
+        else:
+            throwErr("File not in write mode\n")
+
+    @overload
+    def void write_bytes(char[] arr):
+        if mode == 0:
+            __c_call(__c_raw("raw_write.write"),__c_call(__c_raw("reinterpret_cast<char*>"),__c_raw(__c_val(arr.tovector()),".data()")),__c_raw(__c_val(arr),".size*sizeof(__Mothchar)"))
+        else:
+            throwErr("File not in write mode\n")
+
+    @overload
+    def void write_bytes(int[] arr):
+        if mode == 0:
+            __c_call(__c_raw("raw_write.write"),__c_call(__c_raw("reinterpret_cast<char*>"),__c_raw(__c_val(arr.tovector()),".data()")),__c_raw(__c_val(arr),".size*sizeof(__Mothint)"))
+        else:
+            throwErr("File not in write mode\n")
+
+    @overload
+    def void write_bytes(float[] arr):
+        if mode == 0:
+            __c_call(__c_raw("raw_write.write"),__c_call(__c_raw("reinterpret_cast<char*>"),__c_raw(__c_val(arr.tovector()),".data()")),__c_raw(__c_val(arr),".size*sizeof(__Mothfloat)"))
+        else:
+            throwErr("File not in write mode\n")
+
+    @overload
+    def void write_bytes(double[] arr):
+        if mode == 0:
+            __c_call(__c_raw("raw_write.write"),__c_call(__c_raw("reinterpret_cast<char*>"),__c_raw(__c_val(arr.tovector()),".data()")),__c_raw(__c_val(arr),".size*sizeof(__Mothdouble)"))
+        else:
+            throwErr("File not in write mode\n")
+
+    @overload
+    def void write_bytes(long[] arr):
+        if mode == 0:
+            __c_call(__c_raw("raw_write.write"),__c_call(__c_raw("reinterpret_cast<char*>"),__c_raw(__c_val(arr.tovector()),".data()")),__c_raw(__c_val(arr),".size*sizeof(__Mothlong)"))
+        else:
+            throwErr("File not in write mode\n")
