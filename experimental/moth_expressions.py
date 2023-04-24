@@ -17,23 +17,57 @@ LESS_OR_EQUAL
 AND
 OR
 NOT
+
 AMP
 VERT
+RSHIFT
+LSHIFT
 '''
-
-import moth_types
 
 class MothOP:
     def initialize():
         pass
 
-class MothBinOP:
+class MothReturn(MothOP):
+    def __init__(self,expression = None):
+        self.expression = expression
+    
+    def build(self):
+        if type(self.expression) != type(None):
+            return "return " + self.expression.get_c() + ";"
+        return "return;"
+
+class MothBreak(MothOP):
+    pass
+
+class MothAssign(MothOP):
+    def __init__(self,var,expression):
+        self.var = var
+        self.expression = expression
+    
+    def build(self):
+        return self.var.get_c() + " = " + self.expression.get_c() + ";"
+
+class FunctionCallInputs:
+    def __init__(self):
+        self.expressions = []
+    
+    def add_input(self,expression):
+        self.expressions.append(expression)
+
+class MothFunctionCall(MothOP):
+    def __init__(self,function,inputs):
+        self.function = function
+        self.moth_type = function.moth_type
+        self.inputs = inputs
+
+class MothBinOP(MothOP):
     def __init__(self,left,right):
         self.left = left
         self.right = right
         self.initialize()
 
-class MothSingleOP:
+class MothSingleOP(MothOP):
     def __init__(self,operand):
         self.operand = operand
         self.initialize()

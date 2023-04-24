@@ -26,8 +26,6 @@ LIST
 
 '''
 
-import moth_ops
-
 def throwNoConversions(from_type,to_type):
     Exception("No conversions exist between " + str(from_type) + " and " + str(to_type))
 
