@@ -1,16 +1,27 @@
 
-
-class test[T,n]:
+@template[T,a]
+class test:
     int a
     int b
-    def void __init__(test[T,n] self):
+    T a
+    def void __init__(test[T,a] self):
         pass
     
-    def int thing(test[T,n] self):
+    def int thing(test[T,a] self):
         pass
 
-    def int thing2(test[T,n] self):
+    def int thing2(test[T,a] self):
         pass
+@endtemplate
+
+@template[n]
+class other(static):
+    int a
+    int size
+    def void __init__(object other[n] self):
+        self.size = n
+@endtemplate
 
 def int main():
+    test[int,other[1]] a
     return 0
