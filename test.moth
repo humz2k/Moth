@@ -1,15 +1,16 @@
-include <numoth>
-#include <matplotlib>
+
+
+class test[T,n]:
+    int a
+    int b
+    def void __init__(test[T,n] self):
+        pass
+    
+    def int thing(test[T,n] self):
+        pass
+
+    def int thing2(test[T,n] self):
+        pass
 
 def int main():
-    float[:] ys = nm.arange(10)
-    float[:] xs = nm.arange(10)
-    list str a = ["Hello","TWO","three"]
-    a.append("HELLO2")
-    print(a[::-1])
-    #map str->str thing = {"label":"test"}
-    #plt.scatter(xs,ys,thing)
-    #plt.legend()
-    #plt.show()
-    #print(thing)
     return 0
