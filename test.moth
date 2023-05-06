@@ -1,6 +1,4 @@
-
-@template[T,a]
-class test:
+class test[T,other[T]]:
     int a
     int b
     T a
@@ -12,16 +10,13 @@ class test:
 
     def int thing2(test[T,a] self):
         pass
-@endtemplate
 
-@template[n]
-class other(static):
+class other[n](static):
     int a
     int size
-    def void __init__(object other[n] self):
+    def void __init__(other[n] self):
         self.size = n
-@endtemplate
 
 def int main():
-    test[int,other[1]] a
+    test[int] a
     return 0

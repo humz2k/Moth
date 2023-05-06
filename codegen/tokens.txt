@@ -1,0 +1,79 @@
+CHAR \'\w\'
+STRING "(?:[^"\\]*(?:\\.)?)*"
+
+PLUS_PLUS \+\+
+MINUS_MINUS \-\-
+
+PLUS_EQUAL \+\=
+MINUS_EQUAL \-\=
+STARSTAR_EQUAL \*\*\=
+STAR_EQUAL \*\=
+SLASH_EQUAL \/\=
+PERCENT_EQUAL \%\=
+
+PLUS \+
+MINUS \-
+STARSTAR \*\*
+STAR \*
+SLASH \/
+PERCENT \%
+
+BACKSLASH \\
+
+AT \@
+
+EQUAL \=\=
+NOT_EQUAL \!\=
+GREATER \>
+LESS \<
+GREATER_OR_EQUAL \>\=
+LESS_OR_EQUAL \<\=
+AND \band\b|\&\&
+OR \bor\b|\|\|
+NOT \!|\bnot\b
+AMP \&
+VERT \|
+
+ASSIGN \=
+
+COMMA \,
+SEMI_COLON \;
+COLON \:
+OPEN_CURL \{
+CLOSE_CURL \}
+
+OPEN_PAREN \(
+CLOSE_PAREN \)
+
+OPEN_SQUARE \[
+CLOSE_SQUARE \]
+
+TYPE_NAME \bvoid\b|\bchar\b|\bint\b|\blong\|\bfloat\b|\bdouble\b|\bbool\b
+TYPE_QUERY \btype\b
+KERNEL \bkernel\b
+
+CLASS \bclass\b
+DEF \bdef\b
+IF \bif\b
+ELSE \belse\b
+ELIF \belif\b
+FOR \bfor\b
+IN \bin\b
+WHILE \bwhile\b
+BREAK \bbreak\b
+RETURN \breturn\b
+PRINT \bprint\b
+RANGE \brange\b
+PASS \bpass\b
+TRUE \bTrue\b
+FALSE \bFalse\b
+NEW \bnew\b
+NULL \bNULL\b
+
+NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)
+
+IDENTIFIER [a-zA-Z_0-9]+
+
+PERIOD \.
+
+IGNORE \s+

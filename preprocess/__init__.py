@@ -1,2 +1,2 @@
-from .templates import *
+from .finders import *
 from .prep import *
