@@ -10,32 +10,75 @@ class Misc(PreproccessorToken):
     def __init__(self,token):
         self.token = token
         self.name = token.name
-        self.value = token.value
+        try:
+            self.value = token.value
+        except:
+            self.value = token.eval()
+        self.replaced = None
+        self.old_value = self.value
 
     def replace(self,map_to):
-        if self.value in map_to:
-            return Misc(Token("",map_to[self.value]))
+        if self.old_value in map_to:
+            self.replaced = map_to[self.old_value]
         return self
+
+    def get_arg_name(self):
+        if type(self.replaced) != type(None):
+            return self.replaced.get_arg_name()
+        if self.value.replace("_","").isalnum():
+            return self.value
+        else:
+            return self.name
     
     def eval(self):
+        if type(self.replaced) != type(None):
+            return self.replaced.eval()
         return self.value
     
 class ArrayT(PreproccessorToken):
     def __init__(self,typ,dims):
         self.type = typ
         self.dims = dims
+        #self.instantiated = False
+        self.name = "ARRAY_T"
+        #self.value = self.eval()
+
+    def make_template(self,templates):
+        #if self.instantiated:
+        #    return
+        n_args = 2
+        name = "NDArray_" + str(n_args)
+        if name in templates:
+            template = templates[name]
+        else:
+            raise Exception("Did you forget to include stdlib?")
+        template.instantiate([Misc(self.type),Misc(Token("NUMBER",str(self.dims)))],templates)
+        #self.instantiated = True
+
+    def get_arg_name(self):
+        return self.eval()
     
     def eval(self):
+        #if self.dims == 1:
+        #    print("FUCK")
+        #    print(self)
+        #    exit()
         return "_NDArray_" + self.type.value + "_" + str(self.dims) + "_"
 
 class TemplateInstance(PreproccessorToken):
     def __init__(self,name,args):
         self.name = name
         self.args = args
+        self.old_args = self.args
         self.value = self.eval()
         self.instantiated = False
 
+    def get_arg_name(self):
+        return self.eval()
+
     def make_template(self,templates):
+        #if self.instantiated:
+        #    return
         n_args = len(self.args)
         name = self.name.value + "_" + str(n_args)
         if name in templates:
@@ -43,21 +86,21 @@ class TemplateInstance(PreproccessorToken):
         else:
             raise Exception("Template does not exist")
         template.instantiate(self.args,templates)
-        self.instantiated = True
+        #self.instantiated = True
 
     def replace(self,map_to):
         args = []
-        for i in self.args:
+        for i in self.old_args:
             if i.eval() in map_to:
-                args.append(Misc(Token("",map_to[i.eval()])))
+                args.append(Misc(map_to[i.eval()]))
             else:
                 args.append(i)
         self.args = args
         return self
 
     def eval(self):
-        return "_" + self.name.value + "_" + "_".join([i.eval() for i in self.args]) + "_"  
-    
+        return "_" + self.name.value + "_" + "_".join([i.get_arg_name() for i in self.args]) + "_"  
+
 class TemplateDef(PreproccessorToken):
     def __init__(self,name,args,inherits,scope):
         self.name = name
@@ -70,15 +113,17 @@ class TemplateDef(PreproccessorToken):
         name = "_".join([i.eval() for i in args])
         if name in self.instantiations:
             return
-        map_to = {self.args[i].eval().strip(): args[i].eval().strip() for i in range(len(args))}
-        #out = []
-        #for token in self.scope.tokens:
-        #    out.append(token.replace(map_to))
-        #out = " ".join([i.eval() for i in out])
+       
+        self.instantiations[name] = None
+        map_to = {self.args[i].eval().strip(): args[i] for i in range(len(args))}
         self.scope = self.scope.replace(map_to)
         self.scope.make_template(templates)
         out = self.scope.eval()
-        header = "class " + "_" + self.name.value + "_" + "_".join([i.eval() for i in args]) + "_"
+        
+        arg_names = []
+        for i in args:
+            arg_names.append(i.get_arg_name())
+        header = "class " + "_" + self.name.value + "_" + "_".join(arg_names) + "_"
         if type(self.inherits) != type(None):
             header += " (" + self.inherits.value + ")"
         header += ":"
@@ -159,11 +204,6 @@ def get_parser(filename="tokens.txt"):
         state.append(p[0])
         return p[0]
 
-    #@pg.production('program : program template_def')
-    #def pass_template_def(state,p):
-    #    state.log('program : program template_def')
-
-    #@pg.production('program : program template_instance')
     @pg.production('program : program array_t')
     @pg.production('program : program template_instance')
     @pg.production('program : program template_def')
@@ -174,11 +214,13 @@ def get_parser(filename="tokens.txt"):
         return p[0]
     
     @pg.production('array_t : TYPE_NAME OPEN_SQUARE CLOSE_SQUARE')
+    @pg.production('array_t : IDENTIFIER OPEN_SQUARE CLOSE_SQUARE')
     def zero_array(state,p):
         state.log('array_t : TYPE_NAME OPEN_SQUARE CLOSE_SQUARE')
         return ArrayT(p[0],0)
     
     @pg.production('array_t_open : TYPE_NAME OPEN_SQUARE COLON')
+    @pg.production('array_t_open : IDENTIFIER OPEN_SQUARE COLON')
     def init_array(state,p):
         state.log('array_t_open : TYPE_NAME OPEN_SQUARE COLON')
         return ArrayT(p[0],1)
@@ -206,35 +248,27 @@ def get_parser(filename="tokens.txt"):
         #state.append(definition)
         return definition
     
-    @pg.production('template_instance_open : CLASS_NAME OPEN_SQUARE IDENTIFIER')
-    @pg.production('template_instance_open : CLASS_NAME OPEN_SQUARE NUMBER')
-    @pg.production('template_instance_open : CLASS_NAME OPEN_SQUARE TYPE_NAME')
-    @pg.production('template_instance_open : CLASS_NAME OPEN_SQUARE CLASS_NAME')
+    @pg.production('template_instance_open : CLASS_NAME OPEN_SQUARE misc')
     @pg.production('template_instance_open : CLASS_NAME OPEN_SQUARE template_instance')
+    @pg.production('template_instance_open : CLASS_NAME OPEN_SQUARE array_t')
     def template_inst_open(state,p):
         state.log('template_instance_open : CLASS_NAME OPEN_SQUARE misc')
-        return [p[0],Misc(p[2])]
+        return [p[0],p[2]]
 
-    @pg.production('template_instance_open : template_instance_open COMMA IDENTIFIER')
-    @pg.production('template_instance_open : template_instance_open COMMA NUMBER')
-    @pg.production('template_instance_open : template_instance_open COMMA TYPE_NAME')
-    @pg.production('template_instance_open : template_instance_open COMMA CLASS_NAME')
+    @pg.production('template_instance_open : template_instance_open COMMA misc')
     @pg.production('template_instance_open : template_instance_open COMMA template_instance')
+    @pg.production('template_instance_open : template_instance_open COMMA array_t')
     def template_inst_cont(state,p):
         state.log('template_instance_open : template_instance_open COMMA misc')
-        return p[0] + [Misc(p[2])]
+        return p[0] + [p[2]]
     
     @pg.production('template_instance : template_instance_open CLOSE_SQUARE')
     def template_inst(state,p):
         state.log('template_instance : template_instance_open CLOSE_SQUARE')
-        #n_args = len(p[0][1:])
-        #name = p[0][0].value + "_" + str(n_args)
-        #if name in state.templates:
-        #    template = state.templates[name]
-        #else:
-        #    raise Exception("Template does not exist")
-        #state.templates[name].instantiate(p[0][1:])
         return TemplateInstance(p[0][0],p[0][1:])
+
+    #@pg.production('function_template_instance_open : FUNCTION_NAME OPEN_SQUARE misc')
+    #@pg.production('function_template_instance_open : FUNCTION_NAME OPEN_SQUARE template_instance')
 
     @pg.production('scope_open : OPEN_CURL')
     def scope_open(state,p):

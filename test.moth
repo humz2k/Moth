@@ -1,20 +1,10 @@
-class Tuple[T]:
-    T* raw
-    int size
-    def void __init__(Tuple[T] self):
-        pass
-
-class NDArray[T,d]:
-
-    T* raw
-    int dim
-
-    def void __init__(NDArray[T,d] self):
-        self.dim = d
-    
-    def void __getidx__(Tuple[int] index):
-        pass
+class ThisIsFucked[T]:
+    T[:,:,:]
+    def void __init__(ThisIsFucked[T] self):
+        int a = 5 + 5
 
 def int main():
-    NDArray[int,0] a = 5
+    ThisIsFucked[int]
+    #int[:,:,:] a = 5
+    #int[:,:] b = new NDArray[int,0]()
     return 0
