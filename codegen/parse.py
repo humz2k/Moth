@@ -16,7 +16,7 @@ class ParserState(object):
 
     def log(self,text):
         pass
-        #print(text)
+        print(text)
 
 class TypeContainer:
     def __init__(self,raw):
@@ -315,6 +315,26 @@ def get_parser(filename="tokens.txt"):
         state.log('expression : NOT_INTR OPEN_PAREN expression CLOSE_PAREN')
         return ConstantContainer(state.builder.not_(p[2]._get(state.builder)))
     
+    @pg.production('expression : CMP_INTR OPEN_PAREN EQUAL COMMA expression COMMA expression CLOSE_PAREN')
+    @pg.production('expression : CMP_INTR OPEN_PAREN NOT_EQUAL COMMA expression COMMA expression CLOSE_PAREN')
+    @pg.production('expression : CMP_INTR OPEN_PAREN GREATER COMMA expression COMMA expression CLOSE_PAREN')
+    @pg.production('expression : CMP_INTR OPEN_PAREN LESS COMMA expression COMMA expression CLOSE_PAREN')
+    @pg.production('expression : CMP_INTR OPEN_PAREN GREATER_OR_EQUAL COMMA expression COMMA expression CLOSE_PAREN')
+    @pg.production('expression : CMP_INTR OPEN_PAREN LESS_OR_EQUAL COMMA expression COMMA expression CLOSE_PAREN')
+    def trunc(state,p):
+        state.log('expression : CMP_INTR OPEN_PAREN OP COMMA expression COMMA expression CLOSE_PAREN')
+        return ConstantContainer(state.builder.icmp_signed(p[2].value,p[4]._get(state.builder),p[6]._get(state.builder)))
+    
+    @pg.production('expression : FCMP_INTR OPEN_PAREN EQUAL COMMA expression COMMA expression CLOSE_PAREN')
+    @pg.production('expression : FCMP_INTR OPEN_PAREN NOT_EQUAL COMMA expression COMMA expression CLOSE_PAREN')
+    @pg.production('expression : FCMP_INTR OPEN_PAREN GREATER COMMA expression COMMA expression CLOSE_PAREN')
+    @pg.production('expression : FCMP_INTR OPEN_PAREN LESS COMMA expression COMMA expression CLOSE_PAREN')
+    @pg.production('expression : FCMP_INTR OPEN_PAREN GREATER_OR_EQUAL COMMA expression COMMA expression CLOSE_PAREN')
+    @pg.production('expression : FCMP_INTR OPEN_PAREN LESS_OR_EQUAL COMMA expression COMMA expression CLOSE_PAREN')
+    def trunc(state,p):
+        state.log('expression : FCMP_INTR OPEN_PAREN OP COMMA expression COMMA expression CLOSE_PAREN')
+        return ConstantContainer(state.builder.fcmp_ordered(p[2].value,p[4]._get(state.builder),p[6]._get(state.builder)))
+    
     @pg.production('expression : type OPEN_PAREN expression CLOSE_PAREN')
     def cast(state,p):
         state.log('expression : type OPEN_PAREN expression CLOSE_PAREN')
@@ -367,8 +387,8 @@ def get_parser(filename="tokens.txt"):
             "NOT_EQUAL": "__neq__",
             "GREATER": "__gr__",
             "LESS": "__ls__",
-            "GREATER_OR_EQUAL": "__greq__",
-            "LESS_OR_EQUAL": "__lseq__",
+            "GREATER_OR_EQUAL": "__geq__",
+            "LESS_OR_EQUAL": "__leq__",
             "AND": "__and__",
             "OR": "__or__",
             "AMP": "__bitand__",

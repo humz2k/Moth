@@ -823,3 +823,694 @@ def long __bitnot__(long val):
 
 def bool __not__(bool val):
     return __intr_not(val)
+
+
+def bool __eq__(bool left, bool right):
+    return __intr_cmp(==,left,right)
+
+
+def bool __eq__(char left, bool right):
+    return __intr_cmp(==,char(left),char(right))
+
+def bool __eq__(bool left, char right):
+    return __intr_cmp(==,char(left),char(right))
+
+def bool __eq__(char left, char right):
+    return __intr_cmp(==,char(left),char(right))
+
+
+def bool __eq__(int left, bool right):
+    return __intr_cmp(==,int(left),int(right))
+
+def bool __eq__(bool left, int right):
+    return __intr_cmp(==,int(left),int(right))
+
+def bool __eq__(int left, char right):
+    return __intr_cmp(==,int(left),int(right))
+
+def bool __eq__(char left, int right):
+    return __intr_cmp(==,int(left),int(right))
+
+def bool __eq__(int left, int right):
+    return __intr_cmp(==,int(left),int(right))
+
+
+def bool __eq__(long left, bool right):
+    return __intr_cmp(==,long(left),long(right))
+
+def bool __eq__(bool left, long right):
+    return __intr_cmp(==,long(left),long(right))
+
+def bool __eq__(long left, char right):
+    return __intr_cmp(==,long(left),long(right))
+
+def bool __eq__(char left, long right):
+    return __intr_cmp(==,long(left),long(right))
+
+def bool __eq__(long left, int right):
+    return __intr_cmp(==,long(left),long(right))
+
+def bool __eq__(int left, long right):
+    return __intr_cmp(==,long(left),long(right))
+
+def bool __eq__(long left, long right):
+    return __intr_cmp(==,long(left),long(right))
+
+
+def bool __eq__(half left, int right):
+    return __intr_fcmp(==,half(left),half(right))
+
+def bool __eq__(int left, half right):
+    return __intr_fcmp(==,half(left),half(right))
+
+def bool __eq__(half left, long right):
+    return __intr_fcmp(==,half(left),half(right))
+
+def bool __eq__(long left, half right):
+    return __intr_fcmp(==,half(left),half(right))
+
+
+def bool __eq__(float left, int right):
+    return __intr_fcmp(==,float(left),float(right))
+
+def bool __eq__(int left, float right):
+    return __intr_fcmp(==,float(left),float(right))
+
+def bool __eq__(float left, long right):
+    return __intr_fcmp(==,float(left),float(right))
+
+def bool __eq__(long left, float right):
+    return __intr_fcmp(==,float(left),float(right))
+
+def bool __eq__(float left, half right):
+    return __intr_fcmp(==,float(left),float(right))
+
+def bool __eq__(half left, float right):
+    return __intr_fcmp(==,float(left),float(right))
+
+def bool __eq__(float left, float right):
+    return __intr_fcmp(==,float(left),float(right))
+
+
+def bool __eq__(double left, int right):
+    return __intr_fcmp(==,double(left),double(right))
+
+def bool __eq__(int left, double right):
+    return __intr_fcmp(==,double(left),double(right))
+
+def bool __eq__(double left, long right):
+    return __intr_fcmp(==,double(left),double(right))
+
+def bool __eq__(long left, double right):
+    return __intr_fcmp(==,double(left),double(right))
+
+def bool __eq__(double left, half right):
+    return __intr_fcmp(==,double(left),double(right))
+
+def bool __eq__(half left, double right):
+    return __intr_fcmp(==,double(left),double(right))
+
+def bool __eq__(double left, float right):
+    return __intr_fcmp(==,double(left),double(right))
+
+def bool __eq__(float left, double right):
+    return __intr_fcmp(==,double(left),double(right))
+
+def bool __eq__(double left, double right):
+    return __intr_fcmp(==,double(left),double(right))
+
+
+def bool __neq__(bool left, bool right):
+    return __intr_cmp(!=,left,right)
+
+
+def bool __neq__(char left, bool right):
+    return __intr_cmp(!=,char(left),char(right))
+
+def bool __neq__(bool left, char right):
+    return __intr_cmp(!=,char(left),char(right))
+
+def bool __neq__(char left, char right):
+    return __intr_cmp(!=,char(left),char(right))
+
+
+def bool __neq__(int left, bool right):
+    return __intr_cmp(!=,int(left),int(right))
+
+def bool __neq__(bool left, int right):
+    return __intr_cmp(!=,int(left),int(right))
+
+def bool __neq__(int left, char right):
+    return __intr_cmp(!=,int(left),int(right))
+
+def bool __neq__(char left, int right):
+    return __intr_cmp(!=,int(left),int(right))
+
+def bool __neq__(int left, int right):
+    return __intr_cmp(!=,int(left),int(right))
+
+
+def bool __neq__(long left, bool right):
+    return __intr_cmp(!=,long(left),long(right))
+
+def bool __neq__(bool left, long right):
+    return __intr_cmp(!=,long(left),long(right))
+
+def bool __neq__(long left, char right):
+    return __intr_cmp(!=,long(left),long(right))
+
+def bool __neq__(char left, long right):
+    return __intr_cmp(!=,long(left),long(right))
+
+def bool __neq__(long left, int right):
+    return __intr_cmp(!=,long(left),long(right))
+
+def bool __neq__(int left, long right):
+    return __intr_cmp(!=,long(left),long(right))
+
+def bool __neq__(long left, long right):
+    return __intr_cmp(!=,long(left),long(right))
+
+
+def bool __neq__(half left, int right):
+    return __intr_fcmp(!=,half(left),half(right))
+
+def bool __neq__(int left, half right):
+    return __intr_fcmp(!=,half(left),half(right))
+
+def bool __neq__(half left, long right):
+    return __intr_fcmp(!=,half(left),half(right))
+
+def bool __neq__(long left, half right):
+    return __intr_fcmp(!=,half(left),half(right))
+
+
+def bool __neq__(float left, int right):
+    return __intr_fcmp(!=,float(left),float(right))
+
+def bool __neq__(int left, float right):
+    return __intr_fcmp(!=,float(left),float(right))
+
+def bool __neq__(float left, long right):
+    return __intr_fcmp(!=,float(left),float(right))
+
+def bool __neq__(long left, float right):
+    return __intr_fcmp(!=,float(left),float(right))
+
+def bool __neq__(float left, half right):
+    return __intr_fcmp(!=,float(left),float(right))
+
+def bool __neq__(half left, float right):
+    return __intr_fcmp(!=,float(left),float(right))
+
+def bool __neq__(float left, float right):
+    return __intr_fcmp(!=,float(left),float(right))
+
+
+def bool __neq__(double left, int right):
+    return __intr_fcmp(!=,double(left),double(right))
+
+def bool __neq__(int left, double right):
+    return __intr_fcmp(!=,double(left),double(right))
+
+def bool __neq__(double left, long right):
+    return __intr_fcmp(!=,double(left),double(right))
+
+def bool __neq__(long left, double right):
+    return __intr_fcmp(!=,double(left),double(right))
+
+def bool __neq__(double left, half right):
+    return __intr_fcmp(!=,double(left),double(right))
+
+def bool __neq__(half left, double right):
+    return __intr_fcmp(!=,double(left),double(right))
+
+def bool __neq__(double left, float right):
+    return __intr_fcmp(!=,double(left),double(right))
+
+def bool __neq__(float left, double right):
+    return __intr_fcmp(!=,double(left),double(right))
+
+def bool __neq__(double left, double right):
+    return __intr_fcmp(!=,double(left),double(right))
+
+
+def bool __gr__(bool left, bool right):
+    return __intr_cmp(>,left,right)
+
+
+def bool __gr__(char left, bool right):
+    return __intr_cmp(>,char(left),char(right))
+
+def bool __gr__(bool left, char right):
+    return __intr_cmp(>,char(left),char(right))
+
+def bool __gr__(char left, char right):
+    return __intr_cmp(>,char(left),char(right))
+
+
+def bool __gr__(int left, bool right):
+    return __intr_cmp(>,int(left),int(right))
+
+def bool __gr__(bool left, int right):
+    return __intr_cmp(>,int(left),int(right))
+
+def bool __gr__(int left, char right):
+    return __intr_cmp(>,int(left),int(right))
+
+def bool __gr__(char left, int right):
+    return __intr_cmp(>,int(left),int(right))
+
+def bool __gr__(int left, int right):
+    return __intr_cmp(>,int(left),int(right))
+
+
+def bool __gr__(long left, bool right):
+    return __intr_cmp(>,long(left),long(right))
+
+def bool __gr__(bool left, long right):
+    return __intr_cmp(>,long(left),long(right))
+
+def bool __gr__(long left, char right):
+    return __intr_cmp(>,long(left),long(right))
+
+def bool __gr__(char left, long right):
+    return __intr_cmp(>,long(left),long(right))
+
+def bool __gr__(long left, int right):
+    return __intr_cmp(>,long(left),long(right))
+
+def bool __gr__(int left, long right):
+    return __intr_cmp(>,long(left),long(right))
+
+def bool __gr__(long left, long right):
+    return __intr_cmp(>,long(left),long(right))
+
+
+def bool __gr__(half left, int right):
+    return __intr_fcmp(>,half(left),half(right))
+
+def bool __gr__(int left, half right):
+    return __intr_fcmp(>,half(left),half(right))
+
+def bool __gr__(half left, long right):
+    return __intr_fcmp(>,half(left),half(right))
+
+def bool __gr__(long left, half right):
+    return __intr_fcmp(>,half(left),half(right))
+
+
+def bool __gr__(float left, int right):
+    return __intr_fcmp(>,float(left),float(right))
+
+def bool __gr__(int left, float right):
+    return __intr_fcmp(>,float(left),float(right))
+
+def bool __gr__(float left, long right):
+    return __intr_fcmp(>,float(left),float(right))
+
+def bool __gr__(long left, float right):
+    return __intr_fcmp(>,float(left),float(right))
+
+def bool __gr__(float left, half right):
+    return __intr_fcmp(>,float(left),float(right))
+
+def bool __gr__(half left, float right):
+    return __intr_fcmp(>,float(left),float(right))
+
+def bool __gr__(float left, float right):
+    return __intr_fcmp(>,float(left),float(right))
+
+
+def bool __gr__(double left, int right):
+    return __intr_fcmp(>,double(left),double(right))
+
+def bool __gr__(int left, double right):
+    return __intr_fcmp(>,double(left),double(right))
+
+def bool __gr__(double left, long right):
+    return __intr_fcmp(>,double(left),double(right))
+
+def bool __gr__(long left, double right):
+    return __intr_fcmp(>,double(left),double(right))
+
+def bool __gr__(double left, half right):
+    return __intr_fcmp(>,double(left),double(right))
+
+def bool __gr__(half left, double right):
+    return __intr_fcmp(>,double(left),double(right))
+
+def bool __gr__(double left, float right):
+    return __intr_fcmp(>,double(left),double(right))
+
+def bool __gr__(float left, double right):
+    return __intr_fcmp(>,double(left),double(right))
+
+def bool __gr__(double left, double right):
+    return __intr_fcmp(>,double(left),double(right))
+
+
+def bool __ls__(bool left, bool right):
+    return __intr_cmp(<,left,right)
+
+
+def bool __ls__(char left, bool right):
+    return __intr_cmp(<,char(left),char(right))
+
+def bool __ls__(bool left, char right):
+    return __intr_cmp(<,char(left),char(right))
+
+def bool __ls__(char left, char right):
+    return __intr_cmp(<,char(left),char(right))
+
+
+def bool __ls__(int left, bool right):
+    return __intr_cmp(<,int(left),int(right))
+
+def bool __ls__(bool left, int right):
+    return __intr_cmp(<,int(left),int(right))
+
+def bool __ls__(int left, char right):
+    return __intr_cmp(<,int(left),int(right))
+
+def bool __ls__(char left, int right):
+    return __intr_cmp(<,int(left),int(right))
+
+def bool __ls__(int left, int right):
+    return __intr_cmp(<,int(left),int(right))
+
+
+def bool __ls__(long left, bool right):
+    return __intr_cmp(<,long(left),long(right))
+
+def bool __ls__(bool left, long right):
+    return __intr_cmp(<,long(left),long(right))
+
+def bool __ls__(long left, char right):
+    return __intr_cmp(<,long(left),long(right))
+
+def bool __ls__(char left, long right):
+    return __intr_cmp(<,long(left),long(right))
+
+def bool __ls__(long left, int right):
+    return __intr_cmp(<,long(left),long(right))
+
+def bool __ls__(int left, long right):
+    return __intr_cmp(<,long(left),long(right))
+
+def bool __ls__(long left, long right):
+    return __intr_cmp(<,long(left),long(right))
+
+
+def bool __ls__(half left, int right):
+    return __intr_fcmp(<,half(left),half(right))
+
+def bool __ls__(int left, half right):
+    return __intr_fcmp(<,half(left),half(right))
+
+def bool __ls__(half left, long right):
+    return __intr_fcmp(<,half(left),half(right))
+
+def bool __ls__(long left, half right):
+    return __intr_fcmp(<,half(left),half(right))
+
+
+def bool __ls__(float left, int right):
+    return __intr_fcmp(<,float(left),float(right))
+
+def bool __ls__(int left, float right):
+    return __intr_fcmp(<,float(left),float(right))
+
+def bool __ls__(float left, long right):
+    return __intr_fcmp(<,float(left),float(right))
+
+def bool __ls__(long left, float right):
+    return __intr_fcmp(<,float(left),float(right))
+
+def bool __ls__(float left, half right):
+    return __intr_fcmp(<,float(left),float(right))
+
+def bool __ls__(half left, float right):
+    return __intr_fcmp(<,float(left),float(right))
+
+def bool __ls__(float left, float right):
+    return __intr_fcmp(<,float(left),float(right))
+
+
+def bool __ls__(double left, int right):
+    return __intr_fcmp(<,double(left),double(right))
+
+def bool __ls__(int left, double right):
+    return __intr_fcmp(<,double(left),double(right))
+
+def bool __ls__(double left, long right):
+    return __intr_fcmp(<,double(left),double(right))
+
+def bool __ls__(long left, double right):
+    return __intr_fcmp(<,double(left),double(right))
+
+def bool __ls__(double left, half right):
+    return __intr_fcmp(<,double(left),double(right))
+
+def bool __ls__(half left, double right):
+    return __intr_fcmp(<,double(left),double(right))
+
+def bool __ls__(double left, float right):
+    return __intr_fcmp(<,double(left),double(right))
+
+def bool __ls__(float left, double right):
+    return __intr_fcmp(<,double(left),double(right))
+
+def bool __ls__(double left, double right):
+    return __intr_fcmp(<,double(left),double(right))
+
+
+
+def bool __geq__(bool left, bool right):
+    return __intr_cmp(>=,left,right)
+
+
+def bool __geq__(char left, bool right):
+    return __intr_cmp(>=,char(left),char(right))
+
+def bool __geq__(bool left, char right):
+    return __intr_cmp(>=,char(left),char(right))
+
+def bool __geq__(char left, char right):
+    return __intr_cmp(>=,char(left),char(right))
+
+
+def bool __geq__(int left, bool right):
+    return __intr_cmp(>=,int(left),int(right))
+
+def bool __geq__(bool left, int right):
+    return __intr_cmp(>=,int(left),int(right))
+
+def bool __geq__(int left, char right):
+    return __intr_cmp(>=,int(left),int(right))
+
+def bool __geq__(char left, int right):
+    return __intr_cmp(>=,int(left),int(right))
+
+def bool __geq__(int left, int right):
+    return __intr_cmp(>=,int(left),int(right))
+
+
+def bool __geq__(long left, bool right):
+    return __intr_cmp(>=,long(left),long(right))
+
+def bool __geq__(bool left, long right):
+    return __intr_cmp(>=,long(left),long(right))
+
+def bool __geq__(long left, char right):
+    return __intr_cmp(>=,long(left),long(right))
+
+def bool __geq__(char left, long right):
+    return __intr_cmp(>=,long(left),long(right))
+
+def bool __geq__(long left, int right):
+    return __intr_cmp(>=,long(left),long(right))
+
+def bool __geq__(int left, long right):
+    return __intr_cmp(>=,long(left),long(right))
+
+def bool __geq__(long left, long right):
+    return __intr_cmp(>=,long(left),long(right))
+
+
+def bool __geq__(half left, int right):
+    return __intr_fcmp(>=,half(left),half(right))
+
+def bool __geq__(int left, half right):
+    return __intr_fcmp(>=,half(left),half(right))
+
+def bool __geq__(half left, long right):
+    return __intr_fcmp(>=,half(left),half(right))
+
+def bool __geq__(long left, half right):
+    return __intr_fcmp(>=,half(left),half(right))
+
+
+def bool __geq__(float left, int right):
+    return __intr_fcmp(>=,float(left),float(right))
+
+def bool __geq__(int left, float right):
+    return __intr_fcmp(>=,float(left),float(right))
+
+def bool __geq__(float left, long right):
+    return __intr_fcmp(>=,float(left),float(right))
+
+def bool __geq__(long left, float right):
+    return __intr_fcmp(>=,float(left),float(right))
+
+def bool __geq__(float left, half right):
+    return __intr_fcmp(>=,float(left),float(right))
+
+def bool __geq__(half left, float right):
+    return __intr_fcmp(>=,float(left),float(right))
+
+def bool __geq__(float left, float right):
+    return __intr_fcmp(>=,float(left),float(right))
+
+
+def bool __geq__(double left, int right):
+    return __intr_fcmp(>=,double(left),double(right))
+
+def bool __geq__(int left, double right):
+    return __intr_fcmp(>=,double(left),double(right))
+
+def bool __geq__(double left, long right):
+    return __intr_fcmp(>=,double(left),double(right))
+
+def bool __geq__(long left, double right):
+    return __intr_fcmp(>=,double(left),double(right))
+
+def bool __geq__(double left, half right):
+    return __intr_fcmp(>=,double(left),double(right))
+
+def bool __geq__(half left, double right):
+    return __intr_fcmp(>=,double(left),double(right))
+
+def bool __geq__(double left, float right):
+    return __intr_fcmp(>=,double(left),double(right))
+
+def bool __geq__(float left, double right):
+    return __intr_fcmp(>=,double(left),double(right))
+
+def bool __geq__(double left, double right):
+    return __intr_fcmp(>=,double(left),double(right))
+
+
+def bool __leq__(bool left, bool right):
+    return __intr_cmp(<=,left,right)
+
+
+def bool __leq__(char left, bool right):
+    return __intr_cmp(<=,char(left),char(right))
+
+def bool __leq__(bool left, char right):
+    return __intr_cmp(<=,char(left),char(right))
+
+def bool __leq__(char left, char right):
+    return __intr_cmp(<=,char(left),char(right))
+
+
+def bool __leq__(int left, bool right):
+    return __intr_cmp(<=,int(left),int(right))
+
+def bool __leq__(bool left, int right):
+    return __intr_cmp(<=,int(left),int(right))
+
+def bool __leq__(int left, char right):
+    return __intr_cmp(<=,int(left),int(right))
+
+def bool __leq__(char left, int right):
+    return __intr_cmp(<=,int(left),int(right))
+
+def bool __leq__(int left, int right):
+    return __intr_cmp(<=,int(left),int(right))
+
+
+def bool __leq__(long left, bool right):
+    return __intr_cmp(<=,long(left),long(right))
+
+def bool __leq__(bool left, long right):
+    return __intr_cmp(<=,long(left),long(right))
+
+def bool __leq__(long left, char right):
+    return __intr_cmp(<=,long(left),long(right))
+
+def bool __leq__(char left, long right):
+    return __intr_cmp(<=,long(left),long(right))
+
+def bool __leq__(long left, int right):
+    return __intr_cmp(<=,long(left),long(right))
+
+def bool __leq__(int left, long right):
+    return __intr_cmp(<=,long(left),long(right))
+
+def bool __leq__(long left, long right):
+    return __intr_cmp(<=,long(left),long(right))
+
+
+def bool __leq__(half left, int right):
+    return __intr_fcmp(<=,half(left),half(right))
+
+def bool __leq__(int left, half right):
+    return __intr_fcmp(<=,half(left),half(right))
+
+def bool __leq__(half left, long right):
+    return __intr_fcmp(<=,half(left),half(right))
+
+def bool __leq__(long left, half right):
+    return __intr_fcmp(<=,half(left),half(right))
+
+
+def bool __leq__(float left, int right):
+    return __intr_fcmp(<=,float(left),float(right))
+
+def bool __leq__(int left, float right):
+    return __intr_fcmp(<=,float(left),float(right))
+
+def bool __leq__(float left, long right):
+    return __intr_fcmp(<=,float(left),float(right))
+
+def bool __leq__(long left, float right):
+    return __intr_fcmp(<=,float(left),float(right))
+
+def bool __leq__(float left, half right):
+    return __intr_fcmp(<=,float(left),float(right))
+
+def bool __leq__(half left, float right):
+    return __intr_fcmp(<=,float(left),float(right))
+
+def bool __leq__(float left, float right):
+    return __intr_fcmp(<=,float(left),float(right))
+
+
+def bool __leq__(double left, int right):
+    return __intr_fcmp(<=,double(left),double(right))
+
+def bool __leq__(int left, double right):
+    return __intr_fcmp(<=,double(left),double(right))
+
+def bool __leq__(double left, long right):
+    return __intr_fcmp(<=,double(left),double(right))
+
+def bool __leq__(long left, double right):
+    return __intr_fcmp(<=,double(left),double(right))
+
+def bool __leq__(double left, half right):
+    return __intr_fcmp(<=,double(left),double(right))
+
+def bool __leq__(half left, double right):
+    return __intr_fcmp(<=,double(left),double(right))
+
+def bool __leq__(double left, float right):
+    return __intr_fcmp(<=,double(left),double(right))
+
+def bool __leq__(float left, double right):
+    return __intr_fcmp(<=,double(left),double(right))
+
+def bool __leq__(double left, double right):
+    return __intr_fcmp(<=,double(left),double(right))

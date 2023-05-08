@@ -4,8 +4,8 @@ import re
 with open("motharith.moth","r") as f:
     raw = f.read() + "\n"
 
-with open("test.moth","r") as f:
-    raw += f.read()
+#with open("test.moth","r") as f:
+#    raw += f.read()
 
 raw = codegen.remove_comments(raw)
 raw = codegen.convert(raw)

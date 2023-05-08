@@ -2083,17 +2083,296 @@ entry:
   ret i1 %".3"
 }
 
+define i1 @"__eq___i1_i1"(i1 %".1", i1 %".2")
+{
+entry:
+  %".4" = icmp eq i1 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__eq___i8_i1"(i8 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i8 @"i1->i8"(i1 %".2")
+  %".5" = icmp eq i8 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i1_i8"(i1 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i8 @"i1->i8"(i1 %".1")
+  %".5" = icmp eq i8 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i8_i8"(i8 %".1", i8 %".2")
+{
+entry:
+  %".4" = icmp eq i8 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__eq___i32_i1"(i32 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i32 @"i1->i32"(i1 %".2")
+  %".5" = icmp eq i32 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i1_i32"(i1 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"i1->i32"(i1 %".1")
+  %".5" = icmp eq i32 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i32_i8"(i32 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i32 @"i8->i32"(i8 %".2")
+  %".5" = icmp eq i32 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i8_i32"(i8 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"i8->i32"(i8 %".1")
+  %".5" = icmp eq i32 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i32_i32"(i32 %".1", i32 %".2")
+{
+entry:
+  %".4" = icmp eq i32 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__eq___i64_i1"(i64 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i64 @"i1->i64"(i1 %".2")
+  %".5" = icmp eq i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i1_i64"(i1 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i1->i64"(i1 %".1")
+  %".5" = icmp eq i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i64_i8"(i64 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i64 @"i8->i64"(i8 %".2")
+  %".5" = icmp eq i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i8_i64"(i8 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i8->i64"(i8 %".1")
+  %".5" = icmp eq i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i64_i32"(i64 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i64 @"i32->i64"(i32 %".2")
+  %".5" = icmp eq i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i32_i64"(i32 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i32->i64"(i32 %".1")
+  %".5" = icmp eq i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i64_i64"(i64 %".1", i64 %".2")
+{
+entry:
+  %".4" = icmp eq i64 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__eq___half_i32"(half %".1", i32 %".2")
+{
+entry:
+  %".4" = call half @"i32->half"(i32 %".2")
+  %".5" = fcmp oeq half %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i32_half"(i32 %".1", half %".2")
+{
+entry:
+  %".4" = call half @"i32->half"(i32 %".1")
+  %".5" = fcmp oeq half %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___half_i64"(half %".1", i64 %".2")
+{
+entry:
+  %".4" = call half @"i64->half"(i64 %".2")
+  %".5" = fcmp oeq half %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i64_half"(i64 %".1", half %".2")
+{
+entry:
+  %".4" = call half @"i64->half"(i64 %".1")
+  %".5" = fcmp oeq half %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___float_i32"(float %".1", i32 %".2")
+{
+entry:
+  %".4" = call float @"i32->float"(i32 %".2")
+  %".5" = fcmp oeq float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i32_float"(i32 %".1", float %".2")
+{
+entry:
+  %".4" = call float @"i32->float"(i32 %".1")
+  %".5" = fcmp oeq float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___float_i64"(float %".1", i64 %".2")
+{
+entry:
+  %".4" = call float @"i64->float"(i64 %".2")
+  %".5" = fcmp oeq float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i64_float"(i64 %".1", float %".2")
+{
+entry:
+  %".4" = call float @"i64->float"(i64 %".1")
+  %".5" = fcmp oeq float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___float_half"(float %".1", half %".2")
+{
+entry:
+  %".4" = call float @"half->float"(half %".2")
+  %".5" = fcmp oeq float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___half_float"(half %".1", float %".2")
+{
+entry:
+  %".4" = call float @"half->float"(half %".1")
+  %".5" = fcmp oeq float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___float_float"(float %".1", float %".2")
+{
+entry:
+  %".4" = fcmp oeq float %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__eq___double_i32"(double %".1", i32 %".2")
+{
+entry:
+  %".4" = call double @"i32->double"(i32 %".2")
+  %".5" = fcmp oeq double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i32_double"(i32 %".1", double %".2")
+{
+entry:
+  %".4" = call double @"i32->double"(i32 %".1")
+  %".5" = fcmp oeq double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___double_i64"(double %".1", i64 %".2")
+{
+entry:
+  %".4" = call double @"i64->double"(i64 %".2")
+  %".5" = fcmp oeq double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___i64_double"(i64 %".1", double %".2")
+{
+entry:
+  %".4" = call double @"i64->double"(i64 %".1")
+  %".5" = fcmp oeq double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___double_half"(double %".1", half %".2")
+{
+entry:
+  %".4" = call double @"half->double"(half %".2")
+  %".5" = fcmp oeq double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___half_double"(half %".1", double %".2")
+{
+entry:
+  %".4" = call double @"half->double"(half %".1")
+  %".5" = fcmp oeq double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___double_float"(double %".1", float %".2")
+{
+entry:
+  %".4" = call double @"float->double"(float %".2")
+  %".5" = fcmp oeq double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___float_double"(float %".1", double %".2")
+{
+entry:
+  %".4" = call double @"float->double"(float %".1")
+  %".5" = fcmp oeq double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__eq___double_double"(double %".1", double %".2")
+{
+entry:
+  %".4" = fcmp oeq double %".1", %".2"
+  ret i1 %".4"
+}
+
 define i32 @"main"()
 {
 entry:
-  %".2" = alloca i32
-  store i32 5, i32* %".2"
-  %".4" = alloca i32
-  %".5" = call i64 @"i32->i64"(i32 10)
-  %".6" = call float @"__mul___float_i64"(float 0x4016000000000000, i64 %".5")
-  %".7" = call float @"__add___i32_float"(i32 5, float %".6")
-  %".8" = call i32 @"float->i32"(float %".7")
-  store i32 %".8", i32* %".4"
-  %".10" = load i32, i32* %".2"
-  ret i32 %".10"
+  %".2" = alloca i1
+  %".3" = call i1 @"__eq___i32_i32"(i32 1, i32 5)
+  store i1 %".3", i1* %".2"
+  %".5" = load i1, i1* %".2"
+  %".6" = load i1, i1* %".2"
+  %".7" = call i32 @"i1->i32"(i1 %".6")
+  ret i32 %".7"
 }
