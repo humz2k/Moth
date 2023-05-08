@@ -3,13 +3,19 @@ from rply.token import Token
 import sys
 
 class PreproccessorToken:
-    pass
+    def make_template(self,templates):
+        pass
 
 class Misc(PreproccessorToken):
     def __init__(self,token):
         self.token = token
         self.name = token.name
         self.value = token.value
+
+    def replace(self,map_to):
+        if self.value in map_to:
+            return Misc(Token("",map_to[self.value]))
+        return self
     
     def eval(self):
         return self.value
@@ -27,9 +33,74 @@ class TemplateInstance(PreproccessorToken):
         self.name = name
         self.args = args
         self.value = self.eval()
+        self.instantiated = False
+
+    def make_template(self,templates):
+        n_args = len(self.args)
+        name = self.name.value + "_" + str(n_args)
+        if name in templates:
+            template = templates[name]
+        else:
+            raise Exception("Template does not exist")
+        template.instantiate(self.args,templates)
+        self.instantiated = True
+
+    def replace(self,map_to):
+        args = []
+        for i in self.args:
+            if i.eval() in map_to:
+                args.append(Misc(Token("",map_to[i.eval()])))
+            else:
+                args.append(i)
+        self.args = args
+        return self
 
     def eval(self):
-        return "_" + self.name.value + "_" + "_".join([i.eval() for i in self.args]) + "_"    
+        return "_" + self.name.value + "_" + "_".join([i.eval() for i in self.args]) + "_"  
+    
+class TemplateDef(PreproccessorToken):
+    def __init__(self,name,args,inherits,scope):
+        self.name = name
+        self.args = args
+        self.inherits = inherits
+        self.scope = scope
+        self.instantiations = {}
+
+    def instantiate(self,args,templates):
+        name = "_".join([i.eval() for i in args])
+        if name in self.instantiations:
+            return
+        map_to = {self.args[i].eval().strip(): args[i].eval().strip() for i in range(len(args))}
+        #out = []
+        #for token in self.scope.tokens:
+        #    out.append(token.replace(map_to))
+        #out = " ".join([i.eval() for i in out])
+        self.scope = self.scope.replace(map_to)
+        self.scope.make_template(templates)
+        out = self.scope.eval()
+        header = "class " + "_" + self.name.value + "_" + "_".join([i.eval() for i in args]) + "_"
+        if type(self.inherits) != type(None):
+            header += " (" + self.inherits.value + ")"
+        header += ":"
+        out = header + out + ""
+        self.instantiations[name] = out
+
+    def make_template(self,templates):
+        pass
+    
+    def get(self):
+        out = ""
+        for i in self.instantiations.values():
+            out += i + "\n"
+        return out
+
+    def eval(self):
+        return self.get()
+        #out = ""
+        #for i in self.instantiations.values():
+        #    out += i + "\n"
+        #return out
+        
 
 class Scope(PreproccessorToken):
     def __init__(self,start):
@@ -40,6 +111,17 @@ class Scope(PreproccessorToken):
     
     def eval(self):
         return " ".join([i.eval() for i in self.tokens])
+
+    def make_template(self,templates):
+        for i in self.tokens:
+            i.make_template(templates)
+
+    def replace(self,map_to):
+        tokens = []
+        for token in self.tokens:
+            tokens.append(token.replace(map_to))
+        self.tokens = tokens
+        return self
     
 class ParserState(object):
     def __init__(self):
@@ -54,6 +136,8 @@ class ParserState(object):
         self.tokens.append(token)
 
     def eval(self):
+        for i in self.tokens:
+            i.make_template(self.templates)
         return " ".join([i.eval() for i in self.tokens])
 
 def get_parser(filename="tokens.txt"):
@@ -82,6 +166,7 @@ def get_parser(filename="tokens.txt"):
     #@pg.production('program : program template_instance')
     @pg.production('program : program array_t')
     @pg.production('program : program template_instance')
+    @pg.production('program : program template_def')
     @pg.production('program : program misc')
     def add_program(state,p):
         state.log('program : program template_def|template_instance|array_t|misc')
@@ -109,11 +194,17 @@ def get_parser(filename="tokens.txt"):
         state.log('array_t : array_t_open CLOSE_SQUARE')
         return p[0]
     
-    @pg.production('template_def : CLASS template_instance COLON scope')
-    @pg.production('template_def : CLASS template_instance OPEN_PAREN IDENTIFIER CLOSE_PAREN COLON scope')
+    @pg.production('template_def : CLASS template_instance_open CLOSE_SQUARE COLON scope')
+    @pg.production('template_def : CLASS template_instance_open CLOSE_SQUARE OPEN_PAREN IDENTIFIER CLOSE_PAREN COLON scope')
     def open_template(state,p):
         state.log('template_def_open : CLASS template_instance COLON OPEN_CURL')
-        return Misc(Token("",""))
+        if len(p) == 5:
+            definition = TemplateDef(p[1][0],p[1][1:],None,p[4])
+        else:
+            definition = TemplateDef(p[1][0],p[1][1:],p[4],p[7])
+        state.templates[p[1][0].value + "_" + str(len(p[1][1:]))] = definition
+        #state.append(definition)
+        return definition
     
     @pg.production('template_instance_open : CLASS_NAME OPEN_SQUARE IDENTIFIER')
     @pg.production('template_instance_open : CLASS_NAME OPEN_SQUARE NUMBER')
@@ -136,6 +227,13 @@ def get_parser(filename="tokens.txt"):
     @pg.production('template_instance : template_instance_open CLOSE_SQUARE')
     def template_inst(state,p):
         state.log('template_instance : template_instance_open CLOSE_SQUARE')
+        #n_args = len(p[0][1:])
+        #name = p[0][0].value + "_" + str(n_args)
+        #if name in state.templates:
+        #    template = state.templates[name]
+        #else:
+        #    raise Exception("Template does not exist")
+        #state.templates[name].instantiate(p[0][1:])
         return TemplateInstance(p[0][0],p[0][1:])
 
     @pg.production('scope_open : OPEN_CURL')
@@ -149,7 +247,10 @@ def get_parser(filename="tokens.txt"):
         p[0].add(Misc(p[1]))
         return p[0]
     
+
     @pg.production('scope_open : scope_open misc')
+    @pg.production('scope_open : scope_open template_instance')
+    @pg.production('scope_open : scope_open array_t')
     @pg.production('scope_open : scope_open scope')
     def scope_cont(state,p):
         state.log('scope_open : scope_open misc')
