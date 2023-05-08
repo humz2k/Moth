@@ -1,8 +1,11 @@
 import codegen
 import re
 
+with open("motharith.moth","r") as f:
+    raw = f.read() + "\n"
+
 with open("test.moth","r") as f:
-    raw = f.read()
+    raw += f.read()
 
 raw = codegen.remove_comments(raw)
 raw = codegen.convert(raw)
@@ -23,7 +26,7 @@ state = codegen.templates.ParserState()
 parser.parse(tokens,state)
 
 raw = state.eval()
-print(raw)
+
 
 tokens = lexer.lex(raw)
 
@@ -34,4 +37,7 @@ state = codegen.ParserState("test.moth")
 parser.parse(tokens,state)
 print("\n\n")
 
-print(state.module)
+out = "\n".join([i for i in str(state.module).split("\n") if not i.startswith("target")])
+print(out)
+with open("tmp.ll","w") as f:
+    f.write(out)

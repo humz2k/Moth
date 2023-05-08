@@ -37,6 +37,7 @@ NOT \!|\bnot\b
 AMP \&
 VERT \|
 TILDE \~
+HAT \^
 
 ASSIGN \=
 

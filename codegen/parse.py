@@ -6,7 +6,7 @@ class ParserState(object):
     def __init__(self,module_name : str):
         self.module = ir.Module(name=module_name)
         self.global_variables = {}
-        self.blocks = []
+        self.current_block = []
         self.current_class = None
         self.current_function = None
         self.builder = None
@@ -35,10 +35,10 @@ class VariableContainer:
         self.raw = raw
     
     def _get(self,builder):
-        return ConstantContainer(builder.load(self.raw))
+        return builder.load(self.raw)
     
     def _set(self,builder,value):
-        return builder.store(value._get(builder),self.raw)
+        return builder.store(value,self.raw)
 
 def get_parser(filename="tokens.txt"):
     with open(filename,"r") as f:
@@ -46,8 +46,16 @@ def get_parser(filename="tokens.txt"):
     if "IGNORE" in tokens:
         tokens.remove("IGNORE")
     pg = ParserGenerator(tokens, precedence=[
-        #("nonassoc",["misc"]),
-        #("nonassoc",["template_instance"]),
+        ('left', ['PLUS', 'MINUS']),
+        ('left', ['STAR', 'SLASH']),
+        ('left', ['PERCENT']),
+        ('left', ['STARSTAR']),
+        ('left', ['EQUAL', 'NOT_EQUAL','GREATER','LESS','GREATER_OR_EQUAL','LESS_OR_EQUAL']),
+        ('left', ['AMP', 'VERT','HAT','TILDE','LEFT_SHIFT','RIGHT_SHIFT']),
+        ('left', ['AND', 'OR']),
+        ('left', ['NOT']),
+        ('left', ['BACKSLASH']),
+        ('left', ['PERIOD']),
     ])
 
     @pg.production('program : cast_def')
@@ -111,16 +119,25 @@ def get_parser(filename="tokens.txt"):
         return p[0]
     
     @pg.production('function_def_open : DEF type FUNCTION_NAME func_def_inputs COLON OPEN_CURL')
+    @pg.production('function_def_open : DEF type FUNCTION_NAME OPEN_PAREN CLOSE_PAREN COLON OPEN_CURL')
     def func_def_open(state,p):
         state.log('function_def_open : DEF type FUNCTION_NAME func_def_inputs COLON OPEN_CURL')
         if type(state.current_class) == type(None):
-            _,return_type,func_name,inputs,_,_ = p
+            if len(p) == 7:
+                _,return_type,func_name,_,_,_,_, = p
+                inputs = []
+            else:
+                _,return_type,func_name,inputs,_,_ = p
             input_types = [i[0].raw for i in inputs]
             func_type = ir.FunctionType(return_type.raw,input_types)
-            name = func_name.value + "_" + "_".join([str(i) for i in input_types])
+            if func_name.value == "main":
+                name = "main"
+            else:
+                name = func_name.value + "_" + "_".join([str(i) for i in input_types])
             state.current_function = ir.Function(state.module,func_type,name)
             if name in state.functions:
                 raise Exception("Function " + name + " already exists")
+            state.functions[name] = state.current_function
             state.current_block = [state.current_function.append_basic_block(name="entry")]
             state.builder = ir.IRBuilder(state.current_block[-1])
             state.local_variables = {}
@@ -145,8 +162,17 @@ def get_parser(filename="tokens.txt"):
     @pg.production('line : RETURN SEMI_COLON')
     def get_return(state,p):
         state.log('line : RETURN ... SEMI_COLON')
+        if state.current_block[-1].is_terminated:
+            raise Exception("Current block is terminated")
+        return_type = state.current_function.type.pointee.return_type
         if len(p) == 3:
-            return state.builder.ret(p[1]._get(state.builder))
+            expr = p[1]._get(state.builder)
+            
+            if return_type != expr.type:
+                raise Exception("Function returns wrong type")
+            return state.builder.ret(expr)
+        if return_type != ir.VoidType():
+            raise Exception("Function returns wrong type")
         return state.builder.ret_void()
     
     @pg.production('line : PASS SEMI_COLON')
@@ -159,13 +185,14 @@ def get_parser(filename="tokens.txt"):
         state.log('assign : expression ASSIGN expression')
         if isinstance(p[0],VariableContainer):
             expr = p[2]
+            get = expr._get(state.builder)
             var = p[0]
-            if expr.raw.type != var.raw.type.pointee:
-                cast_name = str(expr.raw.type) + "->" + str(var.type.pointee)
+            if get.type != var.raw.type.pointee:
+                cast_name = str(get.type) + "->" + str(var.raw.type.pointee)
                 if not cast_name in state.casts:
                     raise Exception("No casting rule " + cast_name + " exists")
-                expr = ConstantContainer(state.builder.call(state.casts[cast_name],[expr._get()]))
-            return var._set(state.builder,expr)
+                get = state.builder.call(state.casts[cast_name],[get])
+            return var._set(state.builder,get)
         raise Exception("Can't assign to constant")
     
     @pg.production('expression : TRUNC_INTR OPEN_PAREN expression COMMA type CLOSE_PAREN')
@@ -297,10 +324,63 @@ def get_parser(filename="tokens.txt"):
         if cast_to == cast_from:
             return p[2]
         name = str(cast_from) + "->" + str(cast_to)
-        print(state.casts)
         if not name in state.casts:
             raise Exception("No cast " + name + " exists")
         return ConstantContainer(state.builder.call(state.casts[name],[val._get(state.builder)]))
+    
+    @pg.production('expression : OPEN_PAREN expression CLOSE_PAREN')
+    def pass_expr(state,p):
+        state.log('expression : OPEN_PAREN expression CLOSE_PAREN')
+        return p[1]
+
+    @pg.production('expression : expression RIGHT_SHIFT expression')
+    @pg.production('expression : expression LEFT_SHIFT expression')
+    @pg.production('expression : expression PLUS expression')
+    @pg.production('expression : expression MINUS expression')
+    @pg.production('expression : expression STARSTAR expression')
+    @pg.production('expression : expression STAR expression')
+    @pg.production('expression : expression SLASH expression')
+    @pg.production('expression : expression PERCENT expression')
+    @pg.production('expression : expression EQUAL expression')
+    @pg.production('expression : expression NOT_EQUAL expression')
+    @pg.production('expression : expression GREATER expression')
+    @pg.production('expression : expression LESS expression')
+    @pg.production('expression : expression GREATER_OR_EQUAL expression')
+    @pg.production('expression : expression LESS_OR_EQUAL expression')
+    @pg.production('expression : expression AND expression')
+    @pg.production('expression : expression OR expression')
+    @pg.production('expression : expression AMP expression')
+    @pg.production('expression : expression VERT expression')
+    @pg.production('expression : expression HAT expression')
+    def binop(state,p):
+        state.log('expression : expression OP expression')
+        op_dict = {
+            "RIGHT_SHIFT": "__shr__",
+            "LEFT_SHIFT": "__shl__",
+            "PLUS": "__add__",
+            "MINUS": "__sub__",
+            "STAR": "__mul__",
+            "STARSTAR": "__pow__",
+            "SLASH": "__div__",
+            "PERCENT": "__mod__",
+            "EQUAL": "__eq__",
+            "NOT_EQUAL": "__neq__",
+            "GREATER": "__gr__",
+            "LESS": "__ls__",
+            "GREATER_OR_EQUAL": "__greq__",
+            "LESS_OR_EQUAL": "__lseq__",
+            "AND": "__and__",
+            "OR": "__or__",
+            "AMP": "__bitand__",
+            "VERT": "__bitor__",
+            "HAT": "__bitxor__"
+        }
+        left = p[0]._get(state.builder)
+        right = p[2]._get(state.builder)
+        op_name = op_dict[p[1].name] + "_" + str(left.type) + "_" + str(right.type)
+        if not op_name in state.functions:
+            raise Exception("No definition for op " + str(p[1].value) + " exists for types " + str(left.type) + " and " + str(right.type))
+        return ConstantContainer(state.builder.call(state.functions[op_name],[left,right]))
 
     @pg.production('expression : NUMBER')
     def constant(state,p):
@@ -308,6 +388,11 @@ def get_parser(filename="tokens.txt"):
         if "." in p[0].value:
             return ConstantContainer(ir.Constant(ir.FloatType(),float(p[0].value)))
         return ConstantContainer(ir.Constant(ir.IntType(32),int(p[0].value)))
+    
+    @pg.production('expression : CHAR')
+    def constant(state,p):
+        state.log('expression : CHAR')
+        return ConstantContainer(ir.Constant(ir.IntType(8),ord(p[0].value[1:-1])))
 
     @pg.production('expression : type IDENTIFIER')
     def declaration(state,p):
@@ -315,6 +400,7 @@ def get_parser(filename="tokens.txt"):
         var = VariableContainer(state.builder.alloca(p[0].raw))
         if p[1].value in state.local_variables:
             raise Exception("Variable " + p[1].value + " already exists")
+        state.local_variables[p[1].value] = var
         return var
 
     @pg.production('expression : IDENTIFIER')
