@@ -6,6 +6,20 @@ class PreproccessorToken:
     def make_template(self,templates):
         pass
 
+class PointerType(PreproccessorToken):
+    def __init__(self,pointee):
+        self.pointee = pointee
+    
+    def get_arg_name(self):
+        return self.pointee.eval() + "POINTER"
+    
+    def replace(self,map_to):
+        self.pointee.replace(map_to)
+        return self
+
+    def eval(self):
+        return self.pointee.eval() + "*"
+
 class Misc(PreproccessorToken):
     def __init__(self,token):
         self.token = token
@@ -262,7 +276,7 @@ class ParserState(object):
 
     def log(self,text):
         pass
-        print(text)
+        #print(text)
 
     def append(self,token : PreproccessorToken):
         self.tokens.append(token)
@@ -450,6 +464,48 @@ def get_parser(filename="tokens.txt"):
         p[0].add(p[1])
         return p[0]
 
+    @pg.production('pointer_type : TYPE_NAME STAR')
+    @pg.production('pointer_type : IDENTIFIER STAR')
+    def pointer_type(state,p):
+        return PointerType(Misc(p[0]))
+    
+    @pg.production('pointer_type : pointer_type STAR')
+    def pointer_type(state,p):
+        return PointerType(p[0])
+    
+    @pg.production('misc : pointer_type')
+    def pass_ptr(state,p):
+        return p[0]
+
+    @pg.production('misc : RIGHT_SHIFT')
+    @pg.production('misc : LEFT_SHIFT')
+    @pg.production('misc : TILDE')
+    @pg.production('misc : SHL_INTR')
+    @pg.production('misc : SHR_INTR')
+    @pg.production('misc : ADD_INTR')
+    @pg.production('misc : SUB_INTR')
+    @pg.production('misc : MUL_INTR')
+    @pg.production('misc : DIV_INTR')
+    @pg.production('misc : REM_INTR')
+    @pg.production('misc : AND_INTR')
+    @pg.production('misc : OR_INTR')
+    @pg.production('misc : XOR_INTR')
+    @pg.production('misc : NOT_INTR')
+    @pg.production('misc : NEG_INTR')
+    @pg.production('misc : FADD_INTR')
+    @pg.production('misc : FSUB_INTR')
+    @pg.production('misc : FMUL_INTR')
+    @pg.production('misc : FDIV_INTR')
+    @pg.production('misc : FREM_INTR')
+    @pg.production('misc : FNEG_INTR')
+    @pg.production('misc : TRUNC_INTR')
+    @pg.production('misc : EXT_INTR')
+    @pg.production('misc : FTRUNC_INTR')
+    @pg.production('misc : FEXT_INTR')
+    @pg.production('misc : FTOI_INTR')
+    @pg.production('misc : ITOF_INTR')
+    @pg.production('misc : CMP_INTR')
+    @pg.production('misc : FCMP_INTR')
     @pg.production('misc : CHAR')
     @pg.production('misc : STRING')
     @pg.production('misc : PLUS_PLUS')
@@ -516,6 +572,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('misc : FUNCTION_NAME')
     @pg.production('misc : FUNCTION_TEMPLATE_NAME')
     @pg.production('misc : CLASS_NAME')
+    @pg.production('misc : CAST')
     def pass_misc(state,p):
         state.log('misc : * = ' + p[0].name + " " + p[0].value)
         return Misc(p[0])
@@ -526,6 +583,6 @@ def get_parser(filename="tokens.txt"):
         exit()
 
     out = pg.build()
-    print(out.lr_table.sr_conflicts)
+    #print(out.lr_table.sr_conflicts)
     return out
 

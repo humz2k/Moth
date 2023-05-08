@@ -11,6 +11,9 @@ STAR_EQUAL \*\=
 SLASH_EQUAL \/\=
 PERCENT_EQUAL \%\=
 
+RIGHT_SHIFT \>\>
+LEFT_SHIFT \<\<
+
 PLUS \+
 MINUS \-
 STARSTAR \*\*
@@ -33,6 +36,7 @@ OR \bor\b|\|\|
 NOT \!|\bnot\b
 AMP \&
 VERT \|
+TILDE \~
 
 ASSIGN \=
 
@@ -48,11 +52,12 @@ CLOSE_PAREN \)
 OPEN_SQUARE \[
 CLOSE_SQUARE \]
 
-TYPE_NAME \bvoid\b|\bchar\b|\bint\b|\blong\|\bfloat\b|\bdouble\b|\bbool\b
+TYPE_NAME \bvoid\b|\bchar\b|\bint\b|\blong\b|\bfloat\b|\bdouble\b|\bhalf\b|\bbool\b
 TYPE_QUERY \btype\b
 DTYPE \bdtype\b
 KERNEL \bkernel\b
 TEMPLATE \btemplate\b
+CAST \bcast\b
 
 CLASS \bclass\b
 DEF \bdef\b
@@ -71,6 +76,34 @@ TRUE \bTrue\b
 FALSE \bFalse\b
 NEW \bnew\b
 NULL \bNULL\b
+
+SHL_INTR \b__intr_shl\b
+SHR_INTR \b__intr_shr\b
+ADD_INTR \b__intr_add\b
+SUB_INTR \b__intr_sub\b
+MUL_INTR \b__intr_mul\b
+DIV_INTR \b__intr_div\b
+REM_INTR \b__intr_rem\b
+AND_INTR \b__intr_and\b
+OR_INTR \b__intr_or\b
+XOR_INTR \b__intr_xor\b
+NOT_INTR \b__intr_not\b
+NEG_INTR \b__intr_neg\b
+FADD_INTR \b__intr_fadd\b
+FSUB_INTR \b__intr_fsub\b
+FMUL_INTR \b__intr_fmul\b
+FDIV_INTR \b__intr_fdiv\b
+FREM_INTR \b__intr_frem\b
+FNEG_INTR \b__intr_fneg\b
+TRUNC_INTR \b__intr_trunc\b
+EXT_INTR \b__intr_ext\b
+FTRUNC_INTR \b__intr_ftrunc\b
+FEXT_INTR \b__intr_fext\b
+FTOI_INTR \b__intr_ftoi\b
+ITOF_INTR \b__intr_itof\b
+CMP_INTR \b__intr_cmp\b
+FCMP_INTR \b__intr_fcmp\b
+
 
 NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)
 
