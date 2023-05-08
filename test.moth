@@ -1,22 +1,11 @@
-class test[T,other[T]]:
-    int a
-    int b
-    T a
-    def void __init__(test[T,a] self):
-        pass
-    
-    def int thing(test[T,a] self):
-        pass
+class NDArray[T]:
 
-    def int thing2(test[T,a] self):
-        pass
+    T raw
+    #int dim
 
-class other[n](static):
-    int a
-    int size
-    def void __init__(other[n] self):
-        self.size = n
+    #def void __init__(a[T,a] self):
+    #    dim = a
 
 def int main():
-    test[int] a
+    NDArray[NDArray[int],0] a = 5
     return 0

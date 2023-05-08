@@ -50,6 +50,7 @@ CLOSE_SQUARE \]
 
 TYPE_NAME \bvoid\b|\bchar\b|\bint\b|\blong\|\bfloat\b|\bdouble\b|\bbool\b
 TYPE_QUERY \btype\b
+DTYPE \bdtype\b
 KERNEL \bkernel\b
 
 CLASS \bclass\b

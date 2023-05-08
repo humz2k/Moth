@@ -1,18 +1,21 @@
-import preprocess
+import codegen
 import re
 
 with open("test.moth","r") as f:
     raw = f.read()
 
-raw = preprocess.remove_comments(raw)
-raw = preprocess.convert(raw)
+raw = codegen.remove_comments(raw)
+raw = codegen.convert(raw)
 
-#print(raw)
+class_names = codegen.find_classes(raw)
+function_names = codegen.find_functions(raw)
+lexer = codegen.get_lexer(class_names = class_names, function_names=function_names)
 
-class_names = preprocess.find_classes(raw)
-function_names = preprocess.find_functions(raw)
-raw,templates = preprocess.find_templates(raw,class_names)
+tokens = lexer.lex(raw)
 
-#tokenize class names and other text
+parser = codegen.templates.get_parser("tokens.txt")
+state = codegen.templates.ParserState()
 
-print(raw)
+parser.parse(tokens,state)
+
+print(state.eval())
