@@ -37,7 +37,8 @@ class Misc(PreproccessorToken):
     
 class ArrayT(PreproccessorToken):
     def __init__(self,typ,dims):
-        self.type = typ
+        self.type = Misc(typ)
+        self.old_type = Misc(self.type)
         self.dims = dims
         #self.instantiated = False
         self.name = "ARRAY_T"
@@ -55,6 +56,11 @@ class ArrayT(PreproccessorToken):
         template.instantiate([Misc(self.type),Misc(Token("NUMBER",str(self.dims)))],templates)
         #self.instantiated = True
 
+    def replace(self,map_to):
+        if self.old_type.eval() in map_to:
+            self.type = map_to[self.old_type.eval()]
+        return self
+
     def get_arg_name(self):
         return self.eval()
     
@@ -63,7 +69,7 @@ class ArrayT(PreproccessorToken):
         #    print("FUCK")
         #    print(self)
         #    exit()
-        return "_NDArray_" + self.type.value + "_" + str(self.dims) + "_"
+        return "_NDArray_" + self.type.eval() + "_" + str(self.dims) + "_"
 
 class TemplateInstance(PreproccessorToken):
     def __init__(self,name,args):
@@ -72,6 +78,41 @@ class TemplateInstance(PreproccessorToken):
         self.old_args = self.args
         self.value = self.eval()
         self.instantiated = False
+
+    def get_arg_name(self):
+        return self.eval()
+
+    def make_template(self,templates):
+        #if self.instantiated:
+        #    return
+        n_args = len(self.args)
+        name = self.name.value + "_" + str(n_args)
+        if name in templates:
+            template = templates[name]
+        else:
+            raise Exception("Template does not exist")
+        template.instantiate(self.args,templates)
+        #self.instantiated = True
+
+    def replace(self,map_to):
+        args = []
+        for i in self.old_args:
+            if i.eval() in map_to:
+                args.append(Misc(map_to[i.eval()]))
+            else:
+                args.append(i)
+        self.args = args
+        return self
+
+    def eval(self):
+        return "_" + self.name.value + "_" + "_".join([i.get_arg_name() for i in self.args]) + "_"  
+    
+class FunctionTemplateInstance(PreproccessorToken):
+    def __init__(self,name,args):
+        self.name = name
+        self.args = args
+        self.old_args = self.args
+        self.value = self.eval()
 
     def get_arg_name(self):
         return self.eval()
@@ -146,6 +187,51 @@ class TemplateDef(PreproccessorToken):
         #    out += i + "\n"
         #return out
         
+class FuncTemplateDef(PreproccessorToken):
+    def __init__(self,name,args,return_type,scope,func_args = None):
+        self.name = name
+        self.args = args
+        self.return_type = return_type
+        self.scope = scope
+        self.instantiations = {}
+        self.func_args = func_args
+
+    def instantiate(self,args,templates):
+        name = "_".join([i.eval() for i in args])
+        if name in self.instantiations:
+            return
+       
+        self.instantiations[name] = None
+        map_to = {self.args[i].eval().strip(): args[i] for i in range(len(args))}
+        self.scope = self.scope.replace(map_to)
+        self.scope.make_template(templates)
+        self.return_type = self.return_type.replace(map_to)
+        self.return_type.make_template(templates)
+        out = self.scope.eval()
+        
+        arg_names = []
+        for i in args:
+            arg_names.append(i.get_arg_name())
+        header = "def " + self.return_type.eval() + " _" + self.name.value + "_" + "_".join(arg_names) + "_"
+        header += ":"
+        out = header + out + ""
+        self.instantiations[name] = out
+
+    def make_template(self,templates):
+        pass
+    
+    def get(self):
+        out = ""
+        for i in self.instantiations.values():
+            out += i + "\n"
+        return out
+
+    def eval(self):
+        return self.get()
+        #out = ""
+        #for i in self.instantiations.values():
+        #    out += i + "\n"
+        #return out
 
 class Scope(PreproccessorToken):
     def __init__(self,start):
@@ -172,6 +258,7 @@ class ParserState(object):
     def __init__(self):
         self.tokens = []
         self.templates = {}
+        self.func_templates = {}
 
     def log(self,text):
         pass
@@ -187,16 +274,18 @@ class ParserState(object):
 
 def get_parser(filename="tokens.txt"):
     with open(filename,"r") as f:
-        tokens = [i.split()[0] for i in f.read().splitlines() if (not i.startswith("//")) and (not len(i) == 0)] + ["CLASS_NAME","FUNCTION_NAME"]
+        tokens = [i.split()[0] for i in f.read().splitlines() if (not i.startswith("//")) and (not len(i) == 0)] + ["CLASS_NAME","FUNCTION_NAME","FUNCTION_TEMPLATE_NAME"]
     if "IGNORE" in tokens:
         tokens.remove("IGNORE")
     pg = ParserGenerator(tokens, precedence=[
-        ("nonassoc",["misc"]),
-        ("nonassoc",["template_instance"]),
+        #("nonassoc",["misc"]),
+        #("nonassoc",["template_instance"]),
     ])
 
     @pg.production('program : template_def')
+    @pg.production('program : function_template_def')
     @pg.production('program : template_instance')
+    @pg.production('program : function_template_instance')
     @pg.production('program : array_t')
     @pg.production('program : misc')
     def program(state,p):
@@ -206,7 +295,9 @@ def get_parser(filename="tokens.txt"):
 
     @pg.production('program : program array_t')
     @pg.production('program : program template_instance')
+    @pg.production('program : program function_template_instance')
     @pg.production('program : program template_def')
+    @pg.production('program : program function_template_def')
     @pg.production('program : program misc')
     def add_program(state,p):
         state.log('program : program template_def|template_instance|array_t|misc')
@@ -236,16 +327,67 @@ def get_parser(filename="tokens.txt"):
         state.log('array_t : array_t_open CLOSE_SQUARE')
         return p[0]
     
-    @pg.production('template_def : CLASS template_instance_open CLOSE_SQUARE COLON scope')
-    @pg.production('template_def : CLASS template_instance_open CLOSE_SQUARE OPEN_PAREN IDENTIFIER CLOSE_PAREN COLON scope')
+    @pg.production('template_def : AT TEMPLATE SEMI_COLON CLASS template_instance_open CLOSE_SQUARE COLON scope')
+    @pg.production('template_def : AT TEMPLATE SEMI_COLON CLASS template_instance_open CLOSE_SQUARE OPEN_PAREN IDENTIFIER CLOSE_PAREN COLON scope')
     def open_template(state,p):
         state.log('template_def_open : CLASS template_instance COLON OPEN_CURL')
-        if len(p) == 5:
-            definition = TemplateDef(p[1][0],p[1][1:],None,p[4])
+        if len(p) == 8:
+            definition = TemplateDef(p[4][0],p[4][1:],None,p[7])
         else:
-            definition = TemplateDef(p[1][0],p[1][1:],p[4],p[7])
-        state.templates[p[1][0].value + "_" + str(len(p[1][1:]))] = definition
+            definition = TemplateDef(p[4][0],p[4][1:],p[7],p[10])
+        state.templates[p[4][0].value + "_" + str(len(p[4][1:]))] = definition
         #state.append(definition)
+        return definition
+    
+    @pg.production('func_temp_init : AT TEMPLATE SEMI_COLON DEF misc FUNCTION_TEMPLATE_NAME OPEN_SQUARE IDENTIFIER')
+    @pg.production('func_temp_init : AT TEMPLATE SEMI_COLON DEF array_t FUNCTION_TEMPLATE_NAME OPEN_SQUARE IDENTIFIER')
+    #@pg.production('func_temp_init : AT TEMPLATE SEMI_COLON DEF TYPE_NAME FUNCTION_TEMPLATE_NAME OPEN_SQUARE IDENTIFIER')
+    def func_temp_init(state,p):
+        state.log('func_temp_init : AT TEMPLATE SEMI_COLON DEF IDENTIFIER FUNCTION_TEMPLATE_NAME OPEN_SQUARE IDENTIFIER')
+        return [p[4],p[5],Misc(p[-1])]
+    
+    @pg.production('func_temp_init : func_temp_init COMMA IDENTIFIER')
+    def func_temp_init(state,p):
+        state.log('func_temp_init : func_temp_init COMMA IDENTIFIER')
+        return p[0] + [Misc(p[-1])]
+    
+    @pg.production('func_temp : func_temp_init CLOSE_SQUARE')
+    def func_temp(state,p):
+        state.log('func_temp : func_temp_init CLOSE_SQUARE')
+        return p[0]
+    
+    @pg.production('function_template_def : func_temp OPEN_PAREN CLOSE_PAREN COLON scope')
+    def open_template(state,p):
+        state.log('function_template_def : func_temp OPEN_PAREN CLOSE_PAREN COLON scope')
+        name = p[0][1]
+        return_type = p[0][0]
+        args = p[0][2:]
+        definition = FuncTemplateDef(name,args,return_type,p[-1])
+        state.templates[name.value + "_" + str(len(args))] = definition
+        #state.append(definition)
+        return definition
+
+    @pg.production('function_template_def_open : func_temp OPEN_PAREN misc')
+    def open_template(state,p):
+        state.log('function_template_def_open : func_temp OPEN_PAREN misc')
+        #definition = FuncTemplateDef(p[2][0],p[2][1:],p[1],p[-1])
+        #state.templates[p[2][0].value + "_" + str(len(p[2][1:]))] = definition
+        #state.append(definition)
+        return [p[0][1],p[0][2:],p[0][0],[p[-1]]]
+    
+    @pg.production('function_template_def_open : function_template_def_open misc')
+    def cont_template(state,p):
+        state.log('function_template_def_open : function_template_def_open misc')
+        p[0][-1].append(p[-1])
+        return p[0]
+    
+    @pg.production('function_template_def : function_template_def_open CLOSE_PAREN COLON scope')
+    def finish_template(state,p):
+        state.log('function_template_def : function_template_def_open CLOSE_PAREN COLON scope')
+        scope = p[-1]
+        name,temp_args,return_t,func_args = p[0]
+        definition = FuncTemplateDef(name,temp_args,return_t,scope,func_args)
+        state.templates[name.value + "_" + str(len(temp_args))] = definition
         return definition
     
     @pg.production('template_instance_open : CLASS_NAME OPEN_SQUARE misc')
@@ -267,8 +409,24 @@ def get_parser(filename="tokens.txt"):
         state.log('template_instance : template_instance_open CLOSE_SQUARE')
         return TemplateInstance(p[0][0],p[0][1:])
 
-    #@pg.production('function_template_instance_open : FUNCTION_NAME OPEN_SQUARE misc')
-    #@pg.production('function_template_instance_open : FUNCTION_NAME OPEN_SQUARE template_instance')
+    @pg.production('function_template_instance_open : FUNCTION_TEMPLATE_NAME OPEN_SQUARE misc')
+    @pg.production('function_template_instance_open : FUNCTION_TEMPLATE_NAME OPEN_SQUARE template_instance')
+    @pg.production('function_template_instance_open : FUNCTION_TEMPLATE_NAME OPEN_SQUARE array_t')
+    def func_temp_inst_open(state,p):
+        state.log('function_template_instance_open : FUNCTION_NAME OPEN_SQUARE misc')
+        return [p[0],p[2]]
+
+    @pg.production('function_template_instance_open : function_template_instance_open COMMA misc')
+    @pg.production('function_template_instance_open : function_template_instance_open COMMA template_instance')
+    @pg.production('function_template_instance_open : function_template_instance_open COMMA array_t')
+    def func_temp_inst_cont(state,p):
+        state.log('function_template_instance_open : function_template_instance_open misc')
+        return p[0] + [p[2]]
+    
+    @pg.production('function_template_instance : function_template_instance_open CLOSE_SQUARE')
+    def function_template_inst(state,p):
+        state.log('function_template_instance : function_template_instance_open CLOSE_SQUARE')
+        return FunctionTemplateInstance(p[0][0],p[0][1:])
 
     @pg.production('scope_open : OPEN_CURL')
     def scope_open(state,p):
@@ -284,6 +442,7 @@ def get_parser(filename="tokens.txt"):
 
     @pg.production('scope_open : scope_open misc')
     @pg.production('scope_open : scope_open template_instance')
+    @pg.production('scope_open : scope_open function_template_instance')
     @pg.production('scope_open : scope_open array_t')
     @pg.production('scope_open : scope_open scope')
     def scope_cont(state,p):
@@ -355,14 +514,15 @@ def get_parser(filename="tokens.txt"):
     @pg.production('misc : IDENTIFIER')
     @pg.production('misc : PERIOD')
     @pg.production('misc : FUNCTION_NAME')
+    @pg.production('misc : FUNCTION_TEMPLATE_NAME')
     @pg.production('misc : CLASS_NAME')
     def pass_misc(state,p):
-        state.log('misc : * = ' + p[0].name)
+        state.log('misc : * = ' + p[0].name + " " + p[0].value)
         return Misc(p[0])
 
     @pg.error
     def error_handler(state,token):
-        print("ERROR AT",token)
+        print("ERROR AT",token,token.source_pos)
         exit()
 
     out = pg.build()

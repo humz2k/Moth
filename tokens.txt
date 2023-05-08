@@ -52,6 +52,7 @@ TYPE_NAME \bvoid\b|\bchar\b|\bint\b|\blong\|\bfloat\b|\bdouble\b|\bbool\b
 TYPE_QUERY \btype\b
 DTYPE \bdtype\b
 KERNEL \bkernel\b
+TEMPLATE \btemplate\b
 
 CLASS \bclass\b
 DEF \bdef\b

@@ -9,7 +9,9 @@ raw = codegen.convert(raw)
 
 class_names = codegen.find_classes(raw)
 function_names = codegen.find_functions(raw)
-lexer = codegen.get_lexer(class_names = class_names, function_names=function_names)
+function_template_names = codegen.find_t_functions(raw)
+
+lexer = codegen.get_lexer(class_names = class_names, function_names=function_names, function_template_names = function_template_names)
 
 tokens = lexer.lex(raw)
 

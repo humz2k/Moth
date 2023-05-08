@@ -1,6 +1,6 @@
 from rply import LexerGenerator
 
-def get_lexer(filename = "tokens.txt", class_names = [], function_names = [], line_offset = 0):
+def get_lexer(filename = "tokens.txt", class_names = [], function_names = [], function_template_names = [], line_offset = 0):
     
     lexer = LexerGenerator()
     with open(filename,"r") as f:
@@ -11,6 +11,9 @@ def get_lexer(filename = "tokens.txt", class_names = [], function_names = [], li
 
     for i in function_names:
         lexer.add("FUNCTION_NAME",r"\b"+i+r"\b")
+
+    for i in function_template_names:
+        lexer.add("FUNCTION_TEMPLATE_NAME",r"\b"+i+r"\b")
 
     for i in raw:
         if i[0] == "IGNORE":

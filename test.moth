@@ -1,10 +1,7 @@
-class ThisIsFucked[T]:
-    T[:,:,:]
-    def void __init__(ThisIsFucked[T] self):
-        int a = 5 + 5
+@template
+def T test[T,T1,T2,op](T1 a, T2 b):
+    return T(a op b)
 
 def int main():
-    ThisIsFucked[int]
-    #int[:,:,:] a = 5
-    #int[:,:] b = new NDArray[int,0]()
+    return test[int,float,float,+](5,5)
     return 0
