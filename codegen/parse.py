@@ -10,10 +10,11 @@ class ParserState(object):
         self.current_class = None
         self.current_function = None
         self.builder = None
-        self.local_variables = {}
+        self.local_variables = []
         self.functions = {}
         self.casts = {}
         self.formatters = {}
+        self.break_to = []
         printf_ty = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
         self.printf = ir.Function(self.module, printf_ty, name="printf")
         bohem_init_ty = ir.FunctionType(ir.VoidType(), [], var_arg=True)
@@ -111,8 +112,8 @@ def get_parser(filename="tokens.txt"):
         state.casts[name] = state.current_function
         state.current_block = [state.current_function.append_basic_block(name="entry")]
         state.builder = ir.IRBuilder(state.current_block[-1])
-        state.local_variables = {}
-        state.local_variables[var_name.value] = ConstantContainer(state.current_function.args[0])
+        state.local_variables = [{}]
+        state.local_variables[-1][var_name.value] = ConstantContainer(state.current_function.args[0])
         return state.builder
     
     @pg.production('cast_def_open : cast_def_open line')
@@ -160,9 +161,9 @@ def get_parser(filename="tokens.txt"):
             state.functions[name] = state.current_function
             state.current_block = [state.current_function.append_basic_block(name="entry")]
             state.builder = ir.IRBuilder(state.current_block[-1])
-            state.local_variables = {}
+            state.local_variables = [{}]
             for idx,i in enumerate(inputs):
-                state.local_variables[i[1].value] = ConstantContainer(state.current_function.args[idx])
+                state.local_variables[-1][i[1].value] = ConstantContainer(state.current_function.args[idx])
             return state.builder
     
     @pg.production('function_def_open : function_def_open line')
@@ -176,6 +177,135 @@ def get_parser(filename="tokens.txt"):
             if state.current_function.type.pointee.return_type != ir.VoidType():
                 raise Exception("Non-void function does not return a value")
             state.builder.ret_void()
+
+    @pg.production('if_open : IF expression COLON OPEN_CURL')
+    def if_open(state,p):
+        state.log('if_open : IF expression COLON OPEN_CURL')
+        if_true = state.current_function.append_basic_block()
+        if_false = state.current_function.append_basic_block()
+        after = state.current_function.append_basic_block()
+        state.local_variables.append(state.local_variables[-1].copy())
+        expr = p[1]._get(state.builder)
+        if expr.type != ir.IntType(1):
+            cast_name = str(expr.type) + "->" + str(ir.IntType(1))
+            if not cast_name in state.casts:
+                raise Exception("No casting rule " + cast_name + " exists")
+            expr = state.builder.call(state.casts[cast_name],[expr])
+        state.builder.cbranch(expr,if_true,if_false)
+        state.builder.position_at_start(if_true)
+        state.current_block.pop(-1)
+        state.current_block.append(after)
+        state.current_block.append(if_false)
+        state.current_block.append(if_true)
+    
+    @pg.production('if_open : if_open line')
+    def pass_line(state,p):
+        state.log('if_open : if_open line')
+
+    @pg.production('else_open : if_open CLOSE_CURL ELSE COLON OPEN_CURL')
+    def open_else(state,p):
+        state.log('else_open : if_open CLOSE_CURL ELSE COLON OPEN_CURL')
+        if_true = state.current_block.pop(-1)
+        if not if_true.is_terminated:
+            state.builder.branch(state.current_block[-2])
+        state.builder.position_at_start(state.current_block[-1])
+        state.local_variables.pop(-1)
+        state.local_variables.append(state.local_variables[-1].copy())
+    
+    @pg.production('elif : if_open CLOSE_CURL ELIF')
+    def get_elif(state,p):
+        state.log('elif : if_open CLOSE_CURL ELIF')
+        if_true = state.current_block.pop(-1)
+        if_false = state.current_block.pop(-1)
+        if not if_true.is_terminated:
+            state.builder.branch(state.current_block[-1])
+        state.builder.position_at_start(if_false)
+
+    @pg.production('if_open : elif expression COLON OPEN_CURL')
+    def open_elif(state,p):
+        state.log('if_open : elif expression COLON OPEN_CURL')
+        expr = p[1]._get(state.builder)
+        if expr.type != ir.IntType(1):
+            cast_name = str(expr.type) + "->" + str(ir.IntType(1))
+            if not cast_name in state.casts:
+                raise Exception("No casting rule " + cast_name + " exists")
+            expr = state.builder.call(state.casts[cast_name],[expr])
+        if_true_two = state.current_function.append_basic_block()
+        if_false_two = state.current_function.append_basic_block()
+        state.builder.cbranch(expr,if_true_two,if_false_two)
+        state.current_block.append(if_false_two)
+        state.current_block.append(if_true_two)
+        state.builder.position_at_start(if_true_two)
+        state.local_variables.pop(-1)
+        state.local_variables.append(state.local_variables[-1].copy())
+
+    @pg.production('else_open : else_open line')
+    def pass_line(state,p):
+        state.log('else_open : else_open line')
+
+    @pg.production('line : else_open CLOSE_CURL')
+    def else_close(state,p):
+        state.log('line : else_open CLOSE_CURL')
+        if_false = state.current_block.pop(-1)
+        if not if_false.is_terminated:
+            state.builder.branch(state.current_block[-1])
+        state.builder.position_at_start(state.current_block[-1])
+        state.local_variables.pop(-1)
+
+    @pg.production('line : if_open CLOSE_CURL')
+    def if_close(state,p):
+        state.log('line : if_open CLOSE_CURL')
+        if_true = state.current_block.pop(-1)
+        if_false = state.current_block.pop(-1)
+        if not if_true.is_terminated:
+            state.builder.branch(state.current_block[-1])
+        state.builder.position_at_start(if_false)
+        state.builder.branch(state.current_block[-1])
+        state.builder.position_at_start(state.current_block[-1])
+        state.local_variables.pop(-1)
+
+    @pg.production('while : WHILE')
+    def while_init(state,p):
+        state.log('while : WHILE')
+        check_condition = state.current_function.append_basic_block()
+        loop = state.current_function.append_basic_block()
+        after = state.current_function.append_basic_block()
+        state.builder.branch(check_condition)
+        state.builder.position_at_start(check_condition)
+        state.current_block.pop(-1)
+        state.current_block.append(after)
+        state.current_block.append(check_condition)
+        state.current_block.append(loop)
+        state.local_variables.append(state.local_variables[-1].copy())
+        state.break_to.append(after)
+    
+    @pg.production('while_open : while expression COLON OPEN_CURL')
+    def while_open(state,p):
+        state.log('while_open : while expression COLON OPEN_CURL')
+        expr = p[1]._get(state.builder)
+        if expr.type != ir.IntType(1):
+            cast_name = str(expr.type) + "->" + str(ir.IntType(1))
+            if not cast_name in state.casts:
+                raise Exception("No casting rule " + cast_name + " exists")
+            expr = state.builder.call(state.casts[cast_name],[expr])
+        state.builder.cbranch(expr,state.current_block[-1],state.current_block[-3])
+        state.builder.position_at_start(state.current_block[-1])
+    
+    @pg.production('while_open : while_open line')
+    def pass_line(state,p):
+        state.log('while_open : while_open line')
+
+    @pg.production('line : while_open CLOSE_CURL')
+    def end_while(state,p):
+        state.log('line : while_open CLOSE_CURL')
+        loop = state.current_block.pop(-1)
+        check_condition = state.current_block.pop(-1)
+        if not loop.is_terminated:
+            state.builder.branch(check_condition)
+        state.builder.position_at_start(state.current_block[-1])
+        state.break_to.pop(-1)
+        state.local_variables.pop(-1)
+
 
     @pg.production('line : assign SEMI_COLON')
     @pg.production('line : expression SEMI_COLON')
@@ -203,6 +333,12 @@ def get_parser(filename="tokens.txt"):
     def get_pass(state,p):
         state.log('line : PASS SEMI_COLON')
         return ConstantContainer(state.builder.add(ir.Constant(ir.IntType(32),0),ir.Constant(ir.IntType(32),0)))
+    
+    @pg.production('line : BREAK SEMI_COLON')
+    def get_break(state,p):
+        state.log('line : BREAK SEMI_COLON')
+        if len(state.break_to) != 0:
+            
 
     @pg.production('assign : expression ASSIGN expression')
     def assign(state,p):
@@ -506,22 +642,32 @@ def get_parser(filename="tokens.txt"):
     def constant(state,p):
         state.log('expression : CHAR')
         return ConstantContainer(ir.Constant(ir.IntType(8),ord(p[0].value[1:-1])))
+    
+    @pg.production('expression : TRUE')
+    def constant(state,p):
+        state.log('expression : TRUE')
+        return ConstantContainer(ir.Constant(ir.IntType(1),1))
+    
+    @pg.production('expression : FALSE')
+    def constant(state,p):
+        state.log('expression : FALSE')
+        return ConstantContainer(ir.Constant(ir.IntType(1),0))
 
     @pg.production('expression : type IDENTIFIER')
     def declaration(state,p):
         state.log('expression : type IDENTIFIER')
         var = VariableContainer(state.builder.alloca(p[0].raw))
-        if p[1].value in state.local_variables:
+        if p[1].value in state.local_variables[-1]:
             raise Exception("Variable " + p[1].value + " already exists")
-        state.local_variables[p[1].value] = var
+        state.local_variables[-1][p[1].value] = var
         return var
 
     @pg.production('expression : IDENTIFIER')
     def find_var(state,p):
         state.log('expression : IDENTIFIER')
         var_name = p[0].value
-        if var_name in state.local_variables:
-            return state.local_variables[var_name]
+        if var_name in state.local_variables[-1]:
+            return state.local_variables[-1][var_name]
         if var_name in state.global_variables:
             return state.global_variables[var_name]
         raise Exception("Variable " + var_name + " doesn't exist")

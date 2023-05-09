@@ -1527,6 +1527,12 @@ def bool __leq__(float left, double right):
 def bool __leq__(double left, double right):
     return __intr_fcmp(<=,double(left),double(right))
 
+def void __print__(bool val):
+    if val == True:
+        __intr_oup("True")
+    else:
+        __intr_oup("False")
+
 def void __print__(char val):
     __intr_oup("%c",val)
 

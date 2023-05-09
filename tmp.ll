@@ -3781,47 +3781,66 @@ entry:
   ret i1 %".4"
 }
 
+define void @"__print___i1"(i1 %".1")
+{
+entry:
+  %".3" = call i1 @"__eq___i1_i1"(i1 %".1", i1 1)
+  br i1 %".3", label %".4", label %".5"
+.4:
+  %".8" = bitcast [5 x i8]* @"formatter0" to i8*
+  %".9" = call i32 (i8*, ...) @"printf"(i8* %".8")
+  br label %".6"
+.5:
+  %".11" = bitcast [6 x i8]* @"formatter1" to i8*
+  %".12" = call i32 (i8*, ...) @"printf"(i8* %".11")
+  br label %".6"
+.6:
+  ret void
+}
+
+@"formatter0" = internal constant [5 x i8] c"True\00"
+@"formatter1" = internal constant [6 x i8] c"False\00"
 define void @"__print___i8"(i8 %".1")
 {
 entry:
-  %".3" = bitcast [3 x i8]* @"formatter0" to i8*
+  %".3" = bitcast [3 x i8]* @"formatter2" to i8*
   %".4" = call i32 (i8*, ...) @"printf"(i8* %".3", i8 %".1")
   ret void
 }
 
-@"formatter0" = internal constant [3 x i8] c"%c\00"
+@"formatter2" = internal constant [3 x i8] c"%c\00"
 define void @"__print___i32"(i32 %".1")
 {
 entry:
-  %".3" = bitcast [3 x i8]* @"formatter1" to i8*
+  %".3" = bitcast [3 x i8]* @"formatter3" to i8*
   %".4" = call i32 (i8*, ...) @"printf"(i8* %".3", i32 %".1")
   ret void
 }
 
-@"formatter1" = internal constant [3 x i8] c"%d\00"
+@"formatter3" = internal constant [3 x i8] c"%d\00"
 define void @"__print___i64"(i64 %".1")
 {
 entry:
-  %".3" = bitcast [4 x i8]* @"formatter2" to i8*
+  %".3" = bitcast [4 x i8]* @"formatter4" to i8*
   %".4" = call i32 (i8*, ...) @"printf"(i8* %".3", i64 %".1")
   ret void
 }
 
-@"formatter2" = internal constant [4 x i8] c"%ld\00"
+@"formatter4" = internal constant [4 x i8] c"%ld\00"
 define void @"__print___half"(half %".1")
 {
 entry:
   %".3" = call float @"half->float"(half %".1")
-  %".4" = bitcast [3 x i8]* @"formatter3" to i8*
+  %".4" = bitcast [3 x i8]* @"formatter5" to i8*
   %".5" = call i32 (i8*, ...) @"printf"(i8* %".4", float %".3")
   ret void
 }
 
-@"formatter3" = internal constant [3 x i8] c"%f\00"
+@"formatter5" = internal constant [3 x i8] c"%f\00"
 define void @"__print___float"(float %".1")
 {
 entry:
-  %".3" = bitcast [3 x i8]* @"formatter3" to i8*
+  %".3" = bitcast [3 x i8]* @"formatter5" to i8*
   %".4" = call i32 (i8*, ...) @"printf"(i8* %".3", float %".1")
   ret void
 }
@@ -3829,7 +3848,7 @@ entry:
 define void @"__print___double"(double %".1")
 {
 entry:
-  %".3" = bitcast [3 x i8]* @"formatter3" to i8*
+  %".3" = bitcast [3 x i8]* @"formatter5" to i8*
   %".4" = call i32 (i8*, ...) @"printf"(i8* %".3", double %".1")
   ret void
 }
@@ -3845,26 +3864,41 @@ define i32 @"main"()
 {
 entry:
   %".2" = alloca i32
-  store i32 10, i32* %".2"
-  %".4" = alloca i32
-  %".5" = load i32, i32* %".2"
-  %".6" = call i32 @"__add___i32_i32"(i32 %".5", i32 10)
-  store i32 %".6", i32* %".4"
-  %".8" = load i32, i32* %".4"
-  call void @"__print___i32"(i32 %".8")
-  %".10" = load i32, i32* %".2"
-  %".11" = bitcast [2 x i8]* @"formatter4" to i8*
-  %".12" = call i32 (i8*, ...) @"printf"(i8* %".11")
-  call void @"__print___i32"(i32 %".10")
-  %".14" = bitcast [2 x i8]* @"formatter5" to i8*
-  %".15" = call i32 (i8*, ...) @"printf"(i8* %".14")
-  %".16" = bitcast [2 x i8]* @"formatter5" to i8*
-  %".17" = call i32 (i8*, ...) @"printf"(i8* %".16")
-  %".18" = load i32, i32* %".2"
-  %".19" = load i32, i32* %".4"
-  %".20" = call i32 @"test_i32_i32"(i32 %".18", i32 %".19")
-  ret i32 %".20"
+  store i32 1, i32* %".2"
+  br label %".4"
+.4:
+  %".8" = load i32, i32* %".2"
+  %".9" = call i1 @"__ls___i32_i32"(i32 %".8", i32 5)
+  br i1 %".9", label %".5", label %".6"
+.5:
+  %".11" = load i32, i32* %".2"
+  call void @"__print___i32"(i32 %".11")
+  %".13" = bitcast [2 x i8]* @"formatter6" to i8*
+  %".14" = call i32 (i8*, ...) @"printf"(i8* %".13")
+  %".15" = alloca i32
+  %".16" = load i32, i32* %".2"
+  store i32 %".16", i32* %".15"
+  br label %".18"
+.6:
+  ret i32 0
+.18:
+  %".22" = load i32, i32* %".15"
+  %".23" = call i1 @"__geq___i32_i32"(i32 %".22", i32 0)
+  br i1 %".23", label %".19", label %".20"
+.19:
+  %".25" = load i32, i32* %".15"
+  call void @"__print___i32"(i32 %".25")
+  %".27" = bitcast [2 x i8]* @"formatter6" to i8*
+  %".28" = call i32 (i8*, ...) @"printf"(i8* %".27")
+  %".29" = load i32, i32* %".15"
+  %".30" = call i32 @"__sub___i32_i32"(i32 %".29", i32 1)
+  store i32 %".30", i32* %".15"
+  br label %".18"
+.20:
+  %".33" = load i32, i32* %".2"
+  %".34" = call i32 @"__add___i32_i32"(i32 %".33", i32 1)
+  store i32 %".34", i32* %".2"
+  br label %".4"
 }
 
-@"formatter4" = internal constant [2 x i8] c" \00"
-@"formatter5" = internal constant [2 x i8] c"\0a\00"
+@"formatter6" = internal constant [2 x i8] c"\0a\00"
