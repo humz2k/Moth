@@ -18,6 +18,7 @@ class ParserState(object):
         self.casts = {}
         self.formatters = {}
         self.break_to = []
+        self.cast_counts = 0
         self.next_function_modifiers = []
         printf_ty = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
         self.printf = ir.Function(self.module, printf_ty, name="printf")
@@ -72,8 +73,8 @@ class ParserState(object):
             print("VarExists:",kwargs["scope"],"var",kwargs["name"],"already exists in this scope")
             exit()
         if err_t == "CastExists":
-            print("CastExists:",kwargs["name"],"is already defined")
-            exit()
+            print("CastExists:",kwargs["name"],"is already defined, ignoring")
+            #exit()
         if err_t == "FuncExists":
             print("FuncExists:",kwargs["name"])
             exit()
@@ -129,9 +130,11 @@ class ParserState(object):
     
     def make_new_cast(self,cast_from,cast_to):
         name = str(cast_from) + "->" + str(cast_to)
-        func = ir.Function(self.module, ir.FunctionType(cast_to,[cast_from]),name)
         if name in self.casts:
             self.throwError("CastExists",name=name)
+            name = name + str(self.cast_counts)
+            self.cast_counts += 1
+        func = ir.Function(self.module, ir.FunctionType(cast_to,[cast_from]),name)
         self.casts[name] = func
         return func
     
@@ -318,6 +321,7 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('class_open : class_open class_def')
     @pg.production('class_open : class_open function')
+    @pg.production('class_open : class_open cast_def')
     @pg.production('class_open : class_open modifier')
     def pass_class_def(state,p):
         state.log('class_open : class_open class_def|function')
@@ -979,6 +983,14 @@ def get_parser(filename="tokens.txt"):
         expr = p[2]._get(state.builder)
         name = "__print__" + "_" + str(expr.type)
         if not name in state.functions:
+            try:
+                ref_get = expr
+                class_name = ref_get.type.pointee.name
+                ref_class = state.classes[class_name]
+                name = str(ref_class.raw) + "." + "__print___" + str(ir.PointerType(ref_class.raw))
+                return ConstantContainer(state.builder.call(ref_class.bound_functions[name],[expr]))
+            except:
+                pass
             raise Exception("No rule to print " + str(expr.type))
         ConstantContainer(state.builder.call(state.printf,[state.get_formatter(r" ")]))
         return ConstantContainer(state.builder.call(state.functions[name],[expr]))
@@ -1059,7 +1071,7 @@ def get_parser(filename="tokens.txt"):
         inputs = [i._get(state.builder) for i in p[0][2:]]
         func_name = str(ref_class.raw) + "." + func_name_token.value + "_" + str(ir.PointerType(ref_class.raw)) + "_" + "_".join([str(i.type) for i in inputs])
         if not func_name in ref_class.bound_functions:
-            raise Exception("Class " + class_name + " has no function " + p[2].value)
+            raise Exception("Class " + class_name + " has no function " + p[0][1].value)
         return ConstantContainer(state.builder.call(ref_class.bound_functions[func_name],[ref_get] + inputs))
 
     @pg.production('expression : FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
@@ -1173,6 +1185,14 @@ def get_parser(filename="tokens.txt"):
         left = p[0]
         right = p[2]
         return ConstantContainer(state.math_op(op_dict[p[1].name],left,right))
+    
+    @pg.production('expression : MINUS expression')
+    def sinop(state : ParserState,p):
+        op_dict = {
+            "MINUS": "__neg__"
+        }
+        val = p[1]._get(state.builder)
+        return ConstantContainer(state.call_global_function(op_dict[p[0].name],[val]))
 
     @pg.production('expression : NUMBER')
     def constant(state,p):
@@ -1180,6 +1200,26 @@ def get_parser(filename="tokens.txt"):
         if "." in p[0].value:
             return LiteralConstantContainer(ir.Constant(ir.FloatType(),float(p[0].value)))
         return LiteralConstantContainer(ir.Constant(ir.IntType(32),int(p[0].value)))
+    
+    @pg.production('expression : FLOAT_LITERAL')
+    def constant(state,p):
+        state.log('expression : FLOAT_LITERAL')
+        return LiteralConstantContainer(ir.Constant(ir.FloatType(),float(p[0].value[:-1])))
+    
+    @pg.production('expression : DOUBLE_LITERAL')
+    def constant(state,p):
+        state.log('expression : DOUBLE_LITERAL')
+        return LiteralConstantContainer(ir.Constant(ir.DoubleType(),float(p[0].value[:-1])))
+    
+    @pg.production('expression : HALF_LITERAL')
+    def constant(state,p):
+        state.log('expression : HALF_LITERAL')
+        return LiteralConstantContainer(ir.Constant(ir.HalfType(),float(p[0].value[:-1])))
+    
+    @pg.production('expression : LONG_LITERAL')
+    def constant(state,p):
+        state.log('expression : LONG_LITERAL')
+        return LiteralConstantContainer(ir.Constant(ir.IntType(64),float(p[0].value[:-1])))
     
     @pg.production('expression : CHAR')
     def constant(state,p):

@@ -4,19 +4,127 @@ class NDArray[T,d]:
     int dim
     int size
     tuple[int] shape
+    rawArray[int] muls
+
+    def void throwErr(NDArray[T,d] self, str msg):
+        print("NDArray Error:")
+        print("   Error in",type(T),"array")
+        print("   ",msg)
+        exit(1)
+
+    def int len(NDArray[T,d] self):
+        return self.shape[0]
 
     def void __init__(NDArray[T,d] self, tuple[int] _shape):
-        self.dim = d
+        self.dim = _shape._len
         self.shape = _shape
-        if self.dim != 0:
-            if self.dim != self.shape._len:
-                print("Incorrect Dimensions")
-                exit(1)
+        if d != 0:
+            if d != self.shape._len:
+                self.throwErr(str("Incorrect Dimensions"))
         self.size = 1
-        
-        
-        
+        for int i in self.shape:
+            self.size *= i
+        self.muls = new rawArray[int](self.dim)
+        for int i in range(self.dim):
+            self.muls[i] = 1
+            for int j in range(i+1,self.dim):
+                self.muls[i] *= self.shape[j]
+        self.raw = alloc(self.size * sizeof(T))
 
+    def T* __index__(NDArray[T,d] self, int* index, int n):
+        if n != self.dim:
+            if n != 1:
+                self.throwErr(str("Incorrect number of dimensions indexed"))
+            else:
+                return __intr_itop(__intr_ptoi(self.raw,long) + long(__intr_gep(index,0) * sizeof(T)),T*)
+        int raw_index = 0
+        for int i in range(n):
+            int this_index = __intr_gep(index,i)
+            if this_index < 0:
+                this_index += self.shape[i]
+            raw_index += this_index * self.muls[i]
+        return __intr_itop(__intr_ptoi(self.raw,long) + long(raw_index * sizeof(T)),T*)
+
+    def NDArray[T,0] reshape(NDArray[T,d] self, tuple[int] _shape):
+        NDArray[T,0] out = new NDArray[T,0](_shape)
+        if out.size != self.size:
+            self.throwErr(str("Invalid reshape"))
+        for int i in range(self.size):
+            out[i] = self[i]
+        return out
+
+    def void set_all(NDArray[T,d] self, T val):
+        for int i in range(self.size):
+            self[i] = val
+
+    def void zero(NDArray[T,d] self):
+        for int i in range(self.size):
+            self[i] = 0
+    
+    def void __print__(NDArray[T,d] self):
+        rawArray[int] counter = new rawArray[int](self.dim).zero()
+        rawArray[int] last = new rawArray[int](self.dim).zero()
+        for int i in range(self.dim):
+            __intr_oup("[")
+        for int i in range(self.size):
+            for int j in range(self.dim):
+                last[j] = counter[j]
+            for int j in range(self.dim):
+                counter[j] = i
+                for int k in range(j):
+                    counter[j] -= counter[k] * self.muls[k]
+                counter[j] /= self.muls[j]
+            for int j in range(self.dim-1):
+                if counter[j] != last[j]:
+                    __intr_oup("]")
+            if self.dim != 1:
+                if counter[0] != last[0]:
+                    print()
+                    for int j in range(self.dim-1):
+                        __intr_oup(" ")
+            for int j in range(self.dim-1):
+                if counter[j] != last[j]:
+                    __intr_oup("[")
+            __intr_oup(" ")
+            print(__intr_gep(self.raw,i),__nonewln)
+        for int i in range(self.dim):
+            __intr_oup("]")
+
+    def cast NDArray[T,d] (NDArray[T,0] other):
+        if other.dim != d:
+            print("Invalid NDArray Cast")
+            exit(1)
+        NDArray[T,d] out = new NDArray[T,d](other.shape)
+        out.raw = other.raw
+        return out
+
+    def cast NDArray[T,0] (NDArray[T,d] other):
+        NDArray[T,0] out = new NDArray[T,0](other.shape)
+        out.raw = other.raw
+        return out
+
+def void __initarrayTs():
+    NDArray[half,0] _1
+    NDArray[float,0] _2
+    NDArray[double,0] _3
+    NDArray[char,0] _4
+    NDArray[int,0] _5
+    NDArray[long,0] _6
+
+class nm(static):
+
+    @template
+    def array
+        
 def int main():
-    int[:] test = new NDArray[int,1]((1,))
+    float[:,:] test = new NDArray[float,2]((3,4))
+    test[0,-3] = 10000000
+    test.zero()
+    print(test)
+    test.set_all(.1)
+    float[:] test2 = test.reshape((12,))
+    float[] test3 = test2
+    print(test3)
+    test3 = test
+    print(test3)
     return 0

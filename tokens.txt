@@ -119,6 +119,11 @@ PTOI_INTR \b__intr_ptoi\b
 ITOP_INTR \b__intr_itop\b
 GEP_INTR \b__intr_gep\b
 
+FLOAT_LITERAL [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)f
+DOUBLE_LITERAL [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)d
+HALF_LITERAL [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)h
+LONG_LITERAL [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)l
+
 NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)
 
 IDENTIFIER [a-zA-Z_0-9]+

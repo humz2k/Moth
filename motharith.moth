@@ -2046,23 +2046,23 @@ def void __print__(char val):
 
 @inline
 def void __print__(int val):
-    __intr_oup("%d",val)
+    __intr_oup("%5d",val)
 
 @inline
 def void __print__(long val):
-    __intr_oup("%ld",val)
+    __intr_oup("%5ld",val)
 
 @inline
 def void __print__(half val):
-    __intr_oup("%f",float(val))
+    __intr_oup("%5.4f",float(val))
 
 @inline
 def void __print__(float val):
-    __intr_oup("%f",val)
+    __intr_oup("%5.4g",val)
 
 @inline
 def void __print__(double val):
-    __intr_oup("%f",val)
+    __intr_oup("%5.4f",val)
 
 @inline
 def char __postincr__(char val):

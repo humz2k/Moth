@@ -586,6 +586,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('misc : INLINE')
     @pg.production('misc : RESTRICT')
     @pg.production('misc : ENDSTR')
+    @pg.production('misc : FLOAT_LITERAL')
+    @pg.production('misc : DOUBLE_LITERAL')
+    @pg.production('misc : HALF_LITERAL')
+    @pg.production('misc : LONG_LITERAL')
     def pass_misc(state,p):
         state.log('misc : * = ' + p[0].name + " " + p[0].value)
         return Misc(p[0])

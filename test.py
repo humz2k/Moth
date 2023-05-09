@@ -40,7 +40,6 @@ parser.parse(tokens,state)
 
 raw = state.eval()
 
-
 class_names = codegen.find_classes(raw)
 function_names = codegen.find_functions(raw)
 

@@ -11,12 +11,12 @@ class rawArray[T]:
         #print('[',__nonewln)
         __intr_oup("[")
         int count = 0
-        while (count < (self._len-2)):
+        while (count < (self._len-1)):
             #print(self[count],',',__nonewln)
             print(self[count],__nonewln)
             __intr_oup(",")
             count = count + 1
-        count = count + 1
+        #count = count + 1
         print(self[count],__nonewln)
         __intr_oup("]")
 

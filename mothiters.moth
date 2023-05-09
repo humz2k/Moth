@@ -12,7 +12,7 @@ class __rangeiter:
         self._len = (self.end-self.start)/self.step
 
     def void __iterget__(__rangeiter self):
-        self.__itercount = 0
+        self.__itercount = self.start
 
     def bool __itercheck__(__rangeiter self):
         return self.__itercount < self.end
