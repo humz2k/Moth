@@ -1,0 +1,57 @@
+@template
+class tuple[T]:
+    T* raw
+    int _len
+    int __itercount
+
+    def void __init__(tuple[T] self):
+        self._len = 0
+
+    def void __init__(tuple[T] self, T* _raw, int n):
+        self.raw = _raw
+        self._len = n
+
+    def T* __index__(tuple[T] self, int* index, int n):
+        return __intr_itop(__intr_ptoi(self.raw,long) + long(__intr_gep(index,0) * sizeof(T)),T*)
+
+    def void __print__(tuple[T] self):
+        if self._len == 0:
+            __intr_oup("(,)")
+            return
+        __intr_oup("(")
+        int count = 0
+        while count < (self._len-1):
+            print(self[count],__nonewln)
+            __intr_oup(",")
+            count++
+        print(self[count],__nonewln)
+        __intr_oup(")")
+
+    def void __iterget__(tuple[T] self):
+        self.__itercount = 0
+
+    def bool __itercheck__(tuple[T] self):
+        return (self.__itercount < self._len)
+
+    def T __iternext__(tuple[T] self):
+        T out = self[self.__itercount]
+        self.__itercount = self.__itercount + 1
+        return out
+
+def cast tuple[char](char* nullptr):
+    return new tuple[char]()
+
+def cast tuple[int](char* nullptr):
+    return new tuple[int]()
+
+def cast tuple[long](char* nullptr):
+    return new tuple[long]()
+
+def cast tuple[half](char* nullptr):
+    return new tuple[half]()
+
+def cast tuple[float](char* nullptr):
+    return new tuple[float]()
+
+def cast tuple[double](char* nullptr):
+    return new tuple[double]()

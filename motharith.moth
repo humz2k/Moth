@@ -2063,3 +2063,220 @@ def void __print__(float val):
 @inline
 def void __print__(double val):
     __intr_oup("%f",val)
+
+@inline
+def char __postincr__(char val):
+    return __intr_add(val,char(1))
+
+@inline
+def int __postincr__(int val):
+    return __intr_add(val,int(1))
+
+@inline
+def long __postincr__(long val):
+    return __intr_add(val,long(1))
+
+@inline
+def half __postincr__(half val):
+    return __intr_fadd(val,half(1))
+
+@inline
+def float __postincr__(float val):
+    return __intr_fadd(val,float(1))
+
+@inline
+def double __postincr__(double val):
+    return __intr_fadd(val,double(1))
+
+
+@inline
+def char __postdecr__(char val):
+    return __intr_sub(val,char(1))
+
+@inline
+def int __postdecr__(int val):
+    return __intr_sub(val,int(1))
+
+@inline
+def long __postdecr__(long val):
+    return __intr_sub(val,long(1))
+
+@inline
+def half __postdecr__(half val):
+    return __intr_fsub(val,half(1))
+
+@inline
+def float __postdecr__(float val):
+    return __intr_fsub(val,float(1))
+
+@inline
+def double __postdecr__(double val):
+    return __intr_fsub(val,double(1))
+
+
+@inline
+def char __pow__(char left, char right):
+    char count = 1
+    char out = left
+    while count < right:
+        out = __intr_mul(out,left)
+        count = __intr_add(count,char(1))
+    return out
+
+
+@inline
+def int __pow__(int left, int right):
+    int count = 1
+    int out = left
+    while count < right:
+        out = __intr_mul(out,left)
+        count = __intr_add(count,int(1))
+    return out
+
+@inline
+def int __pow__(int left, char right):
+    char count = 1
+    int out = left
+    while count < right:
+        out = __intr_mul(out,left)
+        count = __intr_add(count,char(1))
+    return out
+
+@inline
+def int __pow__(char left, int right):
+    int count = 1
+    int out = int(left)
+    while count < right:
+        out = __intr_mul(out,int(left))
+        count = __intr_add(count,int(1))
+    return out
+
+
+@inline
+def long __pow__(long left, char right):
+    char count = 1
+    long out = left
+    while count < right:
+        out = __intr_mul(out,left)
+        count = __intr_add(count,char(1))
+    return out
+
+@inline
+def long __pow__(char left, long right):
+    long count = 1
+    long out = long(left)
+    while count < right:
+        out = __intr_mul(out,long(left))
+        count = __intr_add(count,long(1))
+    return out
+
+@inline
+def long __pow__(long left, int right):
+    int count = 1
+    long out = left
+    while count < right:
+        out = __intr_mul(out,left)
+        count = __intr_add(count,int(1))
+    return out
+
+@inline
+def long __pow__(int left, long right):
+    long count = 1
+    long out = long(left)
+    while count < right:
+        out = __intr_mul(out,long(left))
+        count = __intr_add(count,long(1))
+    return out
+
+@inline
+def long __pow__(long left, long right):
+    long count = 1
+    long out = left
+    while count < right:
+        out = __intr_mul(out,left)
+        count = __intr_add(count,long(1))
+    return out
+
+@inline
+def half __pow__(half left, int right):
+    return half(__powf(float(left),float(right)))
+
+@inline
+def half __pow__(int left, half right):
+    return half(__powf(float(left),float(right)))
+
+@inline
+def half __pow__(half left, long right):
+    return half(__powf(float(left),float(right)))
+
+@inline
+def half __pow__(long left, half right):
+    return half(__powf(float(left),float(right)))
+
+@inline
+def half __pow__(half left, half right):
+    return half(__powf(float(left),float(right)))
+
+@inline
+def float __pow__(int left, float right):
+    return __powf(float(left),float(right))
+
+@inline
+def float __pow__(float left, int right):
+    return __powf(float(left),float(right))
+
+@inline
+def float __pow__(long left, float right):
+    return __powf(float(left),float(right))
+
+@inline
+def float __pow__(float left, long right):
+    return __powf(float(left),float(right))
+
+@inline
+def float __pow__(half left, float right):
+    return __powf(float(left),float(right))
+
+@inline
+def float __pow__(float left, half right):
+    return __powf(float(left),float(right))
+
+@inline
+def float __pow__(float left, float right):
+    return __powf(float(left),float(right))
+
+@inline
+def double __pow__(int left, double right):
+    return __pow(double(left),double(right))
+
+@inline
+def double __pow__(double left, int right):
+    return __pow(double(left),double(right))
+
+@inline
+def double __pow__(long left, double right):
+    return __pow(double(left),double(right))
+
+@inline
+def double __pow__(double left, long right):
+    return __pow(double(left),double(right))
+
+@inline
+def double __pow__(half left, double right):
+    return __pow(double(left),double(right))
+
+@inline
+def double __pow__(double left, half right):
+    return __pow(double(left),double(right))
+
+@inline
+def double __pow__(float left, double right):
+    return __pow(double(left),double(right))
+
+@inline
+def double __pow__(double left, float right):
+    return __pow(double(left),double(right))
+
+@inline
+def double __pow__(double left, double right):
+    return __pow(double(left),double(right))

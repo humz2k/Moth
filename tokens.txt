@@ -1,4 +1,5 @@
 CHAR \'\w\'
+ENDSTR \'\\0\'
 STRING "(?:[^"\\]*(?:\\.)?)*"
 
 PLUS_PLUS \+\+
@@ -83,6 +84,9 @@ NONEWLN \b__nonewln\b
 
 FUNCTION_NAME \balloc\b
 FUNCTION_NAME \bexit\b
+FUNCTION_NAME \b__strlen\b
+FUNCTION_NAME \b__pow\b
+FUNCTION_NAME \b__powf\b
 
 SHL_INTR \b__intr_shl\b
 SHR_INTR \b__intr_shr\b

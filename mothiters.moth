@@ -2,14 +2,14 @@ class __rangeiter:
     int start
     int end
     int step
-    int len
+    int _len
     int __itercount
 
     def void __init__(__rangeiter self, int _start, int _end, int _step):
         self.start = _start
         self.end = _end
         self.step = _step
-        self.len = (self.end-self.start)/self.step
+        self._len = (self.end-self.start)/self.step
 
     def void __iterget__(__rangeiter self):
         self.__itercount = 0

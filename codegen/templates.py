@@ -227,6 +227,10 @@ class FuncTemplateDef(PreproccessorToken):
         for i in args:
             arg_names.append(i.get_arg_name())
         header = "def " + self.return_type.eval() + " _" + self.name.value + "_" + "_".join(arg_names) + "_"
+        func_args = []
+        for i in self.func_args:
+            func_args.append(i.replace(map_to))
+        header += " ( " + " ".join([i.eval() for i in func_args]) + " ) "
         header += ":"
         out = header + out + ""
         self.instantiations[name] = out
@@ -581,6 +585,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('misc : NONEWLN')
     @pg.production('misc : INLINE')
     @pg.production('misc : RESTRICT')
+    @pg.production('misc : ENDSTR')
     def pass_misc(state,p):
         state.log('misc : * = ' + p[0].name + " " + p[0].value)
         return Misc(p[0])

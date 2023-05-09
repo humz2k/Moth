@@ -1,36 +1,22 @@
-int a
+@template
+class NDArray[T,d]:
+    T* raw
+    int dim
+    int size
+    tuple[int] shape
 
-def void res_test(rawArray[int] restrict a):
-    pass
-
-def void throwError():
-    __intr_oup("ERROR!")
-    print()
-    exit(1)
-
-def rawArray[int] __add__(rawArray[int] left, rawArray[int] right):
-    if left.len != right.len:
-        throwError()
-    rawArray[int] out = new rawArray[int](left.len)
-    for int i in range(left.len):
-        out[i] = left[i] + right[i]
-    return out
+    def void __init__(NDArray[T,d] self, tuple[int] _shape):
+        self.dim = d
+        self.shape = _shape
+        if self.dim != 0:
+            if self.dim != self.shape._len:
+                print("Incorrect Dimensions")
+                exit(1)
+        self.size = 1
+        
+        
+        
 
 def int main():
-    #rawArray[int] = new rawArray[int](10)
-    rawArray[int] test = new rawArray[int](10).set_all(2)
-    rawArray[int] test2 = new rawArray[int](10).set_all(1)
-    print(test + test2)
-    #int* a = alloc(10*sizeof(int))
-    #__intr_gep(a,0) = 5
-    #print(__intr_gep(a,0))
-    #int a = 1
-    #while a < 5:
-    #    print(a)
-    #    int b = a
-    #    while b >= 0:
-    #        print(b)
-    #        b = b - 1
-    #    a = a + 1
-    #    break
+    int[:] test = new NDArray[int,1]((1,))
     return 0

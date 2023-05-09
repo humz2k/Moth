@@ -10,6 +10,12 @@ with open("mothiters.moth","r") as f:
 with open("mothrawarray.moth","r") as f:
     raw += f.read() + "\n"
 
+with open("mothstrings.moth","r") as f:
+    raw += f.read() + "\n"
+
+with open("mothtuple.moth","r") as f:
+    raw += f.read() + "\n"
+
 with open("test.moth","r") as f:
     raw += f.read()
 
@@ -37,11 +43,15 @@ raw = state.eval()
 
 class_names = codegen.find_classes(raw)
 function_names = codegen.find_functions(raw)
+
+static_classes = codegen.find_static_classes(raw)
+class_names = [i for i in class_names if not i in static_classes]
+
 #print(class_names)
 #print(function_names)
 #exit()
 
-lexer = codegen.get_lexer(class_names = class_names, function_names=function_names)
+lexer = codegen.get_lexer(class_names = class_names, function_names=function_names, static_class_names = static_classes)
 
 tokens = lexer.lex(raw)
 

@@ -21,11 +21,26 @@ class ParserState(object):
         self.next_function_modifiers = []
         printf_ty = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
         self.printf = ir.Function(self.module, printf_ty, name="printf")
+
         exit_ty = ir.FunctionType(ir.VoidType(),[ir.IntType(32)])
         self.exit = ir.Function(self.module,exit_ty,name="exit")
         self.functions["exit_i32"] = self.exit
+
+        strlen_ty = ir.FunctionType(ir.IntType(32),[ir.PointerType(ir.IntType(8))])
+        self.strlen = ir.Function(self.module,strlen_ty,"strlen")
+        self.functions["__strlen_i8*"] = self.strlen
+
+        powf_ty = ir.FunctionType(ir.FloatType(),[ir.FloatType()])
+        self.powf = ir.Function(self.module,powf_ty,"powf")
+        self.functions["__powf_float_float"] = self.powf
+
+        pow_ty = ir.FunctionType(ir.DoubleType(),[ir.DoubleType()])
+        self.pow = ir.Function(self.module,pow_ty,"pow")
+        self.functions["__pow_double_double"] = self.pow
+
         bohem_init_ty = ir.FunctionType(ir.VoidType(), [], var_arg=True)
         self.bohem_start = ir.Function(self.module, bohem_init_ty, name="bohem_start")
+
         bohem_alloc_ty = ir.FunctionType(ir.PointerType(ir.IntType(8)), [ir.IntType(32)], var_arg=False)
         self.bohem_alloc = ir.Function(self.module, bohem_alloc_ty, name="bohem_malloc")
         self.functions["alloc_i32"] = self.bohem_alloc
@@ -61,6 +76,9 @@ class ParserState(object):
             exit()
         if err_t == "FuncExists":
             print("FuncExists:",kwargs["name"])
+            exit()
+        if err_t == "SyntaxErr":
+            print("SyntaxErr:",kwargs["msg"])
             exit()
 
     def gep_hack(self,typ):
@@ -131,7 +149,10 @@ class ParserState(object):
 
     def mangle(self,name,types=[],parent_class = None):
         if type(parent_class) != type(None):
-            name = str(parent_class.raw) + "." + name + "_" + "_".join([str(i) for i in types])
+            if isinstance(parent_class,StaticClass):
+                name = str(parent_class.name) + "." + name + "_" + "_".join([str(i) for i in types])
+            else: 
+                name = str(parent_class.raw) + "." + name + "_" + "_".join([str(i) for i in types])
         else:
             if (name == "main"):
                 name = "main"
@@ -147,7 +168,7 @@ class ParserState(object):
 
         name = self.mangle(name,parent_class = self.current_class,types = input_types)
        
-        if type(self.current_class) != type(None):
+        if (type(self.current_class) != type(None)) and (not isinstance(self.current_class,StaticClass)):
             if name in self.current_class.bound_functions:
                 self.throwError("FuncExists",name=self.current_class.raw.name + "." + name)
             if self.current_class.type_set == False:
@@ -159,7 +180,7 @@ class ParserState(object):
             
         func = ir.Function(self.module,func_type,name)
 
-        if type(self.current_class) != type(None):
+        if (type(self.current_class) != type(None)) and (not isinstance(self.current_class,StaticClass)):
             self.current_class.bound_functions[name] = func
         else:
             self.functions[name] = func
@@ -183,6 +204,18 @@ class ParserState(object):
             self.builder.call(self.bohem_start,[])
         
         return self.builder
+    
+    def math_op(self,op,left,right):
+        l_val = left._get(self.builder)
+        r_val = right._get(self.builder)
+        if isinstance(right,LiteralConstantContainer) and op == "__pow__":
+            if (right.raw.type == ir.IntType(32)) and (l_val.type in [ir.IntType(8),ir.IntType(32),ir.IntType(64),ir.HalfType(),ir.FloatType(),ir.DoubleType()]):
+                out = l_val
+                tmp = out
+                for i in range(right.raw.constant-1):
+                    out = self.call_global_function("__mul__",[out,tmp])
+                return out
+        return self.call_global_function(op,[l_val,r_val])
 
 class TypeContainer:
     def __init__(self,raw,parent_class = None):
@@ -198,6 +231,9 @@ class ConstantContainer:
     
     def _get(self,builder):
         return self.raw
+    
+class LiteralConstantContainer(ConstantContainer):
+    pass
 
 class VariableContainer:
     def __init__(self,raw):
@@ -206,12 +242,21 @@ class VariableContainer:
     def _get(self,builder):
         return builder.load(self.raw)
     
-    def _set(self,builder,value):
+    def _set(self,builder,value,casts):
+        if value.type != self.raw.type.pointee:
+            cast_name = str(value.type) + "->" + str(self.raw.type.pointee)
+            if not cast_name in casts:
+                raise Exception("No casting rule " + cast_name + " exists")
+            value = builder.call(casts[cast_name],[value])
         return builder.store(value,self.raw)
+
+class StaticClass:
+    def __init__(self,name):
+        self.name = name
 
 def get_parser(filename="tokens.txt"):
     with open(filename,"r") as f:
-        tokens = [i.split()[0] for i in f.read().splitlines() if (not i.startswith("//")) and (not len(i) == 0)] + ["CLASS_NAME","FUNCTION_NAME","FUNCTION_TEMPLATE_NAME"]
+        tokens = [i.split()[0] for i in f.read().splitlines() if (not i.startswith("//")) and (not len(i) == 0)] + ["CLASS_NAME","FUNCTION_NAME","FUNCTION_TEMPLATE_NAME","STATIC_CLASS_NAME"]
     if "IGNORE" in tokens:
         tokens.remove("IGNORE")
     pg = ParserGenerator(tokens, precedence=[
@@ -250,12 +295,25 @@ def get_parser(filename="tokens.txt"):
         return state.make_global_variable(p[0].raw,p[1].value)
     
     @pg.production('class_open : CLASS CLASS_NAME COLON OPEN_CURL')
+    @pg.production('class_open : CLASS CLASS_NAME OPEN_PAREN IDENTIFIER CLOSE_PAREN COLON OPEN_CURL')
     def class_open(state,p):
         state.log('class_open : CLASS CLASS_NAME COLON OPEN_CURL')
-        _,class_name,_,_ = p
+        if len(p) == 4:
+            _,class_name,_,_ = p
+        else:
+            _,class_name,_,inherits,_,_,_ = p
         if class_name.value in state.classes:
             raise Exception("Class " + class_name.value + " already exists")
         state.current_class = TypeContainer(ir.global_context.get_identified_type(class_name.value))
+        state.classes[class_name.value] = state.current_class
+
+    @pg.production('class_open : CLASS STATIC_CLASS_NAME OPEN_PAREN IDENTIFIER CLOSE_PAREN COLON OPEN_CURL')
+    def class_open(state,p):
+        state.log('class_open : CLASS STATIC_CLASS_NAME OPEN_PAREN IDENTIFIER CLOSE_PAREN COLON OPEN_CURL')
+        _,class_name,_,inherits,_,_,_ = p
+        if class_name.value in state.classes:
+            raise Exception("Class " + class_name.value + " already exists")
+        state.current_class = StaticClass(class_name.value)
         state.classes[class_name.value] = state.current_class
     
     @pg.production('class_open : class_open class_def')
@@ -273,14 +331,21 @@ def get_parser(filename="tokens.txt"):
     @pg.production('class : class_open CLOSE_CURL')
     def end_class(state,p):
         #print([i[0].raw for i in state.current_class.attrs])
+        if isinstance(state.current_class,StaticClass):
+            state.current_class = None
+            return
         if state.current_class.type_set == False:
             state.current_class.raw.set_body(*[i[0].raw for i in state.current_class.attrs])
             state.current_class.type_set = True
         state.current_class = None
 
     @pg.production('class_def : type IDENTIFIER SEMI_COLON')
-    def class_def(state,p):
+    def class_def(state : ParserState,p):
         state.log('class_def : type IDENTIFIER SEMI_COLON')
+        if isinstance(state.current_class,StaticClass):
+            return state.make_global_variable(p[0].raw,state.current_class.name + "." + p[1].value)
+        if state.current_class.type_set == True:
+            state.throwError("SyntaxErr",msg="Class definitions need to be above all function definitions")
         if p[1].value in state.current_class.attrs:
             raise Exception("Class attribute " + p[1].value + " already exists")
         state.current_class.attrs.append((p[0],p[1].value))
@@ -472,7 +537,7 @@ def get_parser(filename="tokens.txt"):
         state.builder.cbranch(cond,loop,after)
         state.builder.position_at_start(loop)
         val = state.builder.call(iter_next,[ref_get])
-        p[1]._set(state.builder,val)
+        p[1]._set(state.builder,val,state.casts)
 
 
     @pg.production('for_open : for_open line')
@@ -578,12 +643,7 @@ def get_parser(filename="tokens.txt"):
             expr = p[2]
             get = expr._get(state.builder)
             var = p[0]
-            if get.type != var.raw.type.pointee:
-                cast_name = str(get.type) + "->" + str(var.raw.type.pointee)
-                if not cast_name in state.casts:
-                    raise Exception("No casting rule " + cast_name + " exists")
-                get = state.builder.call(state.casts[cast_name],[get])
-            return var._set(state.builder,get)
+            return var._set(state.builder,get,state.casts)
         raise Exception("Can't assign to constant")
     
     @pg.production('expression : TRUNC_INTR OPEN_PAREN expression COMMA type CLOSE_PAREN')
@@ -761,6 +821,13 @@ def get_parser(filename="tokens.txt"):
         state.log('expression : PRINT OPEN_PAREN CLOSE_PAREN')
         return ConstantContainer(state.builder.call(state.printf,[state.get_formatter("\n")]))
     
+    @pg.production('expression : STATIC_CLASS_NAME PERIOD IDENTIFIER')
+    def static_ref(state : ParserState,p):
+        name = p[0].value + "." + p[2].value
+        if name in state.global_variables:
+            return state.global_variables[name]
+        raise Exception("Static Var " + name + " doesn't exist")
+
     @pg.production('expression : expression PERIOD IDENTIFIER')
     def reference(state,p):
         state.log('expression : expression PERIOD IDENTIFIER')
@@ -840,8 +907,51 @@ def get_parser(filename="tokens.txt"):
         state.builder.call(my_class.bound_functions[init_func],[alloced] + inputs)
         return ConstantContainer(alloced)
 
-
+    @pg.production('open_tuple : OPEN_PAREN expression COMMA')
+    def open_tuple(state,p):
+        state.log('open_tuple : OPEN_PAREN expression COMMA')
+        return [p[1]]
     
+    @pg.production('cont_tuple : open_tuple expression')
+    def cont_tuple(state,p):
+        state.log('cont_tuple : open_tuple expression')
+        return p[0] + [p[1]]
+    
+    @pg.production('cont_tuple : cont_tuple COMMA expression')
+    def cont_tuple(state,p):
+        state.log('cont_tuple : cont_tuple COMMA expression')
+        return p[0] + [p[2]]
+    
+    @pg.production('expression : open_tuple CLOSE_PAREN')
+    @pg.production('expression : cont_tuple CLOSE_PAREN')
+    def tuple_literal(state : ParserState,p):
+        inputs = [i._get(state.builder) for i in p[0]]
+        tuple_t = inputs[0].type
+        for i in inputs:
+            if i.type != tuple_t:
+                raise Exception("Can't make tuple literal with multiple types")
+        inputs = [ConstantContainer(i) for i in inputs]
+        int_ptr = state.load_array(tuple_t,inputs)
+        n = ir.Constant(ir.IntType(32),len(inputs))
+        name = "_tuple_"
+        type_dict = {ir.IntType(1): "bool", ir.IntType(8): "char", ir.IntType(32) : "int", ir.IntType(64) : "long"}
+        if tuple_t in type_dict:
+            name += type_dict[tuple_t] + "_"
+        else:
+            name += str(tuple_t) + "_"
+        my_class = state.classes[name]
+        alloced = state.allocate(my_class.raw,cast_to=my_class.raw)
+        #print(alloced)
+        init_func = str(my_class.raw) + "." + "__init__" + "_" + str(ir.PointerType(my_class.raw)) + "_" + "_".join([str(i) for i in [ir.PointerType(tuple_t),ir.IntType(32)]])
+        if not init_func in my_class.bound_functions:
+            raise Exception("No matching initialize for inputs " + ",".join(str([i]) for i in [ir.PointerType(tuple_t),ir.IntType(32)]))
+        state.builder.call(my_class.bound_functions[init_func],[alloced,int_ptr,n])
+        return ConstantContainer(alloced)
+    
+    @pg.production('expression : OPEN_PAREN COMMA CLOSE_PAREN')
+    def empty_tuple(state : ParserState,p):
+        return LiteralConstantContainer(ir.Constant(ir.PointerType(ir.IntType(8)),None))
+
     @pg.production('print_open : PRINT OPEN_PAREN expression')
     def print_one(state,p):
         state.log('print_open : PRINT OPEN_PAREN expression')
@@ -908,6 +1018,28 @@ def get_parser(filename="tokens.txt"):
             raise Exception("Class " + class_name + " has no function " + p[2].value)
         return ConstantContainer(state.builder.call(ref_class.bound_functions[func_name],[ref_get]))
     
+    @pg.production('expression : STATIC_CLASS_NAME PERIOD FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
+    def ref_func_call(state,p):
+        state.log('expression : STATIC_CLASS_NAME PERIOD FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
+        func_name = str(p[0].value) + "." + p[2].value
+        return ConstantContainer(state.call_global_function(func_name,[]))
+    
+    @pg.production('static_ref_func_call_open : STATIC_CLASS_NAME PERIOD FUNCTION_NAME OPEN_PAREN expression')
+    def ref_func_call_open(state,p):
+        state.log('ref_func_call_open : expression PERIOD FUNCTION_NAME OPEN_PAREN expression')
+        return [p[0],p[2],p[4]]
+    
+    @pg.production('static_ref_func_call_open : static_ref_func_call_open COMMA expression')
+    def ref_func_call_cont(state,p):
+        return p[0] + [p[2]]
+
+    @pg.production('expression : static_ref_func_call_open CLOSE_PAREN')
+    def ref_func_call(state : ParserState,p):
+        state.log('expression : static_ref_func_call_open CLOSE_PAREN')
+        inputs = [i._get(state.builder) for i in p[0][2:]]
+        func_name = str(p[0][0].value) + "." + p[0][1].value
+        return ConstantContainer(state.call_global_function(func_name,inputs))
+
     @pg.production('ref_func_call_open : expression PERIOD FUNCTION_NAME OPEN_PAREN expression')
     def ref_func_call_open(state,p):
         state.log('ref_func_call_open : expression PERIOD FUNCTION_NAME OPEN_PAREN expression')
@@ -956,13 +1088,45 @@ def get_parser(filename="tokens.txt"):
         input_exprs = [i._get(state.builder) for i in inputs]
         name = token_name.value + "_" + "_".join([str(i.type) for i in input_exprs])
         if not name in state.functions:
-            raise Exception("Function " + token_name + " with no inputs " + ",".join([str(i.type) for i in input_exprs]) + " doesn't exist")
+            raise Exception("Function " + token_name.value + " with no inputs " + ",".join([str(i.type) for i in input_exprs]) + " doesn't exist")
         return ConstantContainer(state.builder.call(state.functions[name],input_exprs))
         
     @pg.production('expression : OPEN_PAREN expression CLOSE_PAREN')
     def pass_expr(state,p):
         state.log('expression : OPEN_PAREN expression CLOSE_PAREN')
         return p[1]
+    
+    @pg.production('assign : expression PLUS_EQUAL expression')
+    @pg.production('assign : expression MINUS_EQUAL expression')
+    @pg.production('assign : expression STARSTAR_EQUAL expression')
+    @pg.production('assign : expression STAR_EQUAL expression')
+    @pg.production('assign : expression SLASH_EQUAL expression')
+    @pg.production('assign : expression PERCENT_EQUAL expression')
+    def inc_assign(state : ParserState,p):
+        state.log('assign : expression PLUS_EQUAL expression')
+        op_dict = {
+            "PLUS_EQUAL": "__add__",
+            "MINUS_EQUAL": "__sub__",
+            "STAR_EQUAL": "__mul__",
+            "STARSTAR_EQUAL": "__pow__",
+            "SLASH_EQUAL": "__div__",
+            "PERCENT_EQUAL": "__mod__"
+        }
+        left = p[0]
+        right = p[2]
+        return p[0]._set(state.builder,state.math_op(op_dict[p[1].name],left,right),state.casts)
+    
+    @pg.production('expression : expression PLUS_PLUS')
+    @pg.production('expression : expression MINUS_MINUS')
+    def inc_dec(state : ParserState,p):
+        state.log('expression : expression PLUS_PLUS')
+        op_dict = {
+            "PLUS_PLUS": "__postincr__",
+            "MINUS_MINUS": "__postdecr__"
+        }
+        val = p[0]._get(state.builder)
+        p[0]._set(state.builder,state.call_global_function(op_dict[p[1].name],[val]),state.casts)
+        return p[0]
 
     @pg.production('expression : expression RIGHT_SHIFT expression')
     @pg.production('expression : expression LEFT_SHIFT expression')
@@ -1006,31 +1170,31 @@ def get_parser(filename="tokens.txt"):
             "VERT": "__bitor__",
             "HAT": "__bitxor__"
         }
-        left = p[0]._get(state.builder)
-        right = p[2]._get(state.builder)
-        return ConstantContainer(state.call_global_function(op_dict[p[1].name],[left,right]))
+        left = p[0]
+        right = p[2]
+        return ConstantContainer(state.math_op(op_dict[p[1].name],left,right))
 
     @pg.production('expression : NUMBER')
     def constant(state,p):
         state.log('expression : NUMBER')
         if "." in p[0].value:
-            return ConstantContainer(ir.Constant(ir.FloatType(),float(p[0].value)))
-        return ConstantContainer(ir.Constant(ir.IntType(32),int(p[0].value)))
+            return LiteralConstantContainer(ir.Constant(ir.FloatType(),float(p[0].value)))
+        return LiteralConstantContainer(ir.Constant(ir.IntType(32),int(p[0].value)))
     
     @pg.production('expression : CHAR')
     def constant(state,p):
         state.log('expression : CHAR')
-        return ConstantContainer(ir.Constant(ir.IntType(8),ord(p[0].value[1:-1])))
+        return LiteralConstantContainer(ir.Constant(ir.IntType(8),ord(p[0].value[1:-1])))
     
     @pg.production('expression : TRUE')
     def constant(state,p):
         state.log('expression : TRUE')
-        return ConstantContainer(ir.Constant(ir.IntType(1),1))
+        return LiteralConstantContainer(ir.Constant(ir.IntType(1),1))
     
     @pg.production('expression : FALSE')
     def constant(state,p):
         state.log('expression : FALSE')
-        return ConstantContainer(ir.Constant(ir.IntType(1),0))
+        return LiteralConstantContainer(ir.Constant(ir.IntType(1),0))
 
     @pg.production('expression : type IDENTIFIER')
     def declaration(state,p):
@@ -1040,6 +1204,18 @@ def get_parser(filename="tokens.txt"):
             raise Exception("Variable " + p[1].value + " already exists")
         state.local_variables[-1][p[1].value] = var
         return var
+    
+    @pg.production('expression : TYPE_QUERY OPEN_PAREN expression CLOSE_PAREN')
+    def type_query(state : ParserState,p):
+        state.log('expression : TYPE_QUERY OPEN_PAREN expression CLOSE_PAREN')
+        val = p[2]._get(state.builder)
+        return ConstantContainer(state.get_formatter(str(val.type)))
+    
+    @pg.production('expression : TYPE_QUERY OPEN_PAREN type CLOSE_PAREN')
+    def type_query(state : ParserState,p):
+        state.log('expression : TYPE_QUERY OPEN_PAREN type CLOSE_PAREN')
+        val = p[2]
+        return ConstantContainer(state.get_formatter(str(val.raw)))
 
     @pg.production('expression : IDENTIFIER')
     def find_var(state,p):
@@ -1050,6 +1226,22 @@ def get_parser(filename="tokens.txt"):
         if var_name in state.global_variables:
             return state.global_variables[var_name]
         raise Exception("Variable " + var_name + " doesn't exist")
+    
+    @pg.production('expression : STRING')
+    def get_str(state : ParserState,p):
+        state.log('expression : STRING')
+        out = state.get_formatter(p[0].value[1:-1])
+        return LiteralConstantContainer(out)
+    
+    @pg.production('expression : ENDSTR')
+    def get_str(state : ParserState,p):
+        state.log('expression : ENDSTR')
+        return LiteralConstantContainer(ir.Constant(ir.IntType(8),ord('\0')))
+    
+    @pg.production('expression : NULL')
+    def get_null(state : ParserState,p):
+        state.log('expression : NULL')
+        return LiteralConstantContainer(ir.Constant(ir.PointerType(ir.IntType(8)),None))
     
     @pg.production('type : CLASS_NAME')
     def class_type(state,p):

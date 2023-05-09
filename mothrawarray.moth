@@ -1,7 +1,7 @@
 @template
 class rawArray[T]:
     T* raw
-    int len
+    int _len
     int __itercount
     
     def T* __index__(rawArray[T] self, int* index, int n):
@@ -11,7 +11,7 @@ class rawArray[T]:
         #print('[',__nonewln)
         __intr_oup("[")
         int count = 0
-        while (count < (self.len-2)):
+        while (count < (self._len-2)):
             #print(self[count],',',__nonewln)
             print(self[count],__nonewln)
             __intr_oup(",")
@@ -24,7 +24,7 @@ class rawArray[T]:
         self.__itercount = 0
 
     def bool __itercheck__(rawArray[T] self):
-        return (self.__itercount < self.len)
+        return (self.__itercount < self._len)
 
     def T __iternext__(rawArray[T] self):
         T out = self[self.__itercount]
@@ -33,24 +33,27 @@ class rawArray[T]:
 
     def void __init__(rawArray[T] self, int size):
         self.raw = alloc(sizeof(T)*size)
-        self.len = size
+        self._len = size
 
     def rawArray[T] zero(rawArray[T] self):
         int count = 0
-        while count < self.len:
+        while count < self._len:
             self[count] = 0
             count = count + 1
         return self
 
     def rawArray[T] set_all(rawArray[T] self, T val):
         int count = 0
-        while count < self.len:
+        while count < self._len:
             self[count] = val
             count = count + 1
         return self
 
+    def int len(rawArray[T] self):
+        return self._len
+
 def cast rawArray[int] (__rangeiter val):
-    rawArray[int] out = new rawArray[int](val.len)
+    rawArray[int] out = new rawArray[int](val._len)
     int count = 0
     for int i in val:
         out[count] = i
