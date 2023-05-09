@@ -579,6 +579,8 @@ def get_parser(filename="tokens.txt"):
     @pg.production('misc : ITOP_INTR')
     @pg.production('misc : GEP_INTR')
     @pg.production('misc : NONEWLN')
+    @pg.production('misc : INLINE')
+    @pg.production('misc : RESTRICT')
     def pass_misc(state,p):
         state.log('misc : * = ' + p[0].name + " " + p[0].value)
         return Misc(p[0])

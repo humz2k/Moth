@@ -1,13 +1,26 @@
 int a
 
+def void res_test(rawArray[int] restrict a):
+    pass
+
+def void throwError():
+    __intr_oup("ERROR!")
+    print()
+    exit(1)
+
+def rawArray[int] __add__(rawArray[int] left, rawArray[int] right):
+    if left.len != right.len:
+        throwError()
+    rawArray[int] out = new rawArray[int](left.len)
+    for int i in range(left.len):
+        out[i] = left[i] + right[i]
+    return out
+
 def int main():
     #rawArray[int] = new rawArray[int](10)
-    rawArray[int] test = new rawArray[int](10)
-    test.set_all(10)
-    print(rawArray[int](range(0,10,2)))
-    print(1 + 1)
-    a = 5
-    print(a)
+    rawArray[int] test = new rawArray[int](10).set_all(2)
+    rawArray[int] test2 = new rawArray[int](10).set_all(1)
+    print(test + test2)
     #int* a = alloc(10*sizeof(int))
     #__intr_gep(a,0) = 5
     #print(__intr_gep(a,0))

@@ -18,8 +18,12 @@ class ParserState(object):
         self.casts = {}
         self.formatters = {}
         self.break_to = []
+        self.next_function_modifiers = []
         printf_ty = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
         self.printf = ir.Function(self.module, printf_ty, name="printf")
+        exit_ty = ir.FunctionType(ir.VoidType(),[ir.IntType(32)])
+        self.exit = ir.Function(self.module,exit_ty,name="exit")
+        self.functions["exit_i32"] = self.exit
         bohem_init_ty = ir.FunctionType(ir.VoidType(), [], var_arg=True)
         self.bohem_start = ir.Function(self.module, bohem_init_ty, name="bohem_start")
         bohem_alloc_ty = ir.FunctionType(ir.PointerType(ir.IntType(8)), [ir.IntType(32)], var_arg=False)
@@ -54,6 +58,9 @@ class ParserState(object):
             exit()
         if err_t == "CastExists":
             print("CastExists:",kwargs["name"],"is already defined")
+            exit()
+        if err_t == "FuncExists":
+            print("FuncExists:",kwargs["name"])
             exit()
 
     def gep_hack(self,typ):
@@ -110,6 +117,18 @@ class ParserState(object):
         self.casts[name] = func
         return func
     
+    def setup_new_cast(self,cast_from,cast_to,var_name):
+        modifiers = self.next_function_modifiers
+        self.next_function_modifiers = []
+        self.current_function = self.make_new_cast(cast_from,cast_to)
+        for i in modifiers:
+            self.current_function.attributes.add(i)
+        self.current_block = [self.current_function.append_basic_block(name="entry")]
+        self.builder = ir.IRBuilder(self.current_block[-1])
+        self.local_variables = [{}]
+        self.local_variables[-1][var_name] = ConstantContainer(self.current_function.args[0])
+        return self.builder
+
     def mangle(self,name,types=[],parent_class = None):
         if type(parent_class) != type(None):
             name = str(parent_class.raw) + "." + name + "_" + "_".join([str(i) for i in types])
@@ -119,6 +138,51 @@ class ParserState(object):
             else:
                 name = name + "_" + "_".join([str(i) for i in types])
         return name
+    
+    def make_new_function(self,name,return_type,input_types=[]):
+        modifiers = self.next_function_modifiers
+        self.next_function_modifiers = []
+
+        func_type = ir.FunctionType(return_type,input_types)
+
+        name = self.mangle(name,parent_class = self.current_class,types = input_types)
+       
+        if type(self.current_class) != type(None):
+            if name in self.current_class.bound_functions:
+                self.throwError("FuncExists",name=self.current_class.raw.name + "." + name)
+            if self.current_class.type_set == False:
+                self.current_class.raw.set_body(*[i[0].raw for i in self.current_class.attrs])
+                self.current_class.type_set = True
+        else:
+            if name in self.functions:
+                self.throwError("FuncExists",name=name)
+            
+        func = ir.Function(self.module,func_type,name)
+
+        if type(self.current_class) != type(None):
+            self.current_class.bound_functions[name] = func
+        else:
+            self.functions[name] = func
+        return func
+    
+    def setup_new_function(self,name,return_type,inputs=[]):
+        input_types = [i[0].raw for i in inputs]
+        self.current_function = self.make_new_function(name,return_type,input_types)
+
+        self.current_block = [self.current_function.append_basic_block(name="entry")]
+        self.builder = ir.IRBuilder(self.current_block[-1])
+        self.local_variables = [{}]
+        for idx,i in enumerate(inputs):
+            if len(i) > 2:
+                attrs = list(set([j.name for j in i[2:]]))
+                for j in attrs:
+                    if j == "RESTRICT":
+                        self.current_function.args[idx].add_attribute("noalias")
+            self.local_variables[-1][i[1].value] = ConstantContainer(self.current_function.args[idx])
+        if name == "main" and (type(self.current_class) == type(None)):
+            self.builder.call(self.bohem_start,[])
+        
+        return self.builder
 
 class TypeContainer:
     def __init__(self,raw,parent_class = None):
@@ -161,12 +225,14 @@ def get_parser(filename="tokens.txt"):
         ('left', ['NOT']),
         ('left', ['BACKSLASH']),
         ('left', ['PERIOD']),
+        ('left',["OPEN_SQUARE"])
     ])
 
     @pg.production('program : cast_def')
     @pg.production('program : function')
     @pg.production('program : class')
     @pg.production('program : global_def')
+    @pg.production('program : modifier')
     def program(state,p):
         state.log('program : global_def|cast_def|function|class')
     
@@ -174,6 +240,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('program : program cast_def')
     @pg.production('program : program class')
     @pg.production('program : program function')
+    @pg.production('program : program modifier')
     def cont_program(state,p):
         state.log('program : program global_def|cast_def|function|class')
 
@@ -193,8 +260,15 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('class_open : class_open class_def')
     @pg.production('class_open : class_open function')
+    @pg.production('class_open : class_open modifier')
     def pass_class_def(state,p):
         state.log('class_open : class_open class_def|function')
+
+    @pg.production('modifier : AT INLINE SEMI_COLON')
+    def pass_modifier(state : ParserState,p):
+        state.log('modifier : AT INLINE SEMI_COLON')
+        modifiers = {"INLINE": "alwaysinline"}
+        state.next_function_modifiers.append(modifiers[p[1].name])
 
     @pg.production('class : class_open CLOSE_CURL')
     def end_class(state,p):
@@ -215,12 +289,7 @@ def get_parser(filename="tokens.txt"):
     def cast_def_open(state,p):
         state.log('cast_def_open : DEF CAST type OPEN_PAREN type IDENTIFIER CLOSE_PAREN COLON OPEN_CURL')
         _,_,cast_to,_,cast_from,var_name,_,_,_ = p
-        state.current_function = state.make_new_cast(cast_from.raw,cast_to.raw)
-        state.current_block = [state.current_function.append_basic_block(name="entry")]
-        state.builder = ir.IRBuilder(state.current_block[-1])
-        state.local_variables = [{}]
-        state.local_variables[-1][var_name.value] = ConstantContainer(state.current_function.args[0])
-        return state.builder
+        return state.setup_new_cast(cast_from.raw,cast_to.raw,var_name.value)
     
     @pg.production('cast_def_open : cast_def_open line')
     def pass_line(state,p):
@@ -231,13 +300,19 @@ def get_parser(filename="tokens.txt"):
         state.log('cast_def : cast_def_open CLOSE_CURL')
     
     @pg.production('func_def_inputs_open : OPEN_PAREN type IDENTIFIER')
+    @pg.production('func_def_inputs_open : OPEN_PAREN type RESTRICT IDENTIFIER')
     def func_def_inputs_open(state,p):
         state.log('func_def_inputs_open : OPEN_PAREN type IDENTIFIER')
+        if len(p) > 3:
+            return [(p[1],p[-1],) + tuple(p[2:-1])]
         return [(p[1],p[2])]
 
     @pg.production('func_def_inputs_open : func_def_inputs_open COMMA type IDENTIFIER')
+    @pg.production('func_def_inputs_open : func_def_inputs_open COMMA type RESTRICT IDENTIFIER')
     def func_def_inputs_cont(state,p):
         state.log('func_def_inputs_open : func_def_inputs_open COMMA type IDENTIFIER')
+        if len(p) > 4:
+            return p[0] + [(p[2],p[-1]) + tuple(p[3:-1])]
         return p[0] + [(p[2],p[3])]
     
     @pg.production('func_def_inputs : func_def_inputs_open CLOSE_PAREN')
@@ -249,46 +324,12 @@ def get_parser(filename="tokens.txt"):
     @pg.production('function_def_open : DEF type FUNCTION_NAME OPEN_PAREN CLOSE_PAREN COLON OPEN_CURL')
     def func_def_open(state,p):
         state.log('function_def_open : DEF type FUNCTION_NAME func_def_inputs COLON OPEN_CURL')
-        #if type(state.current_class) == type(None):
         if len(p) == 7:
             _,return_type,func_name,_,_,_,_, = p
             inputs = []
         else:
             _,return_type,func_name,inputs,_,_ = p
-        input_types = [i[0].raw for i in inputs]
-        func_type = ir.FunctionType(return_type.raw,input_types)
-
-        name = state.mangle(func_name.value,parent_class = state.current_class,types = input_types)
-       
-        if type(state.current_class) != type(None):
-            #name = str(state.current_class.raw) + "." + func_name.value + "_" + "_".join([str(i) for i in input_types])
-            if name in state.current_class.bound_functions:
-                raise Exception("Class method " + name + " already exists")
-            if state.current_class.type_set == False:
-                state.current_class.raw.set_body(*[i[0].raw for i in state.current_class.attrs])
-                state.current_class.type_set = True
-        else:
-            #if (func_name.value == "main"):
-            #    name = "main"
-            #else:
-            #    name = func_name.value + "_" + "_".join([str(i) for i in input_types])
-            if name in state.functions:
-                    raise Exception("Function " + name + " already exists")
-            
-        state.current_function = ir.Function(state.module,func_type,name)
-
-        if type(state.current_class) != type(None):
-            state.current_class.bound_functions[name] = state.current_function
-        else:
-            state.functions[name] = state.current_function
-        state.current_block = [state.current_function.append_basic_block(name="entry")]
-        state.builder = ir.IRBuilder(state.current_block[-1])
-        state.local_variables = [{}]
-        for idx,i in enumerate(inputs):
-            state.local_variables[-1][i[1].value] = ConstantContainer(state.current_function.args[idx])
-        if name == "main":
-            state.builder.call(state.bohem_start,[])
-        return state.builder
+        return state.setup_new_function(func_name.value,return_type.raw,inputs)
     
     @pg.production('function_def_open : function_def_open line')
     def pass_line(state,p):
@@ -756,7 +797,9 @@ def get_parser(filename="tokens.txt"):
             raise Exception("Class " + class_name + " is not indexable")
         alloced = state.load_array(ir.IntType(32),indexes)
         index = state.builder.call(ref_class.bound_functions[func_name],[ref_get,alloced,ir.Constant(ir.IntType(32),len(indexes))])
-        return VariableContainer(index)
+        var = VariableContainer(index)
+        #print(var._get(state.builder).type)
+        return var
         #return var
     
     @pg.production('expression : NEW CLASS_NAME OPEN_PAREN CLOSE_PAREN')

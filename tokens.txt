@@ -60,6 +60,8 @@ KERNEL \bkernel\b
 TEMPLATE \btemplate\b
 CAST \bcast\b
 SIZEOF \bsizeof\b
+INLINE \binline\b
+RESTRICT \brestrict\b
 
 CLASS \bclass\b
 DEF \bdef\b
@@ -80,6 +82,7 @@ NULL \bNULL\b
 NONEWLN \b__nonewln\b
 
 FUNCTION_NAME \balloc\b
+FUNCTION_NAME \bexit\b
 
 SHL_INTR \b__intr_shl\b
 SHR_INTR \b__intr_shr\b
