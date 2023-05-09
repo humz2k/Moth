@@ -45,6 +45,47 @@ class ParserState(object):
         if log:
             print(text)
 
+    def throwError(self,err_t,**kwargs):
+        if err_t == "FuncNotFound":
+            print("FuncNotFound:",kwargs["name"],"with inputs (" + ", ".join([str(i) for i in kwargs["arg_types"]]) + ")")
+            exit()
+
+    def gep_hack(self,typ):
+        gep_hack = self.builder.gep(ir.Constant(ir.PointerType(typ),None),[ir.Constant(ir.IntType(32),1)])
+        return self.builder.ptrtoint(gep_hack,ir.IntType(32))
+    
+    def allocate(self,typ,n=None,cast_to=None):
+        ptr_size = self.gep_hack(typ)
+        if isinstance(n,int):
+            n = ir.Constant(ir.IntType(32),n)
+        if type(n) == type(None):
+            size = ptr_size
+        else:
+            size = self.builder.mul(ptr_size,n)
+        alloced = self.builder.call(self.bohem_alloc,[size])
+        if type(cast_to) != type(None):
+            alloced = self.builder.ptrtoint(alloced,ir.IntType(64))
+            alloced = self.builder.inttoptr(alloced,ir.PointerType(cast_to))
+        return alloced
+    
+    def load_array(self,typ,array):
+        alloced = self.allocate(typ,len(array),typ)
+        #alloced = state.allocate(ir.IntType(32),len(indexes),ir.IntType(32))
+        for idx,i in enumerate(array):
+            var = self.builder.gep(alloced,[ir.Constant(ir.IntType(32),idx)])
+            self.builder.store(i._get(self.builder),var)
+        return alloced
+    
+    def find_global_function(self,name,inputs=[]):
+        func_name = name + "_" + "_".join([str(i.type) for i in inputs])
+        if func_name in self.functions:
+            return self.functions[func_name]
+        self.throwError("FuncNotFound",name = name, arg_types = [i.type for i in inputs])
+
+    def call_global_function(self,name,inputs=[]):
+        func = self.find_global_function(name,inputs)
+        return self.builder.call(func,inputs)
+
 class TypeContainer:
     def __init__(self,raw,parent_class = None):
         self.raw = raw
@@ -655,8 +696,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('expression : SIZEOF OPEN_PAREN type CLOSE_PAREN')
     def get_sizeof(state,p):
         state.log('expression : SIZEOF OPEN_PAREN type CLOSE_PAREN')
-        gep_hack = state.builder.gep(ir.Constant(ir.PointerType(p[2].raw),None),[ir.Constant(ir.IntType(32),1)])
-        return ConstantContainer(state.builder.ptrtoint(gep_hack,ir.IntType(32)))
+        return ConstantContainer(state.gep_hack(p[2].raw))
 
     @pg.production('expression : PRINT OPEN_PAREN CLOSE_PAREN')
     def print_empty(state,p):
@@ -697,16 +737,7 @@ def get_parser(filename="tokens.txt"):
         func_name = str(ref_class.raw) + "." + "__index___" + str(ir.PointerType(ref_class.raw)) + "_" + str(ir.PointerType(ir.IntType(32))) + "_" + str(ir.IntType(32))
         if not func_name in ref_class.bound_functions:
             raise Exception("Class " + class_name + " is not indexable")
-        index_ptr = VariableContainer(state.builder.alloca(ir.PointerType(ir.IntType(32))))
-        gep_hack = state.builder.gep(ir.Constant(ir.PointerType(ir.IntType(32)),None),[ir.Constant(ir.IntType(32),1)])
-        ptr_size = ConstantContainer(state.builder.ptrtoint(gep_hack,ir.IntType(32)))
-        #ptr_long = ConstantContainer(state.builder.ptrtoint(gep_hack,ir.IntType(64)))
-        alloced = state.builder.call(state.bohem_alloc,[state.builder.mul(ptr_size._get(state.builder),ir.Constant(ir.IntType(32),len(indexes)))])
-        alloced = state.builder.ptrtoint(alloced,ir.IntType(64))
-        alloced = state.builder.inttoptr(alloced,ir.PointerType(ir.IntType(32)))
-        for idx,i in enumerate(indexes):
-            var = state.builder.gep(alloced,[ir.Constant(ir.IntType(32),idx)])
-            state.builder.store(i._get(state.builder),var)
+        alloced = state.load_array(ir.IntType(32),indexes)
         index = state.builder.call(ref_class.bound_functions[func_name],[ref_get,alloced,ir.Constant(ir.IntType(32),len(indexes))])
         return VariableContainer(index)
         #return var
@@ -717,11 +748,7 @@ def get_parser(filename="tokens.txt"):
         if not p[1].value in state.classes:
             raise Exception("Class " + p[1].value + " doesn't exist")
         my_class = state.classes[p[1].value]
-        gep_hack = state.builder.gep(ir.Constant(ir.PointerType(my_class.raw),None),[ir.Constant(ir.IntType(32),1)])
-        ptr_size = ConstantContainer(state.builder.ptrtoint(gep_hack,ir.IntType(32)))
-        alloced = state.builder.call(state.bohem_alloc,[ptr_size._get(state.builder)])
-        alloced = state.builder.ptrtoint(alloced,ir.IntType(64))
-        alloced = state.builder.inttoptr(alloced,ir.PointerType(my_class.raw))
+        alloced = state.allocate(my_class.raw,cast_to = my_class.raw)
         init_func = str(my_class.raw) + "." + "__init__" + "_" + str(ir.PointerType(my_class.raw))
         if init_func in my_class.bound_functions:
             state.builder.call(my_class.bound_functions[init_func],[alloced])
@@ -745,14 +772,9 @@ def get_parser(filename="tokens.txt"):
         if not class_name.value in state.classes:
             raise Exception("Class " + p[1].value + " doesn't exist")
         my_class = state.classes[class_name.value]
-        gep_hack = state.builder.gep(ir.Constant(ir.PointerType(my_class.raw),None),[ir.Constant(ir.IntType(32),1)])
-        ptr_size = ConstantContainer(state.builder.ptrtoint(gep_hack,ir.IntType(32)))
-        alloced = state.builder.call(state.bohem_alloc,[ptr_size._get(state.builder)])
-        alloced = state.builder.ptrtoint(alloced,ir.IntType(64))
-        alloced = state.builder.inttoptr(alloced,ir.PointerType(my_class.raw))
+        alloced = state.allocate(my_class.raw,cast_to = my_class.raw)
         inputs = [i._get(state.builder) for i in inputs]
         init_func = str(my_class.raw) + "." + "__init__" + "_" + str(ir.PointerType(my_class.raw)) + "_" + "_".join([str(i.type) for i in inputs])
-        #print(init_func)
         if not init_func in my_class.bound_functions:
             raise Exception("No matching initialize for inputs " + ",".join(str([i.type]) for i in inputs))
         state.builder.call(my_class.bound_functions[init_func],[alloced] + inputs)
@@ -926,10 +948,9 @@ def get_parser(filename="tokens.txt"):
         }
         left = p[0]._get(state.builder)
         right = p[2]._get(state.builder)
-        op_name = op_dict[p[1].name] + "_" + str(left.type) + "_" + str(right.type)
-        if not op_name in state.functions:
-            raise Exception("No definition for op " + str(p[1].value) + " exists for types " + str(left.type) + " and " + str(right.type))
-        return ConstantContainer(state.builder.call(state.functions[op_name],[left,right]))
+        #op = state.find_global_function(op_dict[p[1].name],[left,right])
+        #return ConstantContainer(state.builder.call(op,[left,right]))
+        return ConstantContainer(state.call_global_function(op_dict[p[1].name],[left,right]))
 
     @pg.production('expression : NUMBER')
     def constant(state,p):

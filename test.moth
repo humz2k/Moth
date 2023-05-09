@@ -3,6 +3,7 @@ def int main():
     rawArray[int] test = new rawArray[int](10)
     test.set_all(10)
     print(rawArray[int](range(0,10,2)))
+    print(1 + 1)
     #int* a = alloc(10*sizeof(int))
     #__intr_gep(a,0) = 5
     #print(__intr_gep(a,0))
