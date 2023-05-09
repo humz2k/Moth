@@ -338,7 +338,9 @@ def get_parser(filename="tokens.txt"):
     def get_break(state,p):
         state.log('line : BREAK SEMI_COLON')
         if len(state.break_to) != 0:
-            
+            if not state.current_block[-1].is_terminated:
+                return state.builder.branch(state.break_to[-1])
+        raise Exception("Break but not in loop")
 
     @pg.production('assign : expression ASSIGN expression')
     def assign(state,p):

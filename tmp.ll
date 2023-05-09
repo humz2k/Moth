@@ -3898,7 +3898,7 @@ entry:
   %".33" = load i32, i32* %".2"
   %".34" = call i32 @"__add___i32_i32"(i32 %".33", i32 1)
   store i32 %".34", i32* %".2"
-  br label %".4"
+  br label %".6"
 }
 
 @"formatter6" = internal constant [2 x i8] c"\0a\00"

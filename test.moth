@@ -1,5 +1,6 @@
-def int test(int a, int b):
-    return a + b
+class test:
+    def void __init__(test self):
+        pass
 
 def int main():
     int a = 1
@@ -10,4 +11,5 @@ def int main():
             print(b)
             b = b - 1
         a = a + 1
+        break
     return 0
