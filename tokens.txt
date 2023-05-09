@@ -72,12 +72,14 @@ WHILE \bwhile\b
 BREAK \bbreak\b
 RETURN \breturn\b
 PRINT \bprint\b
-RANGE \brange\b
 PASS \bpass\b
 TRUE \bTrue\b
 FALSE \bFalse\b
 NEW \bnew\b
 NULL \bNULL\b
+NONEWLN \b__nonewln\b
+
+FUNCTION_NAME \balloc\b
 
 SHL_INTR \b__intr_shl\b
 SHR_INTR \b__intr_shr\b
@@ -106,7 +108,9 @@ ITOF_INTR \b__intr_itof\b
 CMP_INTR \b__intr_cmp\b
 FCMP_INTR \b__intr_fcmp\b
 PRINT_INTR \b__intr_oup\b
-
+PTOI_INTR \b__intr_ptoi\b
+ITOP_INTR \b__intr_itop\b
+GEP_INTR \b__intr_gep\b
 
 NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)
 

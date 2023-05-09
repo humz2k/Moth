@@ -319,13 +319,13 @@ def get_parser(filename="tokens.txt"):
         return p[0]
     
     @pg.production('array_t : TYPE_NAME OPEN_SQUARE CLOSE_SQUARE')
-    @pg.production('array_t : IDENTIFIER OPEN_SQUARE CLOSE_SQUARE')
+    #@pg.production('array_t : IDENTIFIER OPEN_SQUARE CLOSE_SQUARE')
     def zero_array(state,p):
         state.log('array_t : TYPE_NAME OPEN_SQUARE CLOSE_SQUARE')
         return ArrayT(p[0],0)
     
     @pg.production('array_t_open : TYPE_NAME OPEN_SQUARE COLON')
-    @pg.production('array_t_open : IDENTIFIER OPEN_SQUARE COLON')
+    #@pg.production('array_t_open : IDENTIFIER OPEN_SQUARE COLON')
     def init_array(state,p):
         state.log('array_t_open : TYPE_NAME OPEN_SQUARE COLON')
         return ArrayT(p[0],1)
@@ -560,7 +560,6 @@ def get_parser(filename="tokens.txt"):
     @pg.production('misc : BREAK')
     @pg.production('misc : RETURN')
     @pg.production('misc : PRINT')
-    @pg.production('misc : RANGE')
     @pg.production('misc : PASS')
     @pg.production('misc : TRUE')
     @pg.production('misc : FALSE')
@@ -576,6 +575,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('misc : HAT')
     @pg.production('misc : SIZEOF')
     @pg.production('misc : PRINT_INTR')
+    @pg.production('misc : PTOI_INTR')
+    @pg.production('misc : ITOP_INTR')
+    @pg.production('misc : GEP_INTR')
+    @pg.production('misc : NONEWLN')
     def pass_misc(state,p):
         state.log('misc : * = ' + p[0].name + " " + p[0].value)
         return Misc(p[0])

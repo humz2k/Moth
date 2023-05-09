@@ -1,10 +1,60 @@
 ; ModuleID = "test.moth"
 
+%"__rangeiter" = type {i32, i32, i32, i32}
+%"_rawArray_int_" = type {i32*, i32, i32}
 declare i32 @"printf"(i8* %".1", ...)
 
 declare void @"bohem_start"(...)
 
 declare i8* @"bohem_malloc"(i32 %".1")
+
+define i1* @"i8*->i1*"(i8* %".1")
+{
+entry:
+  %".3" = ptrtoint i8* %".1" to i64
+  %".4" = inttoptr i64 %".3" to i1*
+  ret i1* %".4"
+}
+
+define i32* @"i8*->i32*"(i8* %".1")
+{
+entry:
+  %".3" = ptrtoint i8* %".1" to i64
+  %".4" = inttoptr i64 %".3" to i32*
+  ret i32* %".4"
+}
+
+define i64* @"i8*->i64*"(i8* %".1")
+{
+entry:
+  %".3" = ptrtoint i8* %".1" to i64
+  %".4" = inttoptr i64 %".3" to i64*
+  ret i64* %".4"
+}
+
+define half* @"i8*->half*"(i8* %".1")
+{
+entry:
+  %".3" = ptrtoint i8* %".1" to i64
+  %".4" = inttoptr i64 %".3" to half*
+  ret half* %".4"
+}
+
+define float* @"i8*->float*"(i8* %".1")
+{
+entry:
+  %".3" = ptrtoint i8* %".1" to i64
+  %".4" = inttoptr i64 %".3" to float*
+  ret float* %".4"
+}
+
+define double* @"i8*->double*"(i8* %".1")
+{
+entry:
+  %".3" = ptrtoint i8* %".1" to i64
+  %".4" = inttoptr i64 %".3" to double*
+  ret double* %".4"
+}
 
 define i1 @"i8->i1"(i8 %".1")
 {
@@ -3853,52 +3903,314 @@ entry:
   ret void
 }
 
-define i32 @"test_i32_i32"(i32 %".1", i32 %".2")
+define void @"%\22__rangeiter\22.__init___%\22__rangeiter\22*_i32_i32_i32"(%"__rangeiter"* %".1", i32 %".2", i32 %".3", i32 %".4")
 {
 entry:
-  %".4" = call i32 @"__add___i32_i32"(i32 %".1", i32 %".2")
-  ret i32 %".4"
+  %".6" = getelementptr %"__rangeiter", %"__rangeiter"* %".1", i32 0, i32 0
+  store i32 %".2", i32* %".6"
+  %".8" = getelementptr %"__rangeiter", %"__rangeiter"* %".1", i32 0, i32 1
+  store i32 %".3", i32* %".8"
+  %".10" = getelementptr %"__rangeiter", %"__rangeiter"* %".1", i32 0, i32 2
+  store i32 %".4", i32* %".10"
+  ret void
+}
+
+define void @"%\22__rangeiter\22.__iterget___%\22__rangeiter\22*"(%"__rangeiter"* %".1")
+{
+entry:
+  %".3" = getelementptr %"__rangeiter", %"__rangeiter"* %".1", i32 0, i32 3
+  store i32 0, i32* %".3"
+  ret void
+}
+
+define i1 @"%\22__rangeiter\22.__itercheck___%\22__rangeiter\22*"(%"__rangeiter"* %".1")
+{
+entry:
+  %".3" = getelementptr %"__rangeiter", %"__rangeiter"* %".1", i32 0, i32 3
+  %".4" = getelementptr %"__rangeiter", %"__rangeiter"* %".1", i32 0, i32 1
+  %".5" = load i32, i32* %".3"
+  %".6" = load i32, i32* %".4"
+  %".7" = call i1 @"__ls___i32_i32"(i32 %".5", i32 %".6")
+  ret i1 %".7"
+}
+
+define i32 @"%\22__rangeiter\22.__iternext___%\22__rangeiter\22*"(%"__rangeiter"* %".1")
+{
+entry:
+  %".3" = alloca i32
+  %".4" = getelementptr %"__rangeiter", %"__rangeiter"* %".1", i32 0, i32 3
+  %".5" = load i32, i32* %".4"
+  store i32 %".5", i32* %".3"
+  %".7" = getelementptr %"__rangeiter", %"__rangeiter"* %".1", i32 0, i32 3
+  %".8" = getelementptr %"__rangeiter", %"__rangeiter"* %".1", i32 0, i32 3
+  %".9" = getelementptr %"__rangeiter", %"__rangeiter"* %".1", i32 0, i32 2
+  %".10" = load i32, i32* %".8"
+  %".11" = load i32, i32* %".9"
+  %".12" = call i32 @"__add___i32_i32"(i32 %".10", i32 %".11")
+  store i32 %".12", i32* %".7"
+  %".14" = load i32, i32* %".3"
+  ret i32 %".14"
+}
+
+define %"__rangeiter"* @"range_i32"(i32 %".1")
+{
+entry:
+  %".3" = getelementptr %"__rangeiter", %"__rangeiter"* null, i32 1
+  %".4" = ptrtoint %"__rangeiter"* %".3" to i32
+  %".5" = call i8* @"bohem_malloc"(i32 %".4")
+  %".6" = ptrtoint i8* %".5" to i64
+  %".7" = inttoptr i64 %".6" to %"__rangeiter"*
+  call void @"%\22__rangeiter\22.__init___%\22__rangeiter\22*_i32_i32_i32"(%"__rangeiter"* %".7", i32 0, i32 %".1", i32 1)
+  ret %"__rangeiter"* %".7"
+}
+
+define %"__rangeiter"* @"range_i32_i32"(i32 %".1", i32 %".2")
+{
+entry:
+  %".4" = getelementptr %"__rangeiter", %"__rangeiter"* null, i32 1
+  %".5" = ptrtoint %"__rangeiter"* %".4" to i32
+  %".6" = call i8* @"bohem_malloc"(i32 %".5")
+  %".7" = ptrtoint i8* %".6" to i64
+  %".8" = inttoptr i64 %".7" to %"__rangeiter"*
+  call void @"%\22__rangeiter\22.__init___%\22__rangeiter\22*_i32_i32_i32"(%"__rangeiter"* %".8", i32 %".1", i32 %".2", i32 1)
+  ret %"__rangeiter"* %".8"
+}
+
+define %"__rangeiter"* @"range_i32_i32_i32"(i32 %".1", i32 %".2", i32 %".3")
+{
+entry:
+  %".5" = getelementptr %"__rangeiter", %"__rangeiter"* null, i32 1
+  %".6" = ptrtoint %"__rangeiter"* %".5" to i32
+  %".7" = call i8* @"bohem_malloc"(i32 %".6")
+  %".8" = ptrtoint i8* %".7" to i64
+  %".9" = inttoptr i64 %".8" to %"__rangeiter"*
+  call void @"%\22__rangeiter\22.__init___%\22__rangeiter\22*_i32_i32_i32"(%"__rangeiter"* %".9", i32 %".1", i32 %".2", i32 %".3")
+  ret %"__rangeiter"* %".9"
+}
+
+define i32* @"%\22_rawArray_int_\22.__index___%\22_rawArray_int_\22*_i32*_i32"(%"_rawArray_int_"* %".1", i32* %".2", i32 %".3")
+{
+entry:
+  %".5" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* %".1", i32 0, i32 0
+  %".6" = load i32*, i32** %".5"
+  %".7" = ptrtoint i32* %".6" to i64
+  %".8" = getelementptr i32, i32* %".2", i32 0
+  %".9" = getelementptr i32, i32* null, i32 1
+  %".10" = ptrtoint i32* %".9" to i32
+  %".11" = load i32, i32* %".8"
+  %".12" = call i32 @"__mul___i32_i32"(i32 %".11", i32 %".10")
+  %".13" = call i64 @"i32->i64"(i32 %".12")
+  %".14" = call i64 @"__add___i64_i64"(i64 %".7", i64 %".13")
+  %".15" = inttoptr i64 %".14" to i32*
+  ret i32* %".15"
+}
+
+define void @"%\22_rawArray_int_\22.__print___%\22_rawArray_int_\22*"(%"_rawArray_int_"* %".1")
+{
+entry:
+  %".3" = bitcast [2 x i8]* @"formatter6" to i8*
+  %".4" = call i32 (i8*, ...) @"printf"(i8* %".3")
+  %".5" = alloca i32
+  store i32 0, i32* %".5"
+  br label %".7"
+.7:
+  %".11" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* %".1", i32 0, i32 1
+  %".12" = load i32, i32* %".11"
+  %".13" = call i32 @"__sub___i32_i32"(i32 %".12", i32 2)
+  %".14" = load i32, i32* %".5"
+  %".15" = call i1 @"__ls___i32_i32"(i32 %".14", i32 %".13")
+  br i1 %".15", label %".8", label %".9"
+.8:
+  %".17" = alloca i32*
+  %".18" = getelementptr i32, i32* null, i32 1
+  %".19" = ptrtoint i32* %".18" to i32
+  %".20" = mul i32 %".19", 1
+  %".21" = call i8* @"bohem_malloc"(i32 %".20")
+  %".22" = ptrtoint i8* %".21" to i64
+  %".23" = inttoptr i64 %".22" to i32*
+  %".24" = getelementptr i32, i32* %".23", i32 0
+  %".25" = load i32, i32* %".5"
+  store i32 %".25", i32* %".24"
+  %".27" = call i32* @"%\22_rawArray_int_\22.__index___%\22_rawArray_int_\22*_i32*_i32"(%"_rawArray_int_"* %".1", i32* %".23", i32 1)
+  %".28" = load i32, i32* %".27"
+  call void @"__print___i32"(i32 %".28")
+  %".30" = bitcast [2 x i8]* @"formatter7" to i8*
+  %".31" = call i32 (i8*, ...) @"printf"(i8* %".30")
+  %".32" = load i32, i32* %".5"
+  %".33" = call i32 @"__add___i32_i32"(i32 %".32", i32 1)
+  store i32 %".33", i32* %".5"
+  br label %".7"
+.9:
+  %".36" = load i32, i32* %".5"
+  %".37" = call i32 @"__add___i32_i32"(i32 %".36", i32 1)
+  store i32 %".37", i32* %".5"
+  %".39" = alloca i32*
+  %".40" = getelementptr i32, i32* null, i32 1
+  %".41" = ptrtoint i32* %".40" to i32
+  %".42" = mul i32 %".41", 1
+  %".43" = call i8* @"bohem_malloc"(i32 %".42")
+  %".44" = ptrtoint i8* %".43" to i64
+  %".45" = inttoptr i64 %".44" to i32*
+  %".46" = getelementptr i32, i32* %".45", i32 0
+  %".47" = load i32, i32* %".5"
+  store i32 %".47", i32* %".46"
+  %".49" = call i32* @"%\22_rawArray_int_\22.__index___%\22_rawArray_int_\22*_i32*_i32"(%"_rawArray_int_"* %".1", i32* %".45", i32 1)
+  %".50" = load i32, i32* %".49"
+  call void @"__print___i32"(i32 %".50")
+  %".52" = bitcast [2 x i8]* @"formatter8" to i8*
+  %".53" = call i32 (i8*, ...) @"printf"(i8* %".52")
+  ret void
+}
+
+@"formatter6" = internal constant [2 x i8] c"[\00"
+@"formatter7" = internal constant [2 x i8] c",\00"
+@"formatter8" = internal constant [2 x i8] c"]\00"
+define void @"%\22_rawArray_int_\22.__iterget___%\22_rawArray_int_\22*"(%"_rawArray_int_"* %".1")
+{
+entry:
+  %".3" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* %".1", i32 0, i32 2
+  store i32 0, i32* %".3"
+  ret void
+}
+
+define i1 @"%\22_rawArray_int_\22.__itercheck___%\22_rawArray_int_\22*"(%"_rawArray_int_"* %".1")
+{
+entry:
+  %".3" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* %".1", i32 0, i32 2
+  %".4" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* %".1", i32 0, i32 1
+  %".5" = load i32, i32* %".3"
+  %".6" = load i32, i32* %".4"
+  %".7" = call i1 @"__ls___i32_i32"(i32 %".5", i32 %".6")
+  ret i1 %".7"
+}
+
+define i32 @"%\22_rawArray_int_\22.__iternext___%\22_rawArray_int_\22*"(%"_rawArray_int_"* %".1")
+{
+entry:
+  %".3" = alloca i32
+  %".4" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* %".1", i32 0, i32 2
+  %".5" = alloca i32*
+  %".6" = getelementptr i32, i32* null, i32 1
+  %".7" = ptrtoint i32* %".6" to i32
+  %".8" = mul i32 %".7", 1
+  %".9" = call i8* @"bohem_malloc"(i32 %".8")
+  %".10" = ptrtoint i8* %".9" to i64
+  %".11" = inttoptr i64 %".10" to i32*
+  %".12" = getelementptr i32, i32* %".11", i32 0
+  %".13" = load i32, i32* %".4"
+  store i32 %".13", i32* %".12"
+  %".15" = call i32* @"%\22_rawArray_int_\22.__index___%\22_rawArray_int_\22*_i32*_i32"(%"_rawArray_int_"* %".1", i32* %".11", i32 1)
+  %".16" = load i32, i32* %".15"
+  store i32 %".16", i32* %".3"
+  %".18" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* %".1", i32 0, i32 2
+  %".19" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* %".1", i32 0, i32 2
+  %".20" = load i32, i32* %".19"
+  %".21" = call i32 @"__add___i32_i32"(i32 %".20", i32 1)
+  store i32 %".21", i32* %".18"
+  %".23" = load i32, i32* %".3"
+  ret i32 %".23"
+}
+
+define void @"%\22_rawArray_int_\22.__init___%\22_rawArray_int_\22*_i32"(%"_rawArray_int_"* %".1", i32 %".2")
+{
+entry:
+  %".4" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* %".1", i32 0, i32 0
+  %".5" = getelementptr i32, i32* null, i32 1
+  %".6" = ptrtoint i32* %".5" to i32
+  %".7" = call i32 @"__mul___i32_i32"(i32 %".6", i32 %".2")
+  %".8" = call i8* @"bohem_malloc"(i32 %".7")
+  %".9" = call i32* @"i8*->i32*"(i8* %".8")
+  store i32* %".9", i32** %".4"
+  %".11" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* %".1", i32 0, i32 1
+  store i32 %".2", i32* %".11"
+  ret void
+}
+
+define %"_rawArray_int_"* @"%\22_rawArray_int_\22.zero_%\22_rawArray_int_\22*"(%"_rawArray_int_"* %".1")
+{
+entry:
+  %".3" = alloca i32
+  store i32 0, i32* %".3"
+  br label %".5"
+.5:
+  %".9" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* %".1", i32 0, i32 1
+  %".10" = load i32, i32* %".3"
+  %".11" = load i32, i32* %".9"
+  %".12" = call i1 @"__ls___i32_i32"(i32 %".10", i32 %".11")
+  br i1 %".12", label %".6", label %".7"
+.6:
+  %".14" = alloca i32*
+  %".15" = getelementptr i32, i32* null, i32 1
+  %".16" = ptrtoint i32* %".15" to i32
+  %".17" = mul i32 %".16", 1
+  %".18" = call i8* @"bohem_malloc"(i32 %".17")
+  %".19" = ptrtoint i8* %".18" to i64
+  %".20" = inttoptr i64 %".19" to i32*
+  %".21" = getelementptr i32, i32* %".20", i32 0
+  %".22" = load i32, i32* %".3"
+  store i32 %".22", i32* %".21"
+  %".24" = call i32* @"%\22_rawArray_int_\22.__index___%\22_rawArray_int_\22*_i32*_i32"(%"_rawArray_int_"* %".1", i32* %".20", i32 1)
+  store i32 0, i32* %".24"
+  %".26" = load i32, i32* %".3"
+  %".27" = call i32 @"__add___i32_i32"(i32 %".26", i32 1)
+  store i32 %".27", i32* %".3"
+  br label %".5"
+.7:
+  ret %"_rawArray_int_"* %".1"
+}
+
+define %"_rawArray_int_"* @"%\22_rawArray_int_\22.set_to_%\22_rawArray_int_\22*_i32"(%"_rawArray_int_"* %".1", i32 %".2")
+{
+entry:
+  %".4" = alloca i32
+  store i32 0, i32* %".4"
+  br label %".6"
+.6:
+  %".10" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* %".1", i32 0, i32 1
+  %".11" = load i32, i32* %".4"
+  %".12" = load i32, i32* %".10"
+  %".13" = call i1 @"__ls___i32_i32"(i32 %".11", i32 %".12")
+  br i1 %".13", label %".7", label %".8"
+.7:
+  %".15" = alloca i32*
+  %".16" = getelementptr i32, i32* null, i32 1
+  %".17" = ptrtoint i32* %".16" to i32
+  %".18" = mul i32 %".17", 1
+  %".19" = call i8* @"bohem_malloc"(i32 %".18")
+  %".20" = ptrtoint i8* %".19" to i64
+  %".21" = inttoptr i64 %".20" to i32*
+  %".22" = getelementptr i32, i32* %".21", i32 0
+  %".23" = load i32, i32* %".4"
+  store i32 %".23", i32* %".22"
+  %".25" = call i32* @"%\22_rawArray_int_\22.__index___%\22_rawArray_int_\22*_i32*_i32"(%"_rawArray_int_"* %".1", i32* %".21", i32 1)
+  store i32 %".2", i32* %".25"
+  %".27" = load i32, i32* %".4"
+  %".28" = call i32 @"__add___i32_i32"(i32 %".27", i32 1)
+  store i32 %".28", i32* %".4"
+  br label %".6"
+.8:
+  ret %"_rawArray_int_"* %".1"
 }
 
 define i32 @"main"()
 {
 entry:
-  %".2" = alloca i32
-  store i32 1, i32* %".2"
-  br label %".4"
-.4:
-  %".8" = load i32, i32* %".2"
-  %".9" = call i1 @"__ls___i32_i32"(i32 %".8", i32 5)
-  br i1 %".9", label %".5", label %".6"
-.5:
-  %".11" = load i32, i32* %".2"
-  call void @"__print___i32"(i32 %".11")
-  %".13" = bitcast [2 x i8]* @"formatter6" to i8*
-  %".14" = call i32 (i8*, ...) @"printf"(i8* %".13")
-  %".15" = alloca i32
-  %".16" = load i32, i32* %".2"
-  store i32 %".16", i32* %".15"
-  br label %".18"
-.6:
+  call void (...) @"bohem_start"()
+  %".3" = alloca %"_rawArray_int_"*
+  %".4" = getelementptr %"_rawArray_int_", %"_rawArray_int_"* null, i32 1
+  %".5" = ptrtoint %"_rawArray_int_"* %".4" to i32
+  %".6" = call i8* @"bohem_malloc"(i32 %".5")
+  %".7" = ptrtoint i8* %".6" to i64
+  %".8" = inttoptr i64 %".7" to %"_rawArray_int_"*
+  call void @"%\22_rawArray_int_\22.__init___%\22_rawArray_int_\22*_i32"(%"_rawArray_int_"* %".8", i32 10)
+  store %"_rawArray_int_"* %".8", %"_rawArray_int_"** %".3"
+  %".11" = load %"_rawArray_int_"*, %"_rawArray_int_"** %".3"
+  %".12" = call %"_rawArray_int_"* @"%\22_rawArray_int_\22.set_to_%\22_rawArray_int_\22*_i32"(%"_rawArray_int_"* %".11", i32 10)
+  %".13" = load %"_rawArray_int_"*, %"_rawArray_int_"** %".3"
+  call void @"%\22_rawArray_int_\22.__print___%\22_rawArray_int_\22*"(%"_rawArray_int_"* %".13")
+  %".15" = bitcast [2 x i8]* @"formatter9" to i8*
+  %".16" = call i32 (i8*, ...) @"printf"(i8* %".15")
   ret i32 0
-.18:
-  %".22" = load i32, i32* %".15"
-  %".23" = call i1 @"__geq___i32_i32"(i32 %".22", i32 0)
-  br i1 %".23", label %".19", label %".20"
-.19:
-  %".25" = load i32, i32* %".15"
-  call void @"__print___i32"(i32 %".25")
-  %".27" = bitcast [2 x i8]* @"formatter6" to i8*
-  %".28" = call i32 (i8*, ...) @"printf"(i8* %".27")
-  %".29" = load i32, i32* %".15"
-  %".30" = call i32 @"__sub___i32_i32"(i32 %".29", i32 1)
-  store i32 %".30", i32* %".15"
-  br label %".18"
-.20:
-  %".33" = load i32, i32* %".2"
-  %".34" = call i32 @"__add___i32_i32"(i32 %".33", i32 1)
-  store i32 %".34", i32* %".2"
-  br label %".6"
 }
 
-@"formatter6" = internal constant [2 x i8] c"\0a\00"
+@"formatter9" = internal constant [2 x i8] c"\0a\00"

@@ -1,3 +1,21 @@
+def cast bool* (char* ptr):
+    return __intr_itop(__intr_ptoi(ptr,long),bool*)
+
+def cast int* (char* ptr):
+    return __intr_itop(__intr_ptoi(ptr,long),int*)
+
+def cast long* (char* ptr):
+    return __intr_itop(__intr_ptoi(ptr,long),long*)
+
+def cast half* (char* ptr):
+    return __intr_itop(__intr_ptoi(ptr,long),half*)
+
+def cast float* (char* ptr):
+    return __intr_itop(__intr_ptoi(ptr,long),float*)
+
+def cast double* (char* ptr):
+    return __intr_itop(__intr_ptoi(ptr,long),double*)
+
 def cast bool (char a):
     return __intr_trunc(a,bool)
 

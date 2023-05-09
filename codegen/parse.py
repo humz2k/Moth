@@ -12,6 +12,7 @@ class ParserState(object):
         self.builder = None
         self.local_variables = []
         self.functions = {}
+        self.classes = {}
         self.casts = {}
         self.formatters = {}
         self.break_to = []
@@ -21,6 +22,7 @@ class ParserState(object):
         self.bohem_start = ir.Function(self.module, bohem_init_ty, name="bohem_start")
         bohem_alloc_ty = ir.FunctionType(ir.PointerType(ir.IntType(8)), [ir.IntType(32)], var_arg=False)
         self.bohem_alloc = ir.Function(self.module, bohem_alloc_ty, name="bohem_malloc")
+        self.functions["alloc_i32"] = self.bohem_alloc
 
     def get_formatter(self,string):
         if string in self.formatters:
@@ -40,9 +42,12 @@ class ParserState(object):
         print(text)
 
 class TypeContainer:
-    def __init__(self,raw):
+    def __init__(self,raw,parent_class = None):
         self.raw = raw
         self.bound_functions = {}
+        self.attrs = []
+        self.parent_class = parent_class
+        self.type_set = False
 
 class ConstantContainer:
     def __init__(self,raw):
@@ -81,15 +86,17 @@ def get_parser(filename="tokens.txt"):
 
     @pg.production('program : cast_def')
     @pg.production('program : function')
+    @pg.production('program : class')
     @pg.production('program : global_def')
     def program(state,p):
-        state.log('program : global_def|cast_def|function')
+        state.log('program : global_def|cast_def|function|class')
     
     @pg.production('program : program global_def')
     @pg.production('program : program cast_def')
+    @pg.production('program : program class')
     @pg.production('program : program function')
     def cont_program(state,p):
-        state.log('program : program global_def|cast_def')
+        state.log('program : program global_def|cast_def|function|class')
 
     @pg.production('global_def : type IDENTIFIER SEMI_COLON')
     def global_def(state,p):
@@ -100,6 +107,35 @@ def get_parser(filename="tokens.txt"):
             raise Exception("Global Variable " + p[1].value + " already exists")
         state.global_variables[p[1].value] = var
         return var
+    
+    @pg.production('class_open : CLASS CLASS_NAME COLON OPEN_CURL')
+    def class_open(state,p):
+        state.log('class_open : CLASS CLASS_NAME COLON OPEN_CURL')
+        _,class_name,_,_ = p
+        if class_name.value in state.classes:
+            raise Exception("Class " + class_name.value + " already exists")
+        state.current_class = TypeContainer(ir.global_context.get_identified_type(class_name.value))
+        state.classes[class_name.value] = state.current_class
+    
+    @pg.production('class_open : class_open class_def')
+    @pg.production('class_open : class_open function')
+    def pass_class_def(state,p):
+        state.log('class_open : class_open class_def|function')
+
+    @pg.production('class : class_open CLOSE_CURL')
+    def end_class(state,p):
+        #print([i[0].raw for i in state.current_class.attrs])
+        if state.current_class.type_set == False:
+            state.current_class.raw.set_body(*[i[0].raw for i in state.current_class.attrs])
+            state.current_class.type_set = True
+        state.current_class = None
+
+    @pg.production('class_def : type IDENTIFIER SEMI_COLON')
+    def class_def(state,p):
+        state.log('class_def : type IDENTIFIER SEMI_COLON')
+        if p[1].value in state.current_class.attrs:
+            raise Exception("Class attribute " + p[1].value + " already exists")
+        state.current_class.attrs.append((p[0],p[1].value))
 
     @pg.production('cast_def_open : DEF CAST type OPEN_PAREN type IDENTIFIER CLOSE_PAREN COLON OPEN_CURL')
     def cast_def_open(state,p):
@@ -164,6 +200,32 @@ def get_parser(filename="tokens.txt"):
             state.local_variables = [{}]
             for idx,i in enumerate(inputs):
                 state.local_variables[-1][i[1].value] = ConstantContainer(state.current_function.args[idx])
+            if name == "main":
+                state.builder.call(state.bohem_start,[])
+            return state.builder
+        else:
+            if len(p) == 7:
+                _,return_type,func_name,_,_,_,_, = p
+                inputs = []
+            else:
+                _,return_type,func_name,inputs,_,_ = p
+            input_types = [i[0].raw for i in inputs]
+            func_type = ir.FunctionType(return_type.raw,input_types)
+            name = str(state.current_class.raw) + "." + func_name.value + "_" + "_".join([str(i) for i in input_types])
+            state.current_function = ir.Function(state.module,func_type,name)
+            if state.current_class.type_set == False:
+                state.current_class.raw.set_body(*[i[0].raw for i in state.current_class.attrs])
+                state.current_class.type_set = True
+            if name in state.current_class.bound_functions:
+                raise Exception("Class method " + name + " already exists")
+            state.current_class.bound_functions[name] = state.current_function
+            state.current_block = [state.current_function.append_basic_block(name="entry")]
+            state.builder = ir.IRBuilder(state.current_block[-1])
+            state.local_variables = [{}]
+            for idx,i in enumerate(inputs):
+                state.local_variables[-1][i[1].value] = ConstantContainer(state.current_function.args[idx])
+            if name == "main":
+                state.builder.call(state.bohem_start,[])
             return state.builder
     
     @pg.production('function_def_open : function_def_open line')
@@ -264,6 +326,68 @@ def get_parser(filename="tokens.txt"):
         state.builder.position_at_start(state.current_block[-1])
         state.local_variables.pop(-1)
 
+    @pg.production('for : FOR')
+    def for_init(state,p):
+        state.log('for : FOR')
+        check_condition = state.current_function.append_basic_block()
+        loop = state.current_function.append_basic_block()
+        after = state.current_function.append_basic_block()
+        #state.builder.branch(check_condition)
+        #state.builder.position_at_start(check_condition)
+        state.current_block.pop(-1)
+        state.current_block.append(after)
+        state.current_block.append(check_condition)
+        state.current_block.append(loop)
+        state.local_variables.append(state.local_variables[-1].copy())
+        state.break_to.append(after)
+
+    @pg.production('for_open : for expression IN expression COLON OPEN_CURL')
+    def for_open(state,p):
+        state.log('for_open : for expression IN expression COLON OPEN_CURL')
+        loop = state.current_block[-1]
+        check_condition = state.current_block[-2]
+        after = state.current_block[-3]
+        ref_get = p[3]._get(state.builder)
+        class_name = ref_get.type.pointee.name
+        ref_class = state.classes[class_name]
+        iter_get_name = str(ref_class.raw) + ".__iterget___" + str(ir.PointerType(ref_class.raw))
+        if not iter_get_name in ref_class.bound_functions:
+            raise Exception("Class " + class_name + " is not iterable")
+        iter_get = ref_class.bound_functions[iter_get_name]
+        iter_next_name = str(ref_class.raw) + ".__iternext___" + str(ir.PointerType(ref_class.raw))
+        if not iter_next_name in ref_class.bound_functions:
+            raise Exception("Class " + class_name + " is not iterable")
+        iter_next = ref_class.bound_functions[iter_next_name]
+        iter_check_name = str(ref_class.raw) + ".__itercheck___" + str(ir.PointerType(ref_class.raw))
+        if not iter_check_name in ref_class.bound_functions:
+            raise Exception("Class " + class_name + " is not iterable")
+        iter_check = ref_class.bound_functions[iter_check_name]
+        state.builder.call(iter_get,[ref_get])
+        state.builder.branch(check_condition)
+        state.builder.position_at_start(check_condition)
+        cond = state.builder.call(iter_check,[ref_get])
+        state.builder.cbranch(cond,loop,after)
+        state.builder.position_at_start(loop)
+        val = state.builder.call(iter_next,[ref_get])
+        p[1]._set(state.builder,val)
+
+
+    @pg.production('for_open : for_open line')
+    def pass_line(state,p):
+        state.log('for_open : for_open line')
+        loop = state.current_block.pop(-1)
+        check_condition = state.current_block.pop(-1)
+        after = state.current_block[-1]
+        if not loop.is_terminated:
+            state.builder.branch(check_condition)
+        state.builder.position_at_start(after)
+        state.break_to.pop(-1)
+        state.local_variables.pop(-1)
+
+    @pg.production('line : for_open CLOSE_CURL')
+    def end_for(state,p):
+        state.log('line : for_open CLOSE_CURL')
+
     @pg.production('while : WHILE')
     def while_init(state,p):
         state.log('while : WHILE')
@@ -323,6 +447,8 @@ def get_parser(filename="tokens.txt"):
             expr = p[1]._get(state.builder)
             
             if return_type != expr.type:
+                print(return_type,expr.type)
+                exit()
                 raise Exception("Function returns wrong type")
             return state.builder.ret(expr)
         if return_type != ir.VoidType():
@@ -507,10 +633,128 @@ def get_parser(filename="tokens.txt"):
         state.log('expression : FCMP_INTR OPEN_PAREN OP COMMA expression COMMA expression CLOSE_PAREN')
         return ConstantContainer(state.builder.fcmp_ordered(p[2].value,p[4]._get(state.builder),p[6]._get(state.builder)))
     
+    @pg.production('expression : PTOI_INTR OPEN_PAREN expression COMMA type CLOSE_PAREN')
+    def ptoi(state,p):
+        state.log('expression : PTOI_INTR OPEN_PAREN expression COMMA type CLOSE_PAREN')
+        return ConstantContainer(state.builder.ptrtoint(p[2]._get(state.builder),p[4].raw))
+    
+    @pg.production('expression : ITOP_INTR OPEN_PAREN expression COMMA type CLOSE_PAREN')
+    def ptoi(state,p):
+        state.log('expression : ITOP_INTR OPEN_PAREN expression COMMA type CLOSE_PAREN')
+        return ConstantContainer(state.builder.inttoptr(p[2]._get(state.builder),p[4].raw))
+    
+    @pg.production('expression : GEP_INTR OPEN_PAREN expression COMMA expression CLOSE_PAREN')
+    def ptoi(state,p):
+        state.log('expression : GEP_INTR OPEN_PAREN expression COMMA expression CLOSE_PAREN')
+        return VariableContainer(state.builder.gep(p[2]._get(state.builder),[p[4]._get(state.builder)]))
+    
+    @pg.production('expression : SIZEOF OPEN_PAREN type CLOSE_PAREN')
+    def get_sizeof(state,p):
+        state.log('expression : SIZEOF OPEN_PAREN type CLOSE_PAREN')
+        gep_hack = state.builder.gep(ir.Constant(ir.PointerType(p[2].raw),None),[ir.Constant(ir.IntType(32),1)])
+        return ConstantContainer(state.builder.ptrtoint(gep_hack,ir.IntType(32)))
+
     @pg.production('expression : PRINT OPEN_PAREN CLOSE_PAREN')
     def print_empty(state,p):
         state.log('expression : PRINT OPEN_PAREN CLOSE_PAREN')
         return ConstantContainer(state.builder.call(state.printf,[state.get_formatter("\n")]))
+    
+    @pg.production('expression : expression PERIOD IDENTIFIER')
+    def reference(state,p):
+        state.log('expression : expression PERIOD IDENTIFIER')
+        reference,_,var_name = p
+        ref_get = reference._get(state.builder)
+        class_name = ref_get.type.pointee.name
+        ref_class = state.classes[class_name]
+        attr_names = [i[1] for i in ref_class.attrs]
+        if not p[2].value in attr_names:
+            raise Exception("Attribute " + p[2].value + " doesn't exist in class " + class_name)
+        var = VariableContainer(state.builder.gep(ref_get,[ir.Constant(ir.IntType(32),0),ir.Constant(ir.IntType(32),attr_names.index(p[2].value))]))
+        return var
+    
+    @pg.production('open_index : expression OPEN_SQUARE expression')
+    def open_index(state,p):
+        state.log('open_index : expression OPEN_SQUARE expression')
+        return [p[0],p[2]]
+    
+    @pg.production('open_index : open_index COMMA expression')
+    def cont_index(state,p):
+        state.log('open_index : open_index COMMA expression')
+        return p[0] + [p[2]]
+
+    @pg.production('expression : open_index CLOSE_SQUARE')
+    def reference(state,p):
+        state.log('expression : open_index CLOSE_SQUARE')
+        reference = p[0][0]
+        indexes = p[0][1:]
+        ref_get = reference._get(state.builder)
+        class_name = ref_get.type.pointee.name
+        ref_class = state.classes[class_name]
+        func_name = str(ref_class.raw) + "." + "__index___" + str(ir.PointerType(ref_class.raw)) + "_" + str(ir.PointerType(ir.IntType(32))) + "_" + str(ir.IntType(32))
+        if not func_name in ref_class.bound_functions:
+            raise Exception("Class " + class_name + " is not indexable")
+        index_ptr = VariableContainer(state.builder.alloca(ir.PointerType(ir.IntType(32))))
+        gep_hack = state.builder.gep(ir.Constant(ir.PointerType(ir.IntType(32)),None),[ir.Constant(ir.IntType(32),1)])
+        ptr_size = ConstantContainer(state.builder.ptrtoint(gep_hack,ir.IntType(32)))
+        #ptr_long = ConstantContainer(state.builder.ptrtoint(gep_hack,ir.IntType(64)))
+        alloced = state.builder.call(state.bohem_alloc,[state.builder.mul(ptr_size._get(state.builder),ir.Constant(ir.IntType(32),len(indexes)))])
+        alloced = state.builder.ptrtoint(alloced,ir.IntType(64))
+        alloced = state.builder.inttoptr(alloced,ir.PointerType(ir.IntType(32)))
+        for idx,i in enumerate(indexes):
+            var = state.builder.gep(alloced,[ir.Constant(ir.IntType(32),idx)])
+            state.builder.store(i._get(state.builder),var)
+        index = state.builder.call(ref_class.bound_functions[func_name],[ref_get,alloced,ir.Constant(ir.IntType(32),len(indexes))])
+        return VariableContainer(index)
+        #return var
+    
+    @pg.production('expression : NEW CLASS_NAME OPEN_PAREN CLOSE_PAREN')
+    def new_class(state,p):
+        state.log('expression : NEW CLASS_NAME')
+        if not p[1].value in state.classes:
+            raise Exception("Class " + p[1].value + " doesn't exist")
+        my_class = state.classes[p[1].value]
+        gep_hack = state.builder.gep(ir.Constant(ir.PointerType(my_class.raw),None),[ir.Constant(ir.IntType(32),1)])
+        ptr_size = ConstantContainer(state.builder.ptrtoint(gep_hack,ir.IntType(32)))
+        alloced = state.builder.call(state.bohem_alloc,[ptr_size._get(state.builder)])
+        alloced = state.builder.ptrtoint(alloced,ir.IntType(64))
+        alloced = state.builder.inttoptr(alloced,ir.PointerType(my_class.raw))
+        init_func = str(my_class.raw) + "." + "__init__" + "_" + str(ir.PointerType(my_class.raw))
+        if init_func in my_class.bound_functions:
+            state.builder.call(my_class.bound_functions[init_func],[alloced])
+        return ConstantContainer(alloced)
+    
+    @pg.production('new_open : NEW CLASS_NAME OPEN_PAREN expression')
+    def new_open(state,p):
+        state.log('new_open : NEW CLASS_NAME OPEN_PAREN expression')
+        return [p[1],p[3]]
+    
+    @pg.production('new_open : new_open COMMA expression')
+    def new_cont(state,p):
+        state.log('new_open : new_open COMMA expression')
+        return p[0] + [p[2]]
+    
+    @pg.production('expression : new_open CLOSE_PAREN')
+    def new_class(state,p):
+        state.log('expression : new_open CLOSE_PAREN')
+        class_name = p[0][0]
+        inputs = p[0][1:]
+        if not class_name.value in state.classes:
+            raise Exception("Class " + p[1].value + " doesn't exist")
+        my_class = state.classes[class_name.value]
+        gep_hack = state.builder.gep(ir.Constant(ir.PointerType(my_class.raw),None),[ir.Constant(ir.IntType(32),1)])
+        ptr_size = ConstantContainer(state.builder.ptrtoint(gep_hack,ir.IntType(32)))
+        alloced = state.builder.call(state.bohem_alloc,[ptr_size._get(state.builder)])
+        alloced = state.builder.ptrtoint(alloced,ir.IntType(64))
+        alloced = state.builder.inttoptr(alloced,ir.PointerType(my_class.raw))
+        inputs = [i._get(state.builder) for i in inputs]
+        init_func = str(my_class.raw) + "." + "__init__" + "_" + str(ir.PointerType(my_class.raw)) + "_" + "_".join([str(i.type) for i in inputs])
+        #print(init_func)
+        if not init_func in my_class.bound_functions:
+            raise Exception("No matching initialize for inputs " + ",".join(str([i.type]) for i in inputs))
+        state.builder.call(my_class.bound_functions[init_func],[alloced] + inputs)
+        return ConstantContainer(alloced)
+
+
     
     @pg.production('print_open : PRINT OPEN_PAREN expression')
     def print_one(state,p):
@@ -518,6 +762,18 @@ def get_parser(filename="tokens.txt"):
         expr = p[2]._get(state.builder)
         name = "__print__" + "_" + str(expr.type)
         if not name in state.functions:
+            #try:
+            #reference = p[2]
+            try:
+                ref_get = expr
+                class_name = ref_get.type.pointee.name
+                ref_class = state.classes[class_name]
+                name = str(ref_class.raw) + "." + "__print___" + str(ir.PointerType(ref_class.raw))
+                return ConstantContainer(state.builder.call(ref_class.bound_functions[name],[expr]))
+            except:
+                pass
+            #except:
+            #    pass
             raise Exception("No rule to print " + str(expr.type))
         return ConstantContainer(state.builder.call(state.functions[name],[expr]))
     
@@ -535,6 +791,11 @@ def get_parser(filename="tokens.txt"):
     def get_print(state,p):
         state.log('expression : print_open CLOSE_PAREN')
         return ConstantContainer(state.builder.call(state.printf,[state.get_formatter("\n")]))
+    
+    @pg.production('expression : print_open COMMA NONEWLN CLOSE_PAREN')
+    def get_print(state,p):
+        state.log('expression : print_open COMMA NONEWLN CLOSE_PAREN')
+        return
         
     
     @pg.production('expression : type OPEN_PAREN expression CLOSE_PAREN')
@@ -550,6 +811,39 @@ def get_parser(filename="tokens.txt"):
             raise Exception("No cast " + name + " exists")
         return ConstantContainer(state.builder.call(state.casts[name],[val._get(state.builder)]))
     
+    @pg.production('expression : expression PERIOD FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
+    def ref_func_call(state,p):
+        state.log('expression : expression PERIOD FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
+        ref_get = p[0]._get(state.builder)
+        class_name = ref_get.type.pointee.name
+        ref_class = state.classes[class_name]
+        func_name = str(ref_class.raw) + "." + p[2].value + "_" + str(ir.PointerType(ref_class.raw))
+        if not func_name in ref_class.bound_functions:
+            raise Exception("Class " + class_name + " has no function " + p[2].value)
+        return ConstantContainer(state.builder.call(ref_class.bound_functions[func_name],[ref_get]))
+    
+    @pg.production('ref_func_call_open : expression PERIOD FUNCTION_NAME OPEN_PAREN expression')
+    def ref_func_call_open(state,p):
+        state.log('ref_func_call_open : expression PERIOD FUNCTION_NAME OPEN_PAREN expression')
+        return [p[0],p[2],p[4]]
+    
+    @pg.production('ref_func_call_open : ref_func_call_open COMMA expression')
+    def ref_func_call_cont(state,p):
+        return p[0] + [p[2]]
+    
+    @pg.production('expression : ref_func_call_open CLOSE_PAREN')
+    def ref_func_call(state,p):
+        state.log('expression : ref_func_call_open CLOSE_PAREN')
+        ref_get = p[0][0]._get(state.builder)
+        class_name = ref_get.type.pointee.name
+        ref_class = state.classes[class_name]
+        func_name_token = p[0][1]
+        inputs = [i._get(state.builder) for i in p[0][2:]]
+        func_name = str(ref_class.raw) + "." + func_name_token.value + "_" + str(ir.PointerType(ref_class.raw)) + "_" + "_".join([str(i.type) for i in inputs])
+        if not func_name in ref_class.bound_functions:
+            raise Exception("Class " + class_name + " has no function " + p[2].value)
+        return ConstantContainer(state.builder.call(ref_class.bound_functions[func_name],[ref_get] + inputs))
+
     @pg.production('expression : FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
     def function_call(state,p):
         state.log('expression : FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
@@ -576,7 +870,7 @@ def get_parser(filename="tokens.txt"):
         input_exprs = [i._get(state.builder) for i in inputs]
         name = token_name.value + "_" + "_".join([str(i.type) for i in input_exprs])
         if not name in state.functions:
-            raise Exception("Function " + p[0].value + " with no inputs " + ",".join([str(i.type) for i in input_exprs]) + " doesn't exist")
+            raise Exception("Function " + token_name + " with no inputs " + ",".join([str(i.type) for i in input_exprs]) + " doesn't exist")
         return ConstantContainer(state.builder.call(state.functions[name],input_exprs))
         
     @pg.production('expression : OPEN_PAREN expression CLOSE_PAREN')
@@ -673,6 +967,13 @@ def get_parser(filename="tokens.txt"):
         if var_name in state.global_variables:
             return state.global_variables[var_name]
         raise Exception("Variable " + var_name + " doesn't exist")
+    
+    @pg.production('type : CLASS_NAME')
+    def class_type(state,p):
+        state.log('type : CLASS_NAME')
+        if not p[0].value in state.classes:
+            raise Exception("Class " + p[0].value + " does not exist")
+        return TypeContainer(ir.PointerType(state.classes[p[0].value].raw),state.classes[p[0].value])
 
     @pg.production('type : TYPE_NAME')
     def base_type(state,p):
@@ -686,6 +987,11 @@ def get_parser(filename="tokens.txt"):
                  "half": ir.HalfType(),
                  "bool": ir.IntType(1)}
         return TypeContainer(types[p[0].value])
+    
+    @pg.production('type : type STAR')
+    def pointer_type(state,p):
+        state.log('type : type STAR')
+        return TypeContainer(ir.PointerType(p[0].raw))
 
     @pg.error
     def error_handler(state,token):
