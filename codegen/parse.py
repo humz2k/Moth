@@ -2,6 +2,8 @@ from rply import ParserGenerator
 from rply.token import Token
 from llvmlite import ir
 
+log = False
+
 class ParserState(object):
     def __init__(self,module_name : str):
         self.module = ir.Module(name=module_name)
@@ -38,8 +40,10 @@ class ParserState(object):
         return self.builder.bitcast(self.formatters[string], ir.IntType(8).as_pointer())
 
     def log(self,text):
+        global log
         pass
-        print(text)
+        if log:
+            print(text)
 
 class TypeContainer:
     def __init__(self,raw,parent_class = None):
@@ -375,6 +379,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('for_open : for_open line')
     def pass_line(state,p):
         state.log('for_open : for_open line')
+
+    @pg.production('line : for_open CLOSE_CURL')
+    def end_for(state,p):
+        state.log('line : for_open CLOSE_CURL')
         loop = state.current_block.pop(-1)
         check_condition = state.current_block.pop(-1)
         after = state.current_block[-1]
@@ -383,10 +391,6 @@ def get_parser(filename="tokens.txt"):
         state.builder.position_at_start(after)
         state.break_to.pop(-1)
         state.local_variables.pop(-1)
-
-    @pg.production('line : for_open CLOSE_CURL')
-    def end_for(state,p):
-        state.log('line : for_open CLOSE_CURL')
 
     @pg.production('while : WHILE')
     def while_init(state,p):

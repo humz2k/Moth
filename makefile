@@ -1,4 +1,5 @@
 build:
+	/Users/humzaqureshi/miniforge3/envs/llvm-stuff/bin/python /Users/humzaqureshi/GitHub/Moth/test.py
 	llc -filetype=obj tmp.ll -o tmp.o
 	clang tmp.o gc_tools.o -o tmp
 
