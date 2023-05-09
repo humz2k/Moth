@@ -49,6 +49,12 @@ class ParserState(object):
         if err_t == "FuncNotFound":
             print("FuncNotFound:",kwargs["name"],"with inputs (" + ", ".join([str(i) for i in kwargs["arg_types"]]) + ")")
             exit()
+        if err_t == "VarExists":
+            print("VarExists:",kwargs["scope"],"var",kwargs["name"],"already exists in this scope")
+            exit()
+        if err_t == "CastExists":
+            print("CastExists:",kwargs["name"],"is already defined")
+            exit()
 
     def gep_hack(self,typ):
         gep_hack = self.builder.gep(ir.Constant(ir.PointerType(typ),None),[ir.Constant(ir.IntType(32),1)])
@@ -85,6 +91,34 @@ class ParserState(object):
     def call_global_function(self,name,inputs=[]):
         func = self.find_global_function(name,inputs)
         return self.builder.call(func,inputs)
+    
+    def make_global_variable(self,typ,name):
+        if name in self.global_variables:
+            self.throwError("VarExists",name=name,typ = typ,scope="global")
+        raw = ir.GlobalVariable(self.module,typ,"global."+name)
+        raw.linkage = 'internal'
+        raw.initializer = None
+        var = VariableContainer(raw)
+        self.global_variables[name] = var
+        return var
+    
+    def make_new_cast(self,cast_from,cast_to):
+        name = str(cast_from) + "->" + str(cast_to)
+        func = ir.Function(self.module, ir.FunctionType(cast_to,[cast_from]),name)
+        if name in self.casts:
+            self.throwError("CastExists",name=name)
+        self.casts[name] = func
+        return func
+    
+    def mangle(self,name,types=[],parent_class = None):
+        if type(parent_class) != type(None):
+            name = str(parent_class.raw) + "." + name + "_" + "_".join([str(i) for i in types])
+        else:
+            if (name == "main"):
+                name = "main"
+            else:
+                name = name + "_" + "_".join([str(i) for i in types])
+        return name
 
 class TypeContainer:
     def __init__(self,raw,parent_class = None):
@@ -146,12 +180,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('global_def : type IDENTIFIER SEMI_COLON')
     def global_def(state,p):
         state.log('global_def : type IDENTIFIER SEMI_COLON')
-        raw = ir.GlobalVariable(state.module,p[0].raw,"global."+p[1].value)
-        var = VariableContainer(raw)
-        if p[1].value in state.global_variables:
-            raise Exception("Global Variable " + p[1].value + " already exists")
-        state.global_variables[p[1].value] = var
-        return var
+        return state.make_global_variable(p[0].raw,p[1].value)
     
     @pg.production('class_open : CLASS CLASS_NAME COLON OPEN_CURL')
     def class_open(state,p):
@@ -186,11 +215,7 @@ def get_parser(filename="tokens.txt"):
     def cast_def_open(state,p):
         state.log('cast_def_open : DEF CAST type OPEN_PAREN type IDENTIFIER CLOSE_PAREN COLON OPEN_CURL')
         _,_,cast_to,_,cast_from,var_name,_,_,_ = p
-        name = str(cast_from.raw) + "->" + str(cast_to.raw)
-        state.current_function = ir.Function(state.module, ir.FunctionType(cast_to.raw,[cast_from.raw]),name)
-        if name in state.casts:
-            raise Exception("Cast " + name + " already defined")
-        state.casts[name] = state.current_function
+        state.current_function = state.make_new_cast(cast_from.raw,cast_to.raw)
         state.current_block = [state.current_function.append_basic_block(name="entry")]
         state.builder = ir.IRBuilder(state.current_block[-1])
         state.local_variables = [{}]
@@ -224,54 +249,46 @@ def get_parser(filename="tokens.txt"):
     @pg.production('function_def_open : DEF type FUNCTION_NAME OPEN_PAREN CLOSE_PAREN COLON OPEN_CURL')
     def func_def_open(state,p):
         state.log('function_def_open : DEF type FUNCTION_NAME func_def_inputs COLON OPEN_CURL')
-        if type(state.current_class) == type(None):
-            if len(p) == 7:
-                _,return_type,func_name,_,_,_,_, = p
-                inputs = []
-            else:
-                _,return_type,func_name,inputs,_,_ = p
-            input_types = [i[0].raw for i in inputs]
-            func_type = ir.FunctionType(return_type.raw,input_types)
-            if func_name.value == "main":
-                name = "main"
-            else:
-                name = func_name.value + "_" + "_".join([str(i) for i in input_types])
-            state.current_function = ir.Function(state.module,func_type,name)
-            if name in state.functions:
-                raise Exception("Function " + name + " already exists")
-            state.functions[name] = state.current_function
-            state.current_block = [state.current_function.append_basic_block(name="entry")]
-            state.builder = ir.IRBuilder(state.current_block[-1])
-            state.local_variables = [{}]
-            for idx,i in enumerate(inputs):
-                state.local_variables[-1][i[1].value] = ConstantContainer(state.current_function.args[idx])
-            if name == "main":
-                state.builder.call(state.bohem_start,[])
-            return state.builder
+        #if type(state.current_class) == type(None):
+        if len(p) == 7:
+            _,return_type,func_name,_,_,_,_, = p
+            inputs = []
         else:
-            if len(p) == 7:
-                _,return_type,func_name,_,_,_,_, = p
-                inputs = []
-            else:
-                _,return_type,func_name,inputs,_,_ = p
-            input_types = [i[0].raw for i in inputs]
-            func_type = ir.FunctionType(return_type.raw,input_types)
-            name = str(state.current_class.raw) + "." + func_name.value + "_" + "_".join([str(i) for i in input_types])
-            state.current_function = ir.Function(state.module,func_type,name)
+            _,return_type,func_name,inputs,_,_ = p
+        input_types = [i[0].raw for i in inputs]
+        func_type = ir.FunctionType(return_type.raw,input_types)
+
+        name = state.mangle(func_name.value,parent_class = state.current_class,types = input_types)
+       
+        if type(state.current_class) != type(None):
+            #name = str(state.current_class.raw) + "." + func_name.value + "_" + "_".join([str(i) for i in input_types])
+            if name in state.current_class.bound_functions:
+                raise Exception("Class method " + name + " already exists")
             if state.current_class.type_set == False:
                 state.current_class.raw.set_body(*[i[0].raw for i in state.current_class.attrs])
                 state.current_class.type_set = True
-            if name in state.current_class.bound_functions:
-                raise Exception("Class method " + name + " already exists")
+        else:
+            #if (func_name.value == "main"):
+            #    name = "main"
+            #else:
+            #    name = func_name.value + "_" + "_".join([str(i) for i in input_types])
+            if name in state.functions:
+                    raise Exception("Function " + name + " already exists")
+            
+        state.current_function = ir.Function(state.module,func_type,name)
+
+        if type(state.current_class) != type(None):
             state.current_class.bound_functions[name] = state.current_function
-            state.current_block = [state.current_function.append_basic_block(name="entry")]
-            state.builder = ir.IRBuilder(state.current_block[-1])
-            state.local_variables = [{}]
-            for idx,i in enumerate(inputs):
-                state.local_variables[-1][i[1].value] = ConstantContainer(state.current_function.args[idx])
-            if name == "main":
-                state.builder.call(state.bohem_start,[])
-            return state.builder
+        else:
+            state.functions[name] = state.current_function
+        state.current_block = [state.current_function.append_basic_block(name="entry")]
+        state.builder = ir.IRBuilder(state.current_block[-1])
+        state.local_variables = [{}]
+        for idx,i in enumerate(inputs):
+            state.local_variables[-1][i[1].value] = ConstantContainer(state.current_function.args[idx])
+        if name == "main":
+            state.builder.call(state.bohem_start,[])
+        return state.builder
     
     @pg.production('function_def_open : function_def_open line')
     def pass_line(state,p):
@@ -948,8 +965,6 @@ def get_parser(filename="tokens.txt"):
         }
         left = p[0]._get(state.builder)
         right = p[2]._get(state.builder)
-        #op = state.find_global_function(op_dict[p[1].name],[left,right])
-        #return ConstantContainer(state.builder.call(op,[left,right]))
         return ConstantContainer(state.call_global_function(op_dict[p[1].name],[left,right]))
 
     @pg.production('expression : NUMBER')

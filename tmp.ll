@@ -4268,6 +4268,7 @@ entry:
   ret %"_rawArray_int_"* %".42"
 }
 
+@"global.a" = internal global i32 undef
 define i32 @"main"()
 {
 entry:
@@ -4291,6 +4292,11 @@ entry:
   call void @"__print___i32"(i32 %".18")
   %".20" = bitcast [2 x i8]* @"formatter11" to i8*
   %".21" = call i32 (i8*, ...) @"printf"(i8* %".20")
+  store i32 5, i32* @"global.a"
+  %".23" = load i32, i32* @"global.a"
+  call void @"__print___i32"(i32 %".23")
+  %".25" = bitcast [2 x i8]* @"formatter11" to i8*
+  %".26" = call i32 (i8*, ...) @"printf"(i8* %".25")
   ret i32 0
 }
 
