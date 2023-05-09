@@ -824,7 +824,6 @@ def long __bitnot__(long val):
 def bool __not__(bool val):
     return __intr_not(val)
 
-
 def bool __eq__(bool left, bool right):
     return __intr_cmp(==,left,right)
 
@@ -938,6 +937,9 @@ def bool __eq__(float left, double right):
 
 def bool __eq__(double left, double right):
     return __intr_fcmp(==,double(left),double(right))
+
+
+
 
 
 def bool __neq__(bool left, bool right):
@@ -1055,6 +1057,9 @@ def bool __neq__(double left, double right):
     return __intr_fcmp(!=,double(left),double(right))
 
 
+
+
+
 def bool __gr__(bool left, bool right):
     return __intr_cmp(>,left,right)
 
@@ -1168,6 +1173,9 @@ def bool __gr__(float left, double right):
 
 def bool __gr__(double left, double right):
     return __intr_fcmp(>,double(left),double(right))
+
+
+
 
 
 def bool __ls__(bool left, bool right):
@@ -1286,8 +1294,10 @@ def bool __ls__(double left, double right):
 
 
 
+
 def bool __geq__(bool left, bool right):
     return __intr_cmp(>=,left,right)
+
 
 
 def bool __geq__(char left, bool right):
@@ -1399,6 +1409,8 @@ def bool __geq__(float left, double right):
 
 def bool __geq__(double left, double right):
     return __intr_fcmp(>=,double(left),double(right))
+
+
 
 
 def bool __leq__(bool left, bool right):
@@ -1514,3 +1526,21 @@ def bool __leq__(float left, double right):
 
 def bool __leq__(double left, double right):
     return __intr_fcmp(<=,double(left),double(right))
+
+def void __print__(char val):
+    __intr_oup("%c",val)
+
+def void __print__(int val):
+    __intr_oup("%d",val)
+
+def void __print__(long val):
+    __intr_oup("%ld",val)
+
+def void __print__(half val):
+    __intr_oup("%f",float(val))
+
+def void __print__(float val):
+    __intr_oup("%f",val)
+
+def void __print__(double val):
+    __intr_oup("%f",val)

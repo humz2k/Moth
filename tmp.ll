@@ -1,5 +1,11 @@
 ; ModuleID = "test.moth"
 
+declare i32 @"printf"(i8* %".1", ...)
+
+declare void @"bohem_start"(...)
+
+declare i8* @"bohem_malloc"(i32 %".1")
+
 define i1 @"i8->i1"(i8 %".1")
 {
 entry:
@@ -2365,14 +2371,1500 @@ entry:
   ret i1 %".4"
 }
 
+define i1 @"__neq___i1_i1"(i1 %".1", i1 %".2")
+{
+entry:
+  %".4" = icmp ne i1 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__neq___i8_i1"(i8 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i8 @"i1->i8"(i1 %".2")
+  %".5" = icmp ne i8 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i1_i8"(i1 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i8 @"i1->i8"(i1 %".1")
+  %".5" = icmp ne i8 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i8_i8"(i8 %".1", i8 %".2")
+{
+entry:
+  %".4" = icmp ne i8 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__neq___i32_i1"(i32 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i32 @"i1->i32"(i1 %".2")
+  %".5" = icmp ne i32 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i1_i32"(i1 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"i1->i32"(i1 %".1")
+  %".5" = icmp ne i32 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i32_i8"(i32 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i32 @"i8->i32"(i8 %".2")
+  %".5" = icmp ne i32 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i8_i32"(i8 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"i8->i32"(i8 %".1")
+  %".5" = icmp ne i32 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i32_i32"(i32 %".1", i32 %".2")
+{
+entry:
+  %".4" = icmp ne i32 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__neq___i64_i1"(i64 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i64 @"i1->i64"(i1 %".2")
+  %".5" = icmp ne i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i1_i64"(i1 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i1->i64"(i1 %".1")
+  %".5" = icmp ne i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i64_i8"(i64 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i64 @"i8->i64"(i8 %".2")
+  %".5" = icmp ne i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i8_i64"(i8 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i8->i64"(i8 %".1")
+  %".5" = icmp ne i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i64_i32"(i64 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i64 @"i32->i64"(i32 %".2")
+  %".5" = icmp ne i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i32_i64"(i32 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i32->i64"(i32 %".1")
+  %".5" = icmp ne i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i64_i64"(i64 %".1", i64 %".2")
+{
+entry:
+  %".4" = icmp ne i64 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__neq___half_i32"(half %".1", i32 %".2")
+{
+entry:
+  %".4" = call half @"i32->half"(i32 %".2")
+  %".5" = fcmp one half %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i32_half"(i32 %".1", half %".2")
+{
+entry:
+  %".4" = call half @"i32->half"(i32 %".1")
+  %".5" = fcmp one half %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___half_i64"(half %".1", i64 %".2")
+{
+entry:
+  %".4" = call half @"i64->half"(i64 %".2")
+  %".5" = fcmp one half %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i64_half"(i64 %".1", half %".2")
+{
+entry:
+  %".4" = call half @"i64->half"(i64 %".1")
+  %".5" = fcmp one half %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___float_i32"(float %".1", i32 %".2")
+{
+entry:
+  %".4" = call float @"i32->float"(i32 %".2")
+  %".5" = fcmp one float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i32_float"(i32 %".1", float %".2")
+{
+entry:
+  %".4" = call float @"i32->float"(i32 %".1")
+  %".5" = fcmp one float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___float_i64"(float %".1", i64 %".2")
+{
+entry:
+  %".4" = call float @"i64->float"(i64 %".2")
+  %".5" = fcmp one float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i64_float"(i64 %".1", float %".2")
+{
+entry:
+  %".4" = call float @"i64->float"(i64 %".1")
+  %".5" = fcmp one float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___float_half"(float %".1", half %".2")
+{
+entry:
+  %".4" = call float @"half->float"(half %".2")
+  %".5" = fcmp one float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___half_float"(half %".1", float %".2")
+{
+entry:
+  %".4" = call float @"half->float"(half %".1")
+  %".5" = fcmp one float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___float_float"(float %".1", float %".2")
+{
+entry:
+  %".4" = fcmp one float %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__neq___double_i32"(double %".1", i32 %".2")
+{
+entry:
+  %".4" = call double @"i32->double"(i32 %".2")
+  %".5" = fcmp one double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i32_double"(i32 %".1", double %".2")
+{
+entry:
+  %".4" = call double @"i32->double"(i32 %".1")
+  %".5" = fcmp one double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___double_i64"(double %".1", i64 %".2")
+{
+entry:
+  %".4" = call double @"i64->double"(i64 %".2")
+  %".5" = fcmp one double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___i64_double"(i64 %".1", double %".2")
+{
+entry:
+  %".4" = call double @"i64->double"(i64 %".1")
+  %".5" = fcmp one double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___double_half"(double %".1", half %".2")
+{
+entry:
+  %".4" = call double @"half->double"(half %".2")
+  %".5" = fcmp one double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___half_double"(half %".1", double %".2")
+{
+entry:
+  %".4" = call double @"half->double"(half %".1")
+  %".5" = fcmp one double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___double_float"(double %".1", float %".2")
+{
+entry:
+  %".4" = call double @"float->double"(float %".2")
+  %".5" = fcmp one double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___float_double"(float %".1", double %".2")
+{
+entry:
+  %".4" = call double @"float->double"(float %".1")
+  %".5" = fcmp one double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__neq___double_double"(double %".1", double %".2")
+{
+entry:
+  %".4" = fcmp one double %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__gr___i1_i1"(i1 %".1", i1 %".2")
+{
+entry:
+  %".4" = icmp sgt i1 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__gr___i8_i1"(i8 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i8 @"i1->i8"(i1 %".2")
+  %".5" = icmp sgt i8 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i1_i8"(i1 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i8 @"i1->i8"(i1 %".1")
+  %".5" = icmp sgt i8 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i8_i8"(i8 %".1", i8 %".2")
+{
+entry:
+  %".4" = icmp sgt i8 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__gr___i32_i1"(i32 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i32 @"i1->i32"(i1 %".2")
+  %".5" = icmp sgt i32 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i1_i32"(i1 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"i1->i32"(i1 %".1")
+  %".5" = icmp sgt i32 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i32_i8"(i32 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i32 @"i8->i32"(i8 %".2")
+  %".5" = icmp sgt i32 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i8_i32"(i8 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"i8->i32"(i8 %".1")
+  %".5" = icmp sgt i32 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i32_i32"(i32 %".1", i32 %".2")
+{
+entry:
+  %".4" = icmp sgt i32 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__gr___i64_i1"(i64 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i64 @"i1->i64"(i1 %".2")
+  %".5" = icmp sgt i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i1_i64"(i1 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i1->i64"(i1 %".1")
+  %".5" = icmp sgt i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i64_i8"(i64 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i64 @"i8->i64"(i8 %".2")
+  %".5" = icmp sgt i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i8_i64"(i8 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i8->i64"(i8 %".1")
+  %".5" = icmp sgt i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i64_i32"(i64 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i64 @"i32->i64"(i32 %".2")
+  %".5" = icmp sgt i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i32_i64"(i32 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i32->i64"(i32 %".1")
+  %".5" = icmp sgt i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i64_i64"(i64 %".1", i64 %".2")
+{
+entry:
+  %".4" = icmp sgt i64 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__gr___half_i32"(half %".1", i32 %".2")
+{
+entry:
+  %".4" = call half @"i32->half"(i32 %".2")
+  %".5" = fcmp ogt half %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i32_half"(i32 %".1", half %".2")
+{
+entry:
+  %".4" = call half @"i32->half"(i32 %".1")
+  %".5" = fcmp ogt half %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___half_i64"(half %".1", i64 %".2")
+{
+entry:
+  %".4" = call half @"i64->half"(i64 %".2")
+  %".5" = fcmp ogt half %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i64_half"(i64 %".1", half %".2")
+{
+entry:
+  %".4" = call half @"i64->half"(i64 %".1")
+  %".5" = fcmp ogt half %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___float_i32"(float %".1", i32 %".2")
+{
+entry:
+  %".4" = call float @"i32->float"(i32 %".2")
+  %".5" = fcmp ogt float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i32_float"(i32 %".1", float %".2")
+{
+entry:
+  %".4" = call float @"i32->float"(i32 %".1")
+  %".5" = fcmp ogt float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___float_i64"(float %".1", i64 %".2")
+{
+entry:
+  %".4" = call float @"i64->float"(i64 %".2")
+  %".5" = fcmp ogt float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i64_float"(i64 %".1", float %".2")
+{
+entry:
+  %".4" = call float @"i64->float"(i64 %".1")
+  %".5" = fcmp ogt float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___float_half"(float %".1", half %".2")
+{
+entry:
+  %".4" = call float @"half->float"(half %".2")
+  %".5" = fcmp ogt float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___half_float"(half %".1", float %".2")
+{
+entry:
+  %".4" = call float @"half->float"(half %".1")
+  %".5" = fcmp ogt float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___float_float"(float %".1", float %".2")
+{
+entry:
+  %".4" = fcmp ogt float %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__gr___double_i32"(double %".1", i32 %".2")
+{
+entry:
+  %".4" = call double @"i32->double"(i32 %".2")
+  %".5" = fcmp ogt double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i32_double"(i32 %".1", double %".2")
+{
+entry:
+  %".4" = call double @"i32->double"(i32 %".1")
+  %".5" = fcmp ogt double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___double_i64"(double %".1", i64 %".2")
+{
+entry:
+  %".4" = call double @"i64->double"(i64 %".2")
+  %".5" = fcmp ogt double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___i64_double"(i64 %".1", double %".2")
+{
+entry:
+  %".4" = call double @"i64->double"(i64 %".1")
+  %".5" = fcmp ogt double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___double_half"(double %".1", half %".2")
+{
+entry:
+  %".4" = call double @"half->double"(half %".2")
+  %".5" = fcmp ogt double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___half_double"(half %".1", double %".2")
+{
+entry:
+  %".4" = call double @"half->double"(half %".1")
+  %".5" = fcmp ogt double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___double_float"(double %".1", float %".2")
+{
+entry:
+  %".4" = call double @"float->double"(float %".2")
+  %".5" = fcmp ogt double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___float_double"(float %".1", double %".2")
+{
+entry:
+  %".4" = call double @"float->double"(float %".1")
+  %".5" = fcmp ogt double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__gr___double_double"(double %".1", double %".2")
+{
+entry:
+  %".4" = fcmp ogt double %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__ls___i1_i1"(i1 %".1", i1 %".2")
+{
+entry:
+  %".4" = icmp slt i1 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__ls___i8_i1"(i8 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i8 @"i1->i8"(i1 %".2")
+  %".5" = icmp slt i8 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i1_i8"(i1 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i8 @"i1->i8"(i1 %".1")
+  %".5" = icmp slt i8 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i8_i8"(i8 %".1", i8 %".2")
+{
+entry:
+  %".4" = icmp slt i8 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__ls___i32_i1"(i32 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i32 @"i1->i32"(i1 %".2")
+  %".5" = icmp slt i32 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i1_i32"(i1 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"i1->i32"(i1 %".1")
+  %".5" = icmp slt i32 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i32_i8"(i32 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i32 @"i8->i32"(i8 %".2")
+  %".5" = icmp slt i32 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i8_i32"(i8 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"i8->i32"(i8 %".1")
+  %".5" = icmp slt i32 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i32_i32"(i32 %".1", i32 %".2")
+{
+entry:
+  %".4" = icmp slt i32 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__ls___i64_i1"(i64 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i64 @"i1->i64"(i1 %".2")
+  %".5" = icmp slt i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i1_i64"(i1 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i1->i64"(i1 %".1")
+  %".5" = icmp slt i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i64_i8"(i64 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i64 @"i8->i64"(i8 %".2")
+  %".5" = icmp slt i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i8_i64"(i8 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i8->i64"(i8 %".1")
+  %".5" = icmp slt i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i64_i32"(i64 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i64 @"i32->i64"(i32 %".2")
+  %".5" = icmp slt i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i32_i64"(i32 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i32->i64"(i32 %".1")
+  %".5" = icmp slt i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i64_i64"(i64 %".1", i64 %".2")
+{
+entry:
+  %".4" = icmp slt i64 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__ls___half_i32"(half %".1", i32 %".2")
+{
+entry:
+  %".4" = call half @"i32->half"(i32 %".2")
+  %".5" = fcmp olt half %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i32_half"(i32 %".1", half %".2")
+{
+entry:
+  %".4" = call half @"i32->half"(i32 %".1")
+  %".5" = fcmp olt half %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___half_i64"(half %".1", i64 %".2")
+{
+entry:
+  %".4" = call half @"i64->half"(i64 %".2")
+  %".5" = fcmp olt half %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i64_half"(i64 %".1", half %".2")
+{
+entry:
+  %".4" = call half @"i64->half"(i64 %".1")
+  %".5" = fcmp olt half %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___float_i32"(float %".1", i32 %".2")
+{
+entry:
+  %".4" = call float @"i32->float"(i32 %".2")
+  %".5" = fcmp olt float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i32_float"(i32 %".1", float %".2")
+{
+entry:
+  %".4" = call float @"i32->float"(i32 %".1")
+  %".5" = fcmp olt float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___float_i64"(float %".1", i64 %".2")
+{
+entry:
+  %".4" = call float @"i64->float"(i64 %".2")
+  %".5" = fcmp olt float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i64_float"(i64 %".1", float %".2")
+{
+entry:
+  %".4" = call float @"i64->float"(i64 %".1")
+  %".5" = fcmp olt float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___float_half"(float %".1", half %".2")
+{
+entry:
+  %".4" = call float @"half->float"(half %".2")
+  %".5" = fcmp olt float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___half_float"(half %".1", float %".2")
+{
+entry:
+  %".4" = call float @"half->float"(half %".1")
+  %".5" = fcmp olt float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___float_float"(float %".1", float %".2")
+{
+entry:
+  %".4" = fcmp olt float %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__ls___double_i32"(double %".1", i32 %".2")
+{
+entry:
+  %".4" = call double @"i32->double"(i32 %".2")
+  %".5" = fcmp olt double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i32_double"(i32 %".1", double %".2")
+{
+entry:
+  %".4" = call double @"i32->double"(i32 %".1")
+  %".5" = fcmp olt double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___double_i64"(double %".1", i64 %".2")
+{
+entry:
+  %".4" = call double @"i64->double"(i64 %".2")
+  %".5" = fcmp olt double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___i64_double"(i64 %".1", double %".2")
+{
+entry:
+  %".4" = call double @"i64->double"(i64 %".1")
+  %".5" = fcmp olt double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___double_half"(double %".1", half %".2")
+{
+entry:
+  %".4" = call double @"half->double"(half %".2")
+  %".5" = fcmp olt double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___half_double"(half %".1", double %".2")
+{
+entry:
+  %".4" = call double @"half->double"(half %".1")
+  %".5" = fcmp olt double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___double_float"(double %".1", float %".2")
+{
+entry:
+  %".4" = call double @"float->double"(float %".2")
+  %".5" = fcmp olt double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___float_double"(float %".1", double %".2")
+{
+entry:
+  %".4" = call double @"float->double"(float %".1")
+  %".5" = fcmp olt double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__ls___double_double"(double %".1", double %".2")
+{
+entry:
+  %".4" = fcmp olt double %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__geq___i1_i1"(i1 %".1", i1 %".2")
+{
+entry:
+  %".4" = icmp sge i1 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__geq___i8_i1"(i8 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i8 @"i1->i8"(i1 %".2")
+  %".5" = icmp sge i8 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i1_i8"(i1 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i8 @"i1->i8"(i1 %".1")
+  %".5" = icmp sge i8 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i8_i8"(i8 %".1", i8 %".2")
+{
+entry:
+  %".4" = icmp sge i8 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__geq___i32_i1"(i32 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i32 @"i1->i32"(i1 %".2")
+  %".5" = icmp sge i32 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i1_i32"(i1 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"i1->i32"(i1 %".1")
+  %".5" = icmp sge i32 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i32_i8"(i32 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i32 @"i8->i32"(i8 %".2")
+  %".5" = icmp sge i32 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i8_i32"(i8 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"i8->i32"(i8 %".1")
+  %".5" = icmp sge i32 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i32_i32"(i32 %".1", i32 %".2")
+{
+entry:
+  %".4" = icmp sge i32 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__geq___i64_i1"(i64 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i64 @"i1->i64"(i1 %".2")
+  %".5" = icmp sge i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i1_i64"(i1 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i1->i64"(i1 %".1")
+  %".5" = icmp sge i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i64_i8"(i64 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i64 @"i8->i64"(i8 %".2")
+  %".5" = icmp sge i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i8_i64"(i8 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i8->i64"(i8 %".1")
+  %".5" = icmp sge i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i64_i32"(i64 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i64 @"i32->i64"(i32 %".2")
+  %".5" = icmp sge i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i32_i64"(i32 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i32->i64"(i32 %".1")
+  %".5" = icmp sge i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i64_i64"(i64 %".1", i64 %".2")
+{
+entry:
+  %".4" = icmp sge i64 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__geq___half_i32"(half %".1", i32 %".2")
+{
+entry:
+  %".4" = call half @"i32->half"(i32 %".2")
+  %".5" = fcmp oge half %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i32_half"(i32 %".1", half %".2")
+{
+entry:
+  %".4" = call half @"i32->half"(i32 %".1")
+  %".5" = fcmp oge half %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___half_i64"(half %".1", i64 %".2")
+{
+entry:
+  %".4" = call half @"i64->half"(i64 %".2")
+  %".5" = fcmp oge half %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i64_half"(i64 %".1", half %".2")
+{
+entry:
+  %".4" = call half @"i64->half"(i64 %".1")
+  %".5" = fcmp oge half %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___float_i32"(float %".1", i32 %".2")
+{
+entry:
+  %".4" = call float @"i32->float"(i32 %".2")
+  %".5" = fcmp oge float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i32_float"(i32 %".1", float %".2")
+{
+entry:
+  %".4" = call float @"i32->float"(i32 %".1")
+  %".5" = fcmp oge float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___float_i64"(float %".1", i64 %".2")
+{
+entry:
+  %".4" = call float @"i64->float"(i64 %".2")
+  %".5" = fcmp oge float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i64_float"(i64 %".1", float %".2")
+{
+entry:
+  %".4" = call float @"i64->float"(i64 %".1")
+  %".5" = fcmp oge float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___float_half"(float %".1", half %".2")
+{
+entry:
+  %".4" = call float @"half->float"(half %".2")
+  %".5" = fcmp oge float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___half_float"(half %".1", float %".2")
+{
+entry:
+  %".4" = call float @"half->float"(half %".1")
+  %".5" = fcmp oge float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___float_float"(float %".1", float %".2")
+{
+entry:
+  %".4" = fcmp oge float %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__geq___double_i32"(double %".1", i32 %".2")
+{
+entry:
+  %".4" = call double @"i32->double"(i32 %".2")
+  %".5" = fcmp oge double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i32_double"(i32 %".1", double %".2")
+{
+entry:
+  %".4" = call double @"i32->double"(i32 %".1")
+  %".5" = fcmp oge double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___double_i64"(double %".1", i64 %".2")
+{
+entry:
+  %".4" = call double @"i64->double"(i64 %".2")
+  %".5" = fcmp oge double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___i64_double"(i64 %".1", double %".2")
+{
+entry:
+  %".4" = call double @"i64->double"(i64 %".1")
+  %".5" = fcmp oge double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___double_half"(double %".1", half %".2")
+{
+entry:
+  %".4" = call double @"half->double"(half %".2")
+  %".5" = fcmp oge double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___half_double"(half %".1", double %".2")
+{
+entry:
+  %".4" = call double @"half->double"(half %".1")
+  %".5" = fcmp oge double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___double_float"(double %".1", float %".2")
+{
+entry:
+  %".4" = call double @"float->double"(float %".2")
+  %".5" = fcmp oge double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___float_double"(float %".1", double %".2")
+{
+entry:
+  %".4" = call double @"float->double"(float %".1")
+  %".5" = fcmp oge double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__geq___double_double"(double %".1", double %".2")
+{
+entry:
+  %".4" = fcmp oge double %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__leq___i1_i1"(i1 %".1", i1 %".2")
+{
+entry:
+  %".4" = icmp sle i1 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__leq___i8_i1"(i8 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i8 @"i1->i8"(i1 %".2")
+  %".5" = icmp sle i8 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i1_i8"(i1 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i8 @"i1->i8"(i1 %".1")
+  %".5" = icmp sle i8 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i8_i8"(i8 %".1", i8 %".2")
+{
+entry:
+  %".4" = icmp sle i8 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__leq___i32_i1"(i32 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i32 @"i1->i32"(i1 %".2")
+  %".5" = icmp sle i32 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i1_i32"(i1 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"i1->i32"(i1 %".1")
+  %".5" = icmp sle i32 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i32_i8"(i32 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i32 @"i8->i32"(i8 %".2")
+  %".5" = icmp sle i32 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i8_i32"(i8 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"i8->i32"(i8 %".1")
+  %".5" = icmp sle i32 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i32_i32"(i32 %".1", i32 %".2")
+{
+entry:
+  %".4" = icmp sle i32 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__leq___i64_i1"(i64 %".1", i1 %".2")
+{
+entry:
+  %".4" = call i64 @"i1->i64"(i1 %".2")
+  %".5" = icmp sle i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i1_i64"(i1 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i1->i64"(i1 %".1")
+  %".5" = icmp sle i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i64_i8"(i64 %".1", i8 %".2")
+{
+entry:
+  %".4" = call i64 @"i8->i64"(i8 %".2")
+  %".5" = icmp sle i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i8_i64"(i8 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i8->i64"(i8 %".1")
+  %".5" = icmp sle i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i64_i32"(i64 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i64 @"i32->i64"(i32 %".2")
+  %".5" = icmp sle i64 %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i32_i64"(i32 %".1", i64 %".2")
+{
+entry:
+  %".4" = call i64 @"i32->i64"(i32 %".1")
+  %".5" = icmp sle i64 %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i64_i64"(i64 %".1", i64 %".2")
+{
+entry:
+  %".4" = icmp sle i64 %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__leq___half_i32"(half %".1", i32 %".2")
+{
+entry:
+  %".4" = call half @"i32->half"(i32 %".2")
+  %".5" = fcmp ole half %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i32_half"(i32 %".1", half %".2")
+{
+entry:
+  %".4" = call half @"i32->half"(i32 %".1")
+  %".5" = fcmp ole half %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___half_i64"(half %".1", i64 %".2")
+{
+entry:
+  %".4" = call half @"i64->half"(i64 %".2")
+  %".5" = fcmp ole half %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i64_half"(i64 %".1", half %".2")
+{
+entry:
+  %".4" = call half @"i64->half"(i64 %".1")
+  %".5" = fcmp ole half %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___float_i32"(float %".1", i32 %".2")
+{
+entry:
+  %".4" = call float @"i32->float"(i32 %".2")
+  %".5" = fcmp ole float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i32_float"(i32 %".1", float %".2")
+{
+entry:
+  %".4" = call float @"i32->float"(i32 %".1")
+  %".5" = fcmp ole float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___float_i64"(float %".1", i64 %".2")
+{
+entry:
+  %".4" = call float @"i64->float"(i64 %".2")
+  %".5" = fcmp ole float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i64_float"(i64 %".1", float %".2")
+{
+entry:
+  %".4" = call float @"i64->float"(i64 %".1")
+  %".5" = fcmp ole float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___float_half"(float %".1", half %".2")
+{
+entry:
+  %".4" = call float @"half->float"(half %".2")
+  %".5" = fcmp ole float %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___half_float"(half %".1", float %".2")
+{
+entry:
+  %".4" = call float @"half->float"(half %".1")
+  %".5" = fcmp ole float %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___float_float"(float %".1", float %".2")
+{
+entry:
+  %".4" = fcmp ole float %".1", %".2"
+  ret i1 %".4"
+}
+
+define i1 @"__leq___double_i32"(double %".1", i32 %".2")
+{
+entry:
+  %".4" = call double @"i32->double"(i32 %".2")
+  %".5" = fcmp ole double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i32_double"(i32 %".1", double %".2")
+{
+entry:
+  %".4" = call double @"i32->double"(i32 %".1")
+  %".5" = fcmp ole double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___double_i64"(double %".1", i64 %".2")
+{
+entry:
+  %".4" = call double @"i64->double"(i64 %".2")
+  %".5" = fcmp ole double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___i64_double"(i64 %".1", double %".2")
+{
+entry:
+  %".4" = call double @"i64->double"(i64 %".1")
+  %".5" = fcmp ole double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___double_half"(double %".1", half %".2")
+{
+entry:
+  %".4" = call double @"half->double"(half %".2")
+  %".5" = fcmp ole double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___half_double"(half %".1", double %".2")
+{
+entry:
+  %".4" = call double @"half->double"(half %".1")
+  %".5" = fcmp ole double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___double_float"(double %".1", float %".2")
+{
+entry:
+  %".4" = call double @"float->double"(float %".2")
+  %".5" = fcmp ole double %".1", %".4"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___float_double"(float %".1", double %".2")
+{
+entry:
+  %".4" = call double @"float->double"(float %".1")
+  %".5" = fcmp ole double %".4", %".2"
+  ret i1 %".5"
+}
+
+define i1 @"__leq___double_double"(double %".1", double %".2")
+{
+entry:
+  %".4" = fcmp ole double %".1", %".2"
+  ret i1 %".4"
+}
+
+define void @"__print___i8"(i8 %".1")
+{
+entry:
+  %".3" = bitcast [3 x i8]* @"formatter0" to i8*
+  %".4" = call i32 (i8*, ...) @"printf"(i8* %".3", i8 %".1")
+  ret void
+}
+
+@"formatter0" = internal constant [3 x i8] c"%c\00"
+define void @"__print___i32"(i32 %".1")
+{
+entry:
+  %".3" = bitcast [3 x i8]* @"formatter1" to i8*
+  %".4" = call i32 (i8*, ...) @"printf"(i8* %".3", i32 %".1")
+  ret void
+}
+
+@"formatter1" = internal constant [3 x i8] c"%d\00"
+define void @"__print___i64"(i64 %".1")
+{
+entry:
+  %".3" = bitcast [4 x i8]* @"formatter2" to i8*
+  %".4" = call i32 (i8*, ...) @"printf"(i8* %".3", i64 %".1")
+  ret void
+}
+
+@"formatter2" = internal constant [4 x i8] c"%ld\00"
+define void @"__print___half"(half %".1")
+{
+entry:
+  %".3" = call float @"half->float"(half %".1")
+  %".4" = bitcast [3 x i8]* @"formatter3" to i8*
+  %".5" = call i32 (i8*, ...) @"printf"(i8* %".4", float %".3")
+  ret void
+}
+
+@"formatter3" = internal constant [3 x i8] c"%f\00"
+define void @"__print___float"(float %".1")
+{
+entry:
+  %".3" = bitcast [3 x i8]* @"formatter3" to i8*
+  %".4" = call i32 (i8*, ...) @"printf"(i8* %".3", float %".1")
+  ret void
+}
+
+define void @"__print___double"(double %".1")
+{
+entry:
+  %".3" = bitcast [3 x i8]* @"formatter3" to i8*
+  %".4" = call i32 (i8*, ...) @"printf"(i8* %".3", double %".1")
+  ret void
+}
+
+define i32 @"test_i32_i32"(i32 %".1", i32 %".2")
+{
+entry:
+  %".4" = call i32 @"__add___i32_i32"(i32 %".1", i32 %".2")
+  ret i32 %".4"
+}
+
 define i32 @"main"()
 {
 entry:
-  %".2" = alloca i1
-  %".3" = call i1 @"__eq___i32_i32"(i32 1, i32 5)
-  store i1 %".3", i1* %".2"
-  %".5" = load i1, i1* %".2"
-  %".6" = load i1, i1* %".2"
-  %".7" = call i32 @"i1->i32"(i1 %".6")
-  ret i32 %".7"
+  %".2" = alloca i32
+  store i32 10, i32* %".2"
+  %".4" = alloca i32
+  %".5" = load i32, i32* %".2"
+  %".6" = call i32 @"__add___i32_i32"(i32 %".5", i32 10)
+  store i32 %".6", i32* %".4"
+  %".8" = load i32, i32* %".4"
+  call void @"__print___i32"(i32 %".8")
+  %".10" = load i32, i32* %".2"
+  %".11" = bitcast [2 x i8]* @"formatter4" to i8*
+  %".12" = call i32 (i8*, ...) @"printf"(i8* %".11")
+  call void @"__print___i32"(i32 %".10")
+  %".14" = bitcast [2 x i8]* @"formatter5" to i8*
+  %".15" = call i32 (i8*, ...) @"printf"(i8* %".14")
+  %".16" = bitcast [2 x i8]* @"formatter5" to i8*
+  %".17" = call i32 (i8*, ...) @"printf"(i8* %".16")
+  %".18" = load i32, i32* %".2"
+  %".19" = load i32, i32* %".4"
+  %".20" = call i32 @"test_i32_i32"(i32 %".18", i32 %".19")
+  ret i32 %".20"
 }
+
+@"formatter4" = internal constant [2 x i8] c" \00"
+@"formatter5" = internal constant [2 x i8] c"\0a\00"

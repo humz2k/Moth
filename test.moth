@@ -1,3 +1,7 @@
+def int test(int a, int b):
+    return a + b
+
 def int main():
-    int a = 1 + 1
-    return int(a)
+    int a = 10
+    int b = a + 10
+    return test(a,b)

@@ -27,10 +27,10 @@ AT \@
 
 EQUAL \=\=
 NOT_EQUAL \!\=
-GREATER \>
-LESS \<
 GREATER_OR_EQUAL \>\=
 LESS_OR_EQUAL \<\=
+GREATER \>
+LESS \<
 AND \band\b|\&\&
 OR \bor\b|\|\|
 NOT \!|\bnot\b
@@ -59,6 +59,7 @@ DTYPE \bdtype\b
 KERNEL \bkernel\b
 TEMPLATE \btemplate\b
 CAST \bcast\b
+SIZEOF \bsizeof\b
 
 CLASS \bclass\b
 DEF \bdef\b
@@ -104,6 +105,7 @@ FTOI_INTR \b__intr_ftoi\b
 ITOF_INTR \b__intr_itof\b
 CMP_INTR \b__intr_cmp\b
 FCMP_INTR \b__intr_fcmp\b
+PRINT_INTR \b__intr_oup\b
 
 
 NUMBER [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)

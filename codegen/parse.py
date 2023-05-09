@@ -13,6 +13,26 @@ class ParserState(object):
         self.local_variables = {}
         self.functions = {}
         self.casts = {}
+        self.formatters = {}
+        printf_ty = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
+        self.printf = ir.Function(self.module, printf_ty, name="printf")
+        bohem_init_ty = ir.FunctionType(ir.VoidType(), [], var_arg=True)
+        self.bohem_start = ir.Function(self.module, bohem_init_ty, name="bohem_start")
+        bohem_alloc_ty = ir.FunctionType(ir.PointerType(ir.IntType(8)), [ir.IntType(32)], var_arg=False)
+        self.bohem_alloc = ir.Function(self.module, bohem_alloc_ty, name="bohem_malloc")
+
+    def get_formatter(self,string):
+        if string in self.formatters:
+            return self.builder.bitcast(self.formatters[string], ir.IntType(8).as_pointer())
+        fmt = string + "\0"
+        c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
+                            bytearray(fmt.encode("utf8")))
+        global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name="formatter" + str(len(list(self.formatters.keys()))))
+        global_fmt.linkage = 'internal'
+        global_fmt.global_constant = True
+        global_fmt.initializer = c_fmt
+        self.formatters[string] = global_fmt
+        return self.builder.bitcast(self.formatters[string], ir.IntType(8).as_pointer())
 
     def log(self,text):
         pass
@@ -152,6 +172,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('function : function_def_open CLOSE_CURL')
     def pass_func(state,p):
         state.log('function : function_def_open CLOSE_CURL')
+        if not state.current_block[-1].is_terminated:
+            if state.current_function.type.pointee.return_type != ir.VoidType():
+                raise Exception("Non-void function does not return a value")
+            state.builder.ret_void()
 
     @pg.production('line : assign SEMI_COLON')
     @pg.production('line : expression SEMI_COLON')
@@ -315,6 +339,16 @@ def get_parser(filename="tokens.txt"):
         state.log('expression : NOT_INTR OPEN_PAREN expression CLOSE_PAREN')
         return ConstantContainer(state.builder.not_(p[2]._get(state.builder)))
     
+    @pg.production('expression : PRINT_INTR OPEN_PAREN STRING COMMA expression CLOSE_PAREN')
+    def trunc(state,p):
+        state.log('expression : PRINT_INTR OPEN_PAREN STRING COMMA expression CLOSE_PAREN')
+        return ConstantContainer(state.builder.call(state.printf,[state.get_formatter(p[2].value[1:-1]),p[4]._get(state.builder)]))
+    
+    @pg.production('expression : PRINT_INTR OPEN_PAREN STRING CLOSE_PAREN')
+    def trunc(state,p):
+        state.log('expression : PRINT_INTR OPEN_PAREN STRING CLOSE_PAREN')
+        return ConstantContainer(state.builder.call(state.printf,[state.get_formatter(p[2].value[1:-1])]))
+    
     @pg.production('expression : CMP_INTR OPEN_PAREN EQUAL COMMA expression COMMA expression CLOSE_PAREN')
     @pg.production('expression : CMP_INTR OPEN_PAREN NOT_EQUAL COMMA expression COMMA expression CLOSE_PAREN')
     @pg.production('expression : CMP_INTR OPEN_PAREN GREATER COMMA expression COMMA expression CLOSE_PAREN')
@@ -335,6 +369,36 @@ def get_parser(filename="tokens.txt"):
         state.log('expression : FCMP_INTR OPEN_PAREN OP COMMA expression COMMA expression CLOSE_PAREN')
         return ConstantContainer(state.builder.fcmp_ordered(p[2].value,p[4]._get(state.builder),p[6]._get(state.builder)))
     
+    @pg.production('expression : PRINT OPEN_PAREN CLOSE_PAREN')
+    def print_empty(state,p):
+        state.log('expression : PRINT OPEN_PAREN CLOSE_PAREN')
+        return ConstantContainer(state.builder.call(state.printf,[state.get_formatter("\n")]))
+    
+    @pg.production('print_open : PRINT OPEN_PAREN expression')
+    def print_one(state,p):
+        state.log('print_open : PRINT OPEN_PAREN expression')
+        expr = p[2]._get(state.builder)
+        name = "__print__" + "_" + str(expr.type)
+        if not name in state.functions:
+            raise Exception("No rule to print " + str(expr.type))
+        return ConstantContainer(state.builder.call(state.functions[name],[expr]))
+    
+    @pg.production('print_open : print_open COMMA expression')
+    def print_next(state,p):
+        state.log('print_open : print_open COMMA expression')
+        expr = p[2]._get(state.builder)
+        name = "__print__" + "_" + str(expr.type)
+        if not name in state.functions:
+            raise Exception("No rule to print " + str(expr.type))
+        ConstantContainer(state.builder.call(state.printf,[state.get_formatter(r" ")]))
+        return ConstantContainer(state.builder.call(state.functions[name],[expr]))
+    
+    @pg.production('expression : print_open CLOSE_PAREN')
+    def get_print(state,p):
+        state.log('expression : print_open CLOSE_PAREN')
+        return ConstantContainer(state.builder.call(state.printf,[state.get_formatter("\n")]))
+        
+    
     @pg.production('expression : type OPEN_PAREN expression CLOSE_PAREN')
     def cast(state,p):
         state.log('expression : type OPEN_PAREN expression CLOSE_PAREN')
@@ -348,6 +412,35 @@ def get_parser(filename="tokens.txt"):
             raise Exception("No cast " + name + " exists")
         return ConstantContainer(state.builder.call(state.casts[name],[val._get(state.builder)]))
     
+    @pg.production('expression : FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
+    def function_call(state,p):
+        state.log('expression : FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
+        name = p[0].value + "_"
+        if not name in state.functions:
+            raise Exception("Function " + p[0].value + " with no inputs doesn't exist")
+        return ConstantContainer(state.builder.call(state.functions[name],[]))
+    
+    @pg.production('func_call_open : FUNCTION_NAME OPEN_PAREN expression')
+    def func_call_open(state,p):
+        state.log('func_call_open : FUNCTION_NAME OPEN_PAREN expression')
+        return [p[0],p[2]]
+    
+    @pg.production('func_call_open : func_call_open COMMA expression')
+    def func_call_cont(state,p):
+        state.log('func_call_open : func_call_open COMMA expression')
+        return p[0] + [p[2]]
+    
+    @pg.production('expression : func_call_open CLOSE_PAREN')
+    def func_call(state,p):
+        state.log('expression : func_call_open CLOSE_PAREN')
+        token_name = p[0][0]
+        inputs = p[0][1:]
+        input_exprs = [i._get(state.builder) for i in inputs]
+        name = token_name.value + "_" + "_".join([str(i.type) for i in input_exprs])
+        if not name in state.functions:
+            raise Exception("Function " + p[0].value + " with no inputs " + ",".join([str(i.type) for i in input_exprs]) + " doesn't exist")
+        return ConstantContainer(state.builder.call(state.functions[name],input_exprs))
+        
     @pg.production('expression : OPEN_PAREN expression CLOSE_PAREN')
     def pass_expr(state,p):
         state.log('expression : OPEN_PAREN expression CLOSE_PAREN')
