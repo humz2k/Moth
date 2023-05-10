@@ -1,0 +1,240 @@
+@template
+class NDArray[T,d]:
+    T* raw
+    int dim
+    int size
+    tuple[int] shape
+    rawArray[int] muls
+
+    def void throwErr(NDArray[T,d] self, str msg):
+        print("NDArray Error:")
+        print("   Error in",type(T),"array")
+        print("   ",msg)
+        exit(1)
+
+    def int len(NDArray[T,d] self):
+        return self.shape[0]
+
+    def void __init__(NDArray[T,d] self, tuple[int] _shape):
+        self.dim = _shape._len
+        self.shape = _shape
+        if d != 0:
+            if d != self.shape._len:
+                self.throwErr(str("Incorrect Dimensions"))
+        self.size = 1
+        for int i in self.shape:
+            self.size *= i
+        self.muls = new rawArray[int](self.dim)
+        for int i in range(self.dim):
+            self.muls[i] = 1
+            for int j in range(i+1,self.dim):
+                self.muls[i] *= self.shape[j]
+        self.raw = alloc(self.size * sizeof(T))
+
+    def T* __index__(NDArray[T,d] self, int* index, int n):
+        if n != self.dim:
+            if n != 1:
+                self.throwErr(str("Incorrect number of dimensions indexed"))
+            else:
+                return __intr_itop(__intr_ptoi(self.raw,long) + long(__intr_gep(index,0) * sizeof(T)),T*)
+        int raw_index = 0
+        for int i in range(n):
+            int this_index = __intr_gep(index,i)
+            if this_index < 0:
+                this_index += self.shape[i]
+            raw_index += this_index * self.muls[i]
+        return __intr_itop(__intr_ptoi(self.raw,long) + long(raw_index * sizeof(T)),T*)
+
+    def NDArray[T,0] reshape(NDArray[T,d] self, tuple[int] _shape):
+        NDArray[T,0] out = new NDArray[T,0](_shape)
+        if out.size != self.size:
+            self.throwErr(str("Invalid reshape"))
+        for int i in range(self.size):
+            out[i] = self[i]
+        return out
+
+    def void set_all(NDArray[T,d] self, T val):
+        for int i in range(self.size):
+            self[i] = val
+
+    def void zero(NDArray[T,d] self):
+        for int i in range(self.size):
+            self[i] = 0
+    
+    def void __print__(NDArray[T,d] self):
+        rawArray[int] counter = new rawArray[int](self.dim).zero()
+        rawArray[int] last = new rawArray[int](self.dim).zero()
+        for int i in range(self.dim):
+            __intr_oup("[")
+        for int i in range(self.size):
+            for int j in range(self.dim):
+                last[j] = counter[j]
+            for int j in range(self.dim):
+                counter[j] = i
+                for int k in range(j):
+                    counter[j] -= counter[k] * self.muls[k]
+                counter[j] /= self.muls[j]
+            for int j in range(self.dim-1):
+                if counter[j] != last[j]:
+                    __intr_oup("]")
+            if self.dim != 1:
+                if counter[0] != last[0]:
+                    print()
+                    for int j in range(self.dim-1):
+                        __intr_oup(" ")
+            for int j in range(self.dim-1):
+                if counter[j] != last[j]:
+                    __intr_oup("[")
+            __intr_oup(" ")
+            print(__intr_gep(self.raw,i),__nonewln)
+        for int i in range(self.dim):
+            __intr_oup("]")
+
+    def cast NDArray[T,d] (NDArray[T,0] other):
+        if other.dim != d:
+            print("Invalid NDArray Cast")
+            exit(1)
+        NDArray[T,d] out = new NDArray[T,d](other.shape)
+        out.raw = other.raw
+        return out
+
+    def cast NDArray[T,0] (NDArray[T,d] other):
+        NDArray[T,0] out = new NDArray[T,0](other.shape)
+        out.raw = other.raw
+        return out
+
+#def void __initarrayTs():
+#    NDArray[half,0] _1
+#    NDArray[float,0] _2
+#    NDArray[double,0] _3
+#    NDArray[char,0] _4
+#    NDArray[int,0] _5
+#    NDArray[long,0] _6
+
+class nm(static):
+
+    @template
+    def NDArray[T,0] array[T](tuple[int] _shape):
+        return new NDArray[T,0](_shape)
+
+    @template
+    def NDArray[T,0] zeros[T](tuple[int] _shape):
+        NDArray[T,0] out = new NDArray[T,0](_shape)
+        out.zero()
+        return out
+
+    @template
+    def NDArray[T,0] ones[T](tuple[int] _shape):
+        NDArray[T,0] out = new NDArray[T,0](_shape)
+        out.set_all(T(1))
+        return out
+
+    @template
+    def NDArray[T,d] as_type[T,d,T1,d1](NDArray[T1,d1] other):
+        if (d != 0) or (d1 != 0):
+            if (d != d1):
+                print("NDArray Cast Error")
+                exit(1)
+        NDArray[T,d] out = new NDArray[T,d](other.shape)
+        for int i in range(other.size):
+            out[i] = T(other[i])
+        return out
+
+    @template
+    def NDArray[T,0] __broadcast[op,T](NDArray[T,0] arr1, NDArray[T,0] arr2):
+        int output_ndims = arr1.dim
+        if arr2.dim > output_ndims:
+            output_ndims = arr2.dim
+        rawArray[int] arr1dims = new rawArray[int](output_ndims)
+        rawArray[int] arr2dims = new rawArray[int](output_ndims)
+        arr1dims.set_all(1)
+        arr2dims.set_all(1)
+        rawArray[int] output_dims = new rawArray[int](output_ndims)
+        int count = output_ndims - 1
+        int dim1 = arr1.dim - 1
+        while dim1 >= 0:
+            arr1dims[count] = arr1.shape[dim1]
+            count--
+            dim1--
+        count = output_ndims - 1
+        int dim2 = arr2.dim - 1
+        while dim2 >= 0:
+            arr2dims[count] = arr2.shape[dim2]
+            count--
+            dim2--
+        int i = output_ndims - 1
+        while (i >= 0):
+            if arr1dims[i] != arr2dims[i]:
+                if (arr1dims[i] != 1) and (arr2dims[i] != 1):
+                    print("BroadcastErr")
+                    exit(1)
+            output_dims[i] = arr1dims[i]
+            if (arr2dims[i] > output_dims[i]):
+                output_dims[i] = arr2dims[i]
+            i--
+        int size = 1
+        rawArray[int] tmp = new rawArray[int](output_ndims)
+        for i in range(output_ndims):
+            size *= output_dims[i]
+            tmp[i] = output_dims[i]
+            output_dims[i]--
+        tuple[int] output_shape = new tuple[int](tmp.raw,tmp._len)
+        print(output_shape)
+        NDArray[T,0] out = new NDArray[T,0](output_shape)
+        int arr1offset = output_ndims - arr1.dim
+        int arr2offset = output_ndims - arr2.dim
+        for i in range(size):
+            int output_index = 0
+            int arr1_index = 0
+            int arr2_index = 0
+            for int j in range(output_ndims):
+                output_index = output_index + out.muls[j]*output_dims[j]
+            for int j in range(arr1offset,output_ndims):
+                if arr1dims[j] != 1:
+                    arr1_index = arr1_index + arr1.muls[j-arr1offset]*output_dims[j]
+            for int j in range(arr2offset,output_ndims):
+                if arr2dims[j] != 1:
+                    arr2_index = arr2_index + arr2.muls[j-arr2offset]*output_dims[j]
+            out[output_index] = arr1[arr1_index] op arr2[arr2_index]
+            output_dims[output_ndims-1]--
+            int _j = output_ndims-1
+            while _j > 0:
+                if output_dims[_j] < 0:
+                    output_dims[_j] = out.shape[_j] - 1
+                    output_dims[_j-1]--
+                _j--
+            if output_dims[0] < 0:
+                break
+        return out
+
+@inline
+def NDArray[half,0] __add__(NDArray[half,0] left, NDArray[half,0] right):
+    return nm.__broadcast[+,half](left,right)
+
+@inline
+def NDArray[half,0] __sub__(NDArray[half,0] left, NDArray[half,0] right):
+    return nm.__broadcast[-,half](left,right)
+
+@inline
+def NDArray[half,0] __mul__(NDArray[half,0] left, NDArray[half,0] right):
+    return nm.__broadcast[*,half](left,right)
+
+@inline
+def NDArray[half,0] __div__(NDArray[half,0] left, NDArray[half,0] right):
+    return nm.__broadcast[/,half](left,right)
+
+@inline
+def NDArray[float,0] __add__(NDArray[float,0] left, NDArray[float,0] right):
+    return nm.__broadcast[+,float](left,right)
+
+@inline
+def NDArray[float,0] __sub__(NDArray[float,0] left, NDArray[float,0] right):
+    return nm.__broadcast[-,float](left,right)
+
+@inline
+def NDArray[float,0] __mul__(NDArray[float,0] left, NDArray[float,0] right):
+    return nm.__broadcast[*,float](left,right)
+
+@inline
+def NDArray[float,0] __div__(NDArray[float,0] left, NDArray[float,0] right):
+    return nm.__broadcast[/,float](left,right)

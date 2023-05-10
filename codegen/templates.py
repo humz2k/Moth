@@ -67,7 +67,7 @@ class ArrayT(PreproccessorToken):
             template = templates[name]
         else:
             raise Exception("Did you forget to include stdlib?")
-        types = [Token("TYPE_NAME","char"),Token("TYPE_NAME","int"),Token("TYPE_NAME","long"),Token("TYPE_NAME","half"),Token("TYPE_NAME","float"),Token("TYPE_NAME","double")]
+        types = [Token("TYPE_NAME","bool"),Token("TYPE_NAME","char"),Token("TYPE_NAME","int"),Token("TYPE_NAME","long"),Token("TYPE_NAME","half"),Token("TYPE_NAME","float"),Token("TYPE_NAME","double")]
         for t in types:
             template.instantiate([Misc(Misc(t)),Misc(Token("NUMBER",str(0)))],templates)
             #template.instantiate([Misc(Misc(t)),Misc(Token("NUMBER",str(self.dims)))],templates)

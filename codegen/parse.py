@@ -211,6 +211,12 @@ class ParserState(object):
     def math_op(self,op,left,right):
         l_val = left._get(self.builder)
         r_val = right._get(self.builder)
+        if str(l_val.type).startswith('%"_NDArray'):
+            new_t = "_".join(str(l_val.type)[2:].split("_")[:-2]) + "_0_"
+            l_val = self.builder.bitcast(l_val,ir.PointerType(self.classes[new_t].raw))
+        if str(r_val.type).startswith('%"_NDArray'):
+            new_t = "_".join(str(r_val.type)[2:].split("_")[:-2]) + "_0_"
+            r_val = self.builder.bitcast(r_val,ir.PointerType(self.classes[new_t].raw))
         if isinstance(right,LiteralConstantContainer) and op == "__pow__":
             if (right.raw.type == ir.IntType(32)) and (l_val.type in [ir.IntType(8),ir.IntType(32),ir.IntType(64),ir.HalfType(),ir.FloatType(),ir.DoubleType()]):
                 out = l_val
