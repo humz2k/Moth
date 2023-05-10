@@ -16,6 +16,9 @@ with open("mothstring.moth","r") as f:
 with open("mothtuple.moth","r") as f:
     raw += f.read() + "\n"
 
+with open("mothndarray.moth","r") as f:
+    raw += f.read() + "\n"
+
 with open("test.moth","r") as f:
     raw += f.read()
 
