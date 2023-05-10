@@ -67,6 +67,14 @@ class ArrayT(PreproccessorToken):
             template = templates[name]
         else:
             raise Exception("Did you forget to include stdlib?")
+        types = [Token("TYPE_NAME","char"),Token("TYPE_NAME","int"),Token("TYPE_NAME","long"),Token("TYPE_NAME","half"),Token("TYPE_NAME","float"),Token("TYPE_NAME","double")]
+        for t in types:
+            template.instantiate([Misc(Misc(t)),Misc(Token("NUMBER",str(0)))],templates)
+            #template.instantiate([Misc(Misc(t)),Misc(Token("NUMBER",str(self.dims)))],templates)
+        template.instantiate([Misc(self.type),Misc(Token("NUMBER",str(0)))],templates)
+        for t in types:
+            #template.instantiate([Misc(Misc(t)),Misc(Token("NUMBER",str(0)))],templates)
+            template.instantiate([Misc(Misc(t)),Misc(Token("NUMBER",str(self.dims)))],templates)
         template.instantiate([Misc(self.type),Misc(Token("NUMBER",str(self.dims)))],templates)
         #self.instantiated = True
 
@@ -230,6 +238,7 @@ class FuncTemplateDef(PreproccessorToken):
         func_args = []
         for i in self.func_args:
             func_args.append(i.replace(map_to))
+            func_args[-1].make_template(templates)
         header += " ( " + " ".join([i.eval() for i in func_args]) + " ) "
         header += ":"
         out = header + out + ""
@@ -358,7 +367,7 @@ def get_parser(filename="tokens.txt"):
         return definition
     
     @pg.production('func_temp_init : AT TEMPLATE SEMI_COLON DEF misc FUNCTION_TEMPLATE_NAME OPEN_SQUARE IDENTIFIER')
-    @pg.production('func_temp_init : AT TEMPLATE SEMI_COLON DEF array_t FUNCTION_TEMPLATE_NAME OPEN_SQUARE IDENTIFIER')
+    @pg.production('func_temp_init : AT TEMPLATE SEMI_COLON DEF template_instance FUNCTION_TEMPLATE_NAME OPEN_SQUARE IDENTIFIER')
     #@pg.production('func_temp_init : AT TEMPLATE SEMI_COLON DEF TYPE_NAME FUNCTION_TEMPLATE_NAME OPEN_SQUARE IDENTIFIER')
     def func_temp_init(state,p):
         state.log('func_temp_init : AT TEMPLATE SEMI_COLON DEF IDENTIFIER FUNCTION_TEMPLATE_NAME OPEN_SQUARE IDENTIFIER')
@@ -386,6 +395,7 @@ def get_parser(filename="tokens.txt"):
         return definition
 
     @pg.production('function_template_def_open : func_temp OPEN_PAREN misc')
+    @pg.production('function_template_def_open : func_temp OPEN_PAREN template_instance')
     def open_template(state,p):
         state.log('function_template_def_open : func_temp OPEN_PAREN misc')
         #definition = FuncTemplateDef(p[2][0],p[2][1:],p[1],p[-1])
@@ -394,6 +404,7 @@ def get_parser(filename="tokens.txt"):
         return [p[0][1],p[0][2:],p[0][0],[p[-1]]]
     
     @pg.production('function_template_def_open : function_template_def_open misc')
+    @pg.production('function_template_def_open : function_template_def_open template_instance')
     def cont_template(state,p):
         state.log('function_template_def_open : function_template_def_open misc')
         p[0][-1].append(p[-1])

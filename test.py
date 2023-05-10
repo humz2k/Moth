@@ -4,13 +4,13 @@ import re
 with open("motharith.moth","r") as f:
     raw = f.read() + "\n"
 
-with open("mothiters.moth","r") as f:
+with open("mothiter.moth","r") as f:
     raw += f.read() + "\n"
 
 with open("mothrawarray.moth","r") as f:
     raw += f.read() + "\n"
 
-with open("mothstrings.moth","r") as f:
+with open("mothstring.moth","r") as f:
     raw += f.read() + "\n"
 
 with open("mothtuple.moth","r") as f:
@@ -39,6 +39,7 @@ state = codegen.templates.ParserState()
 parser.parse(tokens,state)
 
 raw = state.eval()
+
 
 class_names = codegen.find_classes(raw)
 function_names = codegen.find_functions(raw)

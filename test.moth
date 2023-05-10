@@ -103,28 +103,49 @@ class NDArray[T,d]:
         out.raw = other.raw
         return out
 
-def void __initarrayTs():
-    NDArray[half,0] _1
-    NDArray[float,0] _2
-    NDArray[double,0] _3
-    NDArray[char,0] _4
-    NDArray[int,0] _5
-    NDArray[long,0] _6
+#def void __initarrayTs():
+#    NDArray[half,0] _1
+#    NDArray[float,0] _2
+#    NDArray[double,0] _3
+#    NDArray[char,0] _4
+#    NDArray[int,0] _5
+#    NDArray[long,0] _6
 
 class nm(static):
 
     @template
-    def array
+    def NDArray[T,0] array[T](tuple[int] _shape):
+        return new NDArray[T,0](_shape)
+
+    @template
+    def NDArray[T,0] zeros[T](tuple[int] _shape):
+        NDArray[T,0] out = new NDArray[T,0](_shape)
+        out.zero()
+        return out
+
+    @template
+    def NDArray[T,0] ones[T](tuple[int] _shape):
+        NDArray[T,0] out = new NDArray[T,0](_shape)
+        out.set_all(T(1))
+        return out
+
+    @template
+    def NDArray[T,d] as_type[T,d,T1,d1](NDArray[T1,d1] other):
+        if (d != 0) or (d1 != 0):
+            if (d != d1):
+                print("NDArray Cast Error")
+                exit(1)
+        NDArray[T,d] out = new NDArray[T,d](other.shape)
+        for int i in range(other.size):
+            out[i] = T(other[i])
+        return out
         
 def int main():
-    float[:,:] test = new NDArray[float,2]((3,4))
+    float[:,:] test = nm.ones[float]((3,4))
     test[0,-3] = 10000000
-    test.zero()
-    print(test)
+    #test.zero()
     test.set_all(.1)
     float[:] test2 = test.reshape((12,))
     float[] test3 = test2
-    print(test3)
-    test3 = test
-    print(test3)
+    print(nm.as_type[int,1,float,1](test2))
     return 0
