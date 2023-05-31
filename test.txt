@@ -1,0 +1,13 @@
+#This is a comment
+
+###
+This
+is a
+multiline
+comment
+###
+
+def int main():
+    int3 a = [1,2,3]
+    a[0] = 5 * 5
+    return 0

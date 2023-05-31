@@ -1,8 +1,0 @@
-
-        
-def int main():
-    float[:] test1 = nm.ones[float]((2,))
-    float[:,:] test2 = nm.ones[float]((4,2))
-    #print(nm.__broadcast[+,float](test1,test2))
-    print(test1*test2)
-    return 0

@@ -54,7 +54,8 @@ CLOSE_PAREN \)
 OPEN_SQUARE \[
 CLOSE_SQUARE \]
 
-TYPE_NAME \bvoid\b|\bchar\b|\bint\b|\blong\b|\bfloat\b|\bdouble\b|\bhalf\b|\bbool\b
+TYPE_NAME \bvoid\b|\bchar\b|\bint\b|\blong\b|\bfloat\b|\bdouble\b|\bhalf\b|\bbool\b|\bstr\b
+VECTOR_TYPE (\bvoid|\bchar|\bint|\blong|\bfloat|\bdouble|\bhalf|\bbool)\d+
 TYPE_QUERY \btype\b
 DTYPE \bdtype\b
 KERNEL \bkernel\b
@@ -64,7 +65,8 @@ SIZEOF \bsizeof\b
 INLINE \binline\b
 RESTRICT \brestrict\b
 
-CLASS \bclass\b
+STRUCT \bstruct\b
+OBJECT \bobject\b
 DEF \bdef\b
 IF \bif\b
 ELSE \belse\b
@@ -87,37 +89,6 @@ FUNCTION_NAME \bexit\b
 FUNCTION_NAME \b__strlen\b
 FUNCTION_NAME \b__pow\b
 FUNCTION_NAME \b__powf\b
-
-SHL_INTR \b__intr_shl\b
-SHR_INTR \b__intr_shr\b
-ADD_INTR \b__intr_add\b
-SUB_INTR \b__intr_sub\b
-MUL_INTR \b__intr_mul\b
-DIV_INTR \b__intr_div\b
-REM_INTR \b__intr_rem\b
-AND_INTR \b__intr_and\b
-OR_INTR \b__intr_or\b
-XOR_INTR \b__intr_xor\b
-NOT_INTR \b__intr_not\b
-NEG_INTR \b__intr_neg\b
-FADD_INTR \b__intr_fadd\b
-FSUB_INTR \b__intr_fsub\b
-FMUL_INTR \b__intr_fmul\b
-FDIV_INTR \b__intr_fdiv\b
-FREM_INTR \b__intr_frem\b
-FNEG_INTR \b__intr_fneg\b
-TRUNC_INTR \b__intr_trunc\b
-EXT_INTR \b__intr_ext\b
-FTRUNC_INTR \b__intr_ftrunc\b
-FEXT_INTR \b__intr_fext\b
-FTOI_INTR \b__intr_ftoi\b
-ITOF_INTR \b__intr_itof\b
-CMP_INTR \b__intr_cmp\b
-FCMP_INTR \b__intr_fcmp\b
-PRINT_INTR \b__intr_oup\b
-PTOI_INTR \b__intr_ptoi\b
-ITOP_INTR \b__intr_itop\b
-GEP_INTR \b__intr_gep\b
 
 FLOAT_LITERAL [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)f
 DOUBLE_LITERAL [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)d
