@@ -13,6 +13,7 @@ def get_parser(filename="tokens.txt"):
     if "IGNORE" in tokens:
         tokens.remove("IGNORE")
     pg = ParserGenerator(tokens, precedence=[
+        ('left',["ASSIGN","PLUS_EQUAL","MINUS_EQUAL","STARSTAR_EQUAL","STAR_EQUAL","SLASH_EQUAL","PERCENT_EQUAL","RSHIFT_EQUAL","LSHIFT_EQUAL"]),
         ('left', ['PLUS', 'MINUS']),
         ('left', ['STAR', 'SLASH', 'AT']),
         ('left', ['PERCENT']),
@@ -23,14 +24,14 @@ def get_parser(filename="tokens.txt"):
         ('left', ['NOT']),
         ('left', ['BACKSLASH']),
         ('left', ['PERIOD']),
-        ('left',["OPEN_SQUARE"]),
-        ('left',["ASSIGN","PLUS_EQUAL","MINUS_EQUAL","STARSTAR_EQUAL","STAR_EQUAL","SLASH_EQUAL","PERCENT_EQUAL","RSHIFT_EQUAL","LSHIFT_EQUAL"])
+        ('left',["OPEN_SQUARE"])
     ])
 
     @pg.production('program : function')
     @pg.production('program : struct')
     @pg.production('program : object')
     @pg.production('program : cast')
+    @pg.production('program : kernel')
     def pass_program(state,p):
         program = aster.Program()
         program.add(p[0])
@@ -40,9 +41,22 @@ def get_parser(filename="tokens.txt"):
     @pg.production('program : program struct')
     @pg.production('program : program object')
     @pg.production('program : program cast')
+    @pg.production('program : program kernel')
     def pass_program(state,p):
         p[0].add(p[1])
         return p[0]
+    
+    @pg.production('function : function_header SEMI_COLON')
+    def pass_func_def(state,p):
+        return aster.Function(p[0],[])
+    
+    @pg.production('kernel : kernel_header SEMI_COLON')
+    def pass_func_def(state,p):
+        return aster.Kernel(p[0],[])
+    
+    @pg.production('cast : cast_header SEMI_COLON')
+    def pass_func_def(state,p):
+        return aster.Cast(p[0],[])
 
     @pg.production('struct_open : STRUCT STRUCT_NAME COLON OPEN_CURL')
     def pass_struct_open(state,p):
@@ -110,10 +124,82 @@ def get_parser(filename="tokens.txt"):
         tmp["inputs"].append([inptyp,inpname])
         return tmp
     
-    @pg.production('function_header : function_header_open CLOSE_PAREN')
+    @pg.production('function_header : function_header_open CLOSE_PAREN COLON')
     def function_header(state,p):
         tmp = p[0]
         return aster.FunctionHeader(tmp["type"],tmp["name"],tmp["inputs"])
+    
+    @pg.production('kernel_iters_open : OPEN_SQUARE IDENTIFIER COLON expression')
+    def kernel_iters(state,p):
+        _,name,_,val = p
+        return [[name,val]]
+    
+    @pg.production('kernel_iters_open : kernel_iters_open COMMA IDENTIFIER COLON expression')
+    def kernel_iters(state,p):
+        tmp,_,name,_,val = p
+        return tmp + [[name,val]]
+    
+    @pg.production('kernel_iters : kernel_iters_open CLOSE_SQUARE')
+    def kernel_iters(state,p):
+        return p[0]
+    
+    @pg.production('kernel : kernel_header OPEN_CURL lines CLOSE_CURL')
+    def return_function(state,p):
+        header,_,lines,_ = p
+        return aster.Kernel(header,lines)
+
+    @pg.production('kernel_header : DEF KERNEL FUNCTION_NAME kernel_iters OPEN_PAREN CLOSE_PAREN COLON')
+    def function_header(state,p):
+        _,typ,name,iters,_,_,_ = p
+        return aster.KernelHeader(iters,name)
+    
+    @pg.production('kernel_header_open : DEF KERNEL FUNCTION_NAME kernel_iters OPEN_PAREN type IDENTIFIER')
+    def function_header_open(state,p):
+        _,typ,name,iters,_,inptyp,inpname = p
+        return {"type":typ,"iters":iters,"name":name,"inputs":[[inptyp,inpname]]}
+    
+    @pg.production('kernel_header_open : kernel_header_open COMMA type IDENTIFIER')
+    def function_header_open(state,p):
+        tmp,_,inptyp,inpname = p
+        tmp["inputs"].append([inptyp,inpname])
+        return tmp
+    
+    @pg.production('kernel_header : kernel_header_open CLOSE_PAREN COLON')
+    def function_header(state,p):
+        tmp = p[0]
+        return aster.KernelHeader(tmp["iters"],tmp["name"],tmp["inputs"])
+    
+    @pg.production('line : IF expression COLON OPEN_CURL lines CLOSE_CURL else_statement')
+    def if_statement(state,p):
+        return aster.IfStatement(p[1],p[4],p[6])
+    
+    @pg.production('line : IF expression COLON OPEN_CURL lines CLOSE_CURL')
+    def if_statement(state,p):
+        return aster.IfStatement(p[1],p[4])
+    
+    @pg.production('elif_statement : ELIF expression COLON OPEN_CURL lines CLOSE_CURL elif_statement')
+    def elif_statement(state,p):
+        return aster.IfStatement(p[1],p[4],p[6])
+    
+    @pg.production('else_statement : ELIF expression COLON OPEN_CURL lines CLOSE_CURL else_statement')
+    def elif_statement(state,p):
+        return aster.IfStatement(p[1],p[4],p[6])
+    
+    @pg.production('elif_statement : ELIF expression COLON OPEN_CURL lines CLOSE_CURL')
+    def elif_statement(state,p):
+        return aster.IfStatement(p[1],p[4])
+    
+    @pg.production('else_statement : ELSE COLON OPEN_CURL lines CLOSE_CURL')
+    def if_statement(state,p):
+        return aster.ElseStatement(p[3])
+    
+    @pg.production('line : WHILE expression COLON OPEN_CURL lines CLOSE_CURL')
+    def while_loop(state,p):
+        return aster.WhileLoop(p[1],p[4])
+    
+    @pg.production('line : FOR expression IN expression COLON OPEN_CURL lines CLOSE_CURL')
+    def for_loop(state,p):
+        return aster.ForLoop(p[1],p[3],p[6])
 
     @pg.production('lines : line')
     def pass_lines(state,p):

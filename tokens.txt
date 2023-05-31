@@ -57,6 +57,7 @@ OPEN_SQUARE \[
 CLOSE_SQUARE \]
 
 TYPE_NAME \bvoid\b|\bchar\b|\bint\b|\blong\b|\bfloat\b|\bdouble\b|\bhalf\b|\bbool\b|\bstr\b
+VECTOR_TYPE (\bvoid|\bchar|\bint|\blong|\bfloat|\bdouble|\bhalf|\bbool)\d+[x\d+]+
 VECTOR_TYPE (\bvoid|\bchar|\bint|\blong|\bfloat|\bdouble|\bhalf|\bbool)\d+
 TYPE_QUERY \btype\b
 KERNEL \bkernel\b

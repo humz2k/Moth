@@ -16,6 +16,12 @@ lexer = lex.get_lexer(function_names = function_names, object_names = object_nam
 
 tokens = [i for i in lexer.lex(raw)]
 
+print(tokens)
+
 parser = parse.get_parser()
 
 parsed = parser.parse(iter(tokens),parse.ParserState())
+
+out = parsed.eval("test.txt")
+
+print(out)
