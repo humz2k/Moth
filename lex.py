@@ -51,7 +51,8 @@ def convert(raw):
     return out
 
 def find_functions(raw):
-    return re.findall(r"def \w+ (\w+)",raw)
+    out = re.findall(r"def (\w+) (\w+)",raw)
+    return [i[1] for i in out if i[0] != 'cast']
 
 def find_objects(raw):
     return re.findall(r"object (\w+)",raw)

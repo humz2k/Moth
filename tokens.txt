@@ -11,6 +11,8 @@ STARSTAR_EQUAL \*\*\=
 STAR_EQUAL \*\=
 SLASH_EQUAL \/\=
 PERCENT_EQUAL \%\=
+RSHIFT_EQUAL \>\>\=
+LSHIFT_EQUAL \<\<\=
 
 RIGHT_SHIFT \>\>
 LEFT_SHIFT \<\<
@@ -57,9 +59,7 @@ CLOSE_SQUARE \]
 TYPE_NAME \bvoid\b|\bchar\b|\bint\b|\blong\b|\bfloat\b|\bdouble\b|\bhalf\b|\bbool\b|\bstr\b
 VECTOR_TYPE (\bvoid|\bchar|\bint|\blong|\bfloat|\bdouble|\bhalf|\bbool)\d+
 TYPE_QUERY \btype\b
-DTYPE \bdtype\b
 KERNEL \bkernel\b
-TEMPLATE \btemplate\b
 CAST \bcast\b
 SIZEOF \bsizeof\b
 INLINE \binline\b

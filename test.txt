@@ -7,6 +7,13 @@ multiline
 comment
 ###
 
+struct Test:
+    int a;
+    int b;
+
+def cast int(float a):
+    return a
+
 def int main():
     int3 a = [1,2,3]
     a[0] = 5 * 5

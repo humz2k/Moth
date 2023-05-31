@@ -24,19 +24,70 @@ def get_parser(filename="tokens.txt"):
         ('left', ['BACKSLASH']),
         ('left', ['PERIOD']),
         ('left',["OPEN_SQUARE"]),
-        ('left',["ASSIGN"])
+        ('left',["ASSIGN","PLUS_EQUAL","MINUS_EQUAL","STARSTAR_EQUAL","STAR_EQUAL","SLASH_EQUAL","PERCENT_EQUAL","RSHIFT_EQUAL","LSHIFT_EQUAL"])
     ])
 
     @pg.production('program : function')
+    @pg.production('program : struct')
+    @pg.production('program : object')
+    @pg.production('program : cast')
     def pass_program(state,p):
         program = aster.Program()
         program.add(p[0])
         return program
 
     @pg.production('program : program function')
+    @pg.production('program : program struct')
+    @pg.production('program : program object')
+    @pg.production('program : program cast')
     def pass_program(state,p):
         p[0].add(p[1])
         return p[0]
+
+    @pg.production('struct_open : STRUCT STRUCT_NAME COLON OPEN_CURL')
+    def pass_struct_open(state,p):
+        return aster.Struct(p[1])
+    
+    @pg.production('struct_open : struct_open vardec SEMI_COLON')
+    def pass_struct_open(state,p):
+        p[0].add_vardec(p[1])
+        return p[0]
+    
+    @pg.production('struct_open : struct_open function')
+    def pass_struct_open(state,p):
+        p[0].add_function(p[1])
+        return p[0]
+    
+    @pg.production('struct : struct_open CLOSE_CURL')
+    def pass_struct(state,p):
+        return p[0]
+    
+    @pg.production('object_open : OBJECT OBJECT_NAME COLON OPEN_CURL')
+    def pass_struct_open(state,p):
+        return aster.Object(p[1])
+    
+    @pg.production('object_open : object_open vardec SEMI_COLON')
+    def pass_struct_open(state,p):
+        p[0].add_vardec(p[1])
+        return p[0]
+    
+    @pg.production('object_open : object_open function')
+    def pass_struct_open(state,p):
+        p[0].add_function(p[1])
+        return p[0]
+    
+    @pg.production('object : object_open CLOSE_CURL')
+    def pass_struct(state,p):
+        return p[0]
+    
+    @pg.production('cast_header : DEF CAST type OPEN_PAREN type IDENTIFIER CLOSE_PAREN COLON')
+    def pass_cast_header(state,p):
+        _,_,typ,_,inptyp,inpname,_,_ = p
+        return aster.CastHeader(typ,[inptyp,inpname])
+    
+    @pg.production('cast : cast_header OPEN_CURL lines CLOSE_CURL')
+    def pass_cast(state,p):
+        return aster.Cast(p[0],p[2])
 
     @pg.production('function : function_header OPEN_CURL lines CLOSE_CURL')
     def return_function(state,p):
@@ -88,6 +139,15 @@ def get_parser(filename="tokens.txt"):
     def pass_line(state,p):
         return p[0]
     
+    #@pg.production('user_binop : BACKSLASH FUNCTION_NAME')
+    #@pg.production('user_binop : BACKSLASH ref_func')
+    #def pass_user_binop(state,p):
+    #    return p[1]
+    
+    #@pg.production('expression : expression user_binop expression')
+    #def pass_user_binop(state,p):
+    #    return aster.FunctionCall(p[1],[p[0],p[2]])
+    
     @pg.production('expression : expression RIGHT_SHIFT expression')
     @pg.production('expression : expression LEFT_SHIFT expression')
     @pg.production('expression : expression PLUS expression')
@@ -121,6 +181,56 @@ def get_parser(filename="tokens.txt"):
     @pg.production('expression : expression MINUS_MINUS')
     def pass_expression(state,p):
         return aster.Incr(p[1].name,p[0])
+    
+    @pg.production('expression : FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
+    @pg.production('expression : ref_func OPEN_PAREN CLOSE_PAREN')
+    def pass_function(state,p):
+        return aster.FunctionCall(p[0])
+    
+    @pg.production('func_call_open : FUNCTION_NAME OPEN_PAREN expression')
+    @pg.production('func_call_open : ref_func OPEN_PAREN expression')
+    def pass_function(state,p):
+        return [p[0],p[2]]
+    
+    @pg.production('func_call_open : func_call_open COMMA expression')
+    def pass_function(state,p):
+        return p[0] + [p[2]]
+    
+    @pg.production('expression : func_call_open CLOSE_PAREN')
+    def pass_function(state,p):
+        return aster.FunctionCall(p[0][0],p[0][1:])
+    
+    @pg.production('expression : STRUCT_NAME OPEN_PAREN CLOSE_PAREN')
+    def pass_function(state,p):
+        return aster.NewStruct(p[0])
+    
+    @pg.production('struct_call_open : STRUCT_NAME OPEN_PAREN expression')
+    def pass_function(state,p):
+        return [p[0],p[2]]
+    
+    @pg.production('struct_call_open : struct_call_open COMMA expression')
+    def pass_function(state,p):
+        return p[0] + [p[2]]
+    
+    @pg.production('expression : struct_call_open CLOSE_PAREN')
+    def pass_function(state,p):
+        return aster.NewStruct(p[0][0],p[0][1:])
+    
+    @pg.production('expression : OBJECT_NAME OPEN_PAREN CLOSE_PAREN')
+    def pass_function(state,p):
+        return aster.NewObject(p[0])
+    
+    @pg.production('object_call_open : OBJECT_NAME OPEN_PAREN expression')
+    def pass_function(state,p):
+        return [p[0],p[2]]
+    
+    @pg.production('object_call_open : object_call_open COMMA expression')
+    def pass_function(state,p):
+        return p[0] + [p[2]]
+    
+    @pg.production('expression : object_call_open CLOSE_PAREN')
+    def pass_function(state,p):
+        return aster.NewObject(p[0][0],p[0][1:])
 
     @pg.production('expression : NUMBER')
     @pg.production('expression : FLOAT_LITERAL')
@@ -135,9 +245,13 @@ def get_parser(filename="tokens.txt"):
     def pass_expression(state,p):
         return aster.Constant(p[0])
     
-    @pg.production('expression : type IDENTIFIER')
+    @pg.production('vardec : type IDENTIFIER')
     def declaration(state,p):
         return aster.VarDec(p[0],p[1])
+    
+    @pg.production('expression : vardec')
+    def declaration(state,p):
+        return p[0]
     
     @pg.production('expression : IDENTIFIER')
     def declaration(state,p):
@@ -150,6 +264,17 @@ def get_parser(filename="tokens.txt"):
     @pg.production('expression : expression ASSIGN expression')
     def declaration(state,p):
         return aster.Assign(p[0],p[2])
+    
+    @pg.production('expression : expression PLUS_EQUAL expression')
+    @pg.production('expression : expression MINUS_EQUAL expression')
+    @pg.production('expression : expression STARSTAR_EQUAL expression')
+    @pg.production('expression : expression STAR_EQUAL expression')
+    @pg.production('expression : expression SLASH_EQUAL expression')
+    @pg.production('expression : expression PERCENT_EQUAL expression')
+    @pg.production('expression : expression RSHIFT_EQUAL expression')
+    @pg.production('expression : expression LSHIFT_EQUAL expression')
+    def declaration(state,p):
+        return aster.IncAssign(p[1],p[0],p[2])
     
     @pg.production('expression : PRINT OPEN_PAREN CLOSE_PAREN')
     def pass_print(state,p):
@@ -171,6 +296,14 @@ def get_parser(filename="tokens.txt"):
     def pass_print(state,p):
         p[0].add(p[2])
         return p[0]
+    
+    @pg.production('expression : SIZEOF OPEN_PAREN type CLOSE_PAREN')
+    def pass_sizeof(state,p):
+        return aster.Sizeof(p[2])
+    
+    @pg.production('expression : TYPE_QUERY OPEN_PAREN expression CLOSE_PAREN')
+    def pass_sizeof(state,p):
+        return aster.Typeof(p[2])
     
     @pg.production('expression : print_open CLOSE_PAREN')
     def pass_print(state,p):
@@ -205,13 +338,41 @@ def get_parser(filename="tokens.txt"):
     def pass_expr(state,p):
         return p[1]
     
+    @pg.production('expression : expression PERIOD IDENTIFIER')
+    def pass_var(state,p):
+        return aster.VarReference(p[0],p[2])
+    
+    @pg.production('ref_func : expression PERIOD FUNCTION_NAME')
+    def pass_var(state,p):
+        return aster.FuncReference(p[0],p[2])
+    
+    @pg.production('expression : NAMESPACE PERIOD IDENTIFIER')
+    def pass_var(state,p):
+        return aster.NamespaceVar(p[0],p[2])
+    
+    @pg.production('ref_func : NAMESPACE PERIOD FUNCTION_NAME')
+    def pass_var(state,p):
+        return aster.NamsespaceFunc(p[0],p[2])
+    
     @pg.production('type : TYPE_NAME')
     def pass_type(state,p):
         return aster.BaseType(p[0])
     
+    @pg.production('type : STRUCT_NAME')
+    def pass_type(state,p):
+        return aster.StructType(p[0])
+    
+    @pg.production('type : OBJECT_NAME')
+    def pass_type(state,p):
+        return aster.ObjectType(p[0])
+    
     @pg.production('type : VECTOR_TYPE')
     def pass_type(state,p):
         return aster.VectorType(p[0])
+    
+    @pg.production('type : type STAR')
+    def pass_type(state,p):
+        return aster.PointerType(p[0])
 
     @pg.error
     def error_handler(state,token):
