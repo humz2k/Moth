@@ -8,8 +8,4 @@ comment
 ###
 
 def int main(int a):
-    if 1:
-        int c = 5
-    elif 1:
-        int c = 10
     return 0

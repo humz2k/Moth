@@ -61,7 +61,7 @@ class IfStatement:
             with builder.if_then(val) as then:
                 new_locals = local_vars.copy()
                 for i in self.lines:
-                    i.eval(module,builder,new_locals)
+                    i.eval(module,builder,new_locals,break_to)
                     if (isinstance(i,Break)):
                         break
         else:
@@ -69,7 +69,7 @@ class IfStatement:
                 with then:
                     new_locals = local_vars.copy()
                     for i in self.lines:
-                        i.eval(module,builder,new_locals)
+                        i.eval(module,builder,new_locals,break_to)
                         if (isinstance(i,Break)):
                             break
                 with otherwise:
@@ -82,7 +82,7 @@ class ElseStatement:
     def eval(self,module,builder : ir.IRBuilder, local_vars, break_to = None):
         new_locals = local_vars.copy()
         for i in self.lines:
-            i.eval(module,builder,new_locals)
+            i.eval(module,builder,new_locals,break_to)
             if (isinstance(i,Break)):
                 break
 
@@ -90,6 +90,21 @@ class WhileLoop:
     def __init__(self,val,lines):
         self.val = val
         self.lines = lines
+    
+    def eval(self,module,builder : ir.IRBuilder, local_vars, *args):
+        new_locals = local_vars.copy()
+        start = builder.append_basic_block()
+        loop = builder.append_basic_block()
+        end = builder.append_basic_block()
+        builder.branch(start)
+        with builder.goto_block(start):
+            val = self.val.eval(module,builder,local_vars).get(module,builder)
+            builder.cbranch(val,loop,end)
+            with builder.goto_block(loop):
+                for i in self.lines:
+                    i.eval(module,builder,new_locals,end)
+                builder.branch(start)
+        builder.position_at_start(end)
 
 class ForLoop:
     def __init__(self,val,iterator,lines):
@@ -142,7 +157,7 @@ class Function:
             builder.call(FUNCTIONS["bohem_start"],[])
         self.locals = self.header.get_inputs(module,builder)
         for i in self.lines:
-            i.eval(module,builder,self.locals)
+            i.eval(module,builder,self.locals,None)
 
 class KernelHeader:
     def __init__(self,iters,name,inputs=[]):
