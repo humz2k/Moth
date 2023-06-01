@@ -24,7 +24,8 @@ def get_parser(filename="tokens.txt"):
         ('left', ['NOT']),
         ('left', ['BACKSLASH']),
         ('left', ['PERIOD']),
-        ('left',["OPEN_SQUARE"])
+        ('left',["OPEN_SQUARE"]),
+        ('left',["OPEN_PAREN"])
     ])
 
     @pg.production('program : function')
@@ -185,7 +186,7 @@ def get_parser(filename="tokens.txt"):
     def elif_statement(state,p):
         return aster.IfStatement(p[1],p[4],p[6])
     
-    @pg.production('elif_statement : ELIF expression COLON OPEN_CURL lines CLOSE_CURL')
+    @pg.production('else_statement : ELIF expression COLON OPEN_CURL lines CLOSE_CURL')
     def elif_statement(state,p):
         return aster.IfStatement(p[1],p[4])
     
@@ -314,6 +315,14 @@ def get_parser(filename="tokens.txt"):
     def pass_function(state,p):
         return p[0] + [p[2]]
     
+    @pg.production('cast_val : type OPEN_PAREN expression CLOSE_PAREN')
+    def pass_cast(state,p):
+        return aster.CastVal(p[0],p[2])
+    
+    @pg.production('expression : cast_val')
+    def pass_cast(state,p):
+        return p[0]
+
     @pg.production('expression : object_call_open CLOSE_PAREN')
     def pass_function(state,p):
         return aster.NewObject(p[0][0],p[0][1:])

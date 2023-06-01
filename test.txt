@@ -8,5 +8,8 @@ comment
 ###
 
 def int main(int a):
-    int b = (a == 5) and (a != 2)
+    if 1:
+        int c = 5
+    elif 1:
+        int c = 10
     return 0
