@@ -25,3 +25,7 @@ parsed = parser.parse(iter(tokens),parse.ParserState())
 out = parsed.eval("test.txt")
 
 print(out)
+
+out = "\n".join([i for i in str(out).split("\n") if not i.startswith("target")])
+with open("tmp.ll","w") as f:
+    f.write(out)

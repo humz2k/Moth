@@ -1,12 +1,88 @@
 from llvmlite import ir
 
+FUNCTIONS = {}
+
 base_types = [ir.IntType(1),
                 ir.IntType(8),
                 ir.IntType(32),
                 ir.IntType(64),
                 ir.FloatType(),
                 ir.DoubleType(),
-                ir.HalfType()] ####ADD STRING
+                ir.HalfType(),
+                ir.PointerType(ir.IntType(8))] ####ADD STRING
+
+N_STRINGS = -1
+
+FORMATTERS = {}
+
+PRINT = None
+STRLEN = None
+ALLOC = None
+STRCPY = None
+
+def make_string(module,builder,string):
+    global N_STRINGS
+    N_STRINGS += 1
+    fmt = string + "\0"
+    c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
+                        bytearray(fmt.encode("utf8")))
+    global_fmt = ir.GlobalVariable(module, c_fmt.type, name="string" + str(N_STRINGS))
+    global_fmt.linkage = 'internal'
+    global_fmt.global_constant = True
+    global_fmt.initializer = c_fmt
+    return builder.bitcast(global_fmt, ir.IntType(8).as_pointer())
+
+def make_formatter(module,string):
+    global N_STRINGS
+    N_STRINGS += 1
+    fmt = string + "\0"
+    c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
+                        bytearray(fmt.encode("utf8")))
+    global_fmt = ir.GlobalVariable(module, c_fmt.type, name="string" + str(N_STRINGS))
+    global_fmt.linkage = 'internal'
+    global_fmt.global_constant = True
+    global_fmt.initializer = c_fmt
+    return global_fmt
+
+def generate_formatters(module):
+    global FORMATTERS
+    FORMATTERS[ir.IntType(1)] = make_formatter(module,"%s")
+    FORMATTERS[ir.IntType(8)] = make_formatter(module,"%c")
+    FORMATTERS[ir.IntType(32)] = make_formatter(module,"%d")
+    FORMATTERS[ir.IntType(64)] = make_formatter(module,"%ld")
+    FORMATTERS[ir.HalfType()] = make_formatter(module,"%f")
+    FORMATTERS[ir.FloatType()] = make_formatter(module,"%f")
+    FORMATTERS[ir.DoubleType()] = make_formatter(module,"%f")
+    FORMATTERS[ir.PointerType(ir.IntType(8))] = make_formatter(module,"%s")
+    FORMATTERS["True"] = make_formatter(module,"True")
+    FORMATTERS["False"] = make_formatter(module,"False")
+    FORMATTERS["Newline"] = make_formatter(module,"\n")
+    FORMATTERS["Space"] = make_formatter(module," ")
+
+def print_base(module,builder : ir.IRBuilder,val):
+    formatter = FORMATTERS[val.type]
+    formatter = builder.bitcast(formatter, ir.IntType(8).as_pointer())
+    if val.type == ir.IntType(1):
+        with builder.if_else(val) as (then,otherwise):
+            with then:
+                builder.call(PRINT,[formatter,builder.bitcast(FORMATTERS["True"], ir.IntType(8).as_pointer())])
+            with otherwise:
+                builder.call(PRINT,[formatter,builder.bitcast(FORMATTERS["False"], ir.IntType(8).as_pointer())])
+        return
+    if val.type == ir.HalfType():
+        val = cast(module,builder,val,ir.FloatType())
+    builder.call(PRINT,[formatter,val])
+
+def print_newline(module,builder : ir.IRBuilder):
+    builder.call(PRINT,[builder.bitcast(FORMATTERS["Newline"], ir.IntType(8).as_pointer())])
+
+def print_space(module,builder : ir.IRBuilder):
+    builder.call(PRINT,[builder.bitcast(FORMATTERS["Space"], ir.IntType(8).as_pointer())])
+
+def eval_lines(module,builder,local_vars,break_to,lines):
+    for i in lines:
+        if not builder.block.is_terminated:
+            i.eval(module,builder,local_vars,break_to)
 
 def cast(module, builder : ir.IRBuilder,val,new_type):
     if val.type == new_type:
@@ -73,7 +149,10 @@ def promote_many(module,builder,items):
         out.append(cast(module,builder,i,out_ty))
     return out
     
-    
+def gep_hack(builder,typ):
+    gep_hack = builder.gep(ir.Constant(ir.PointerType(typ),None),[ir.Constant(ir.IntType(32),1)])
+    return builder.ptrtoint(gep_hack,ir.IntType(32))
+
 def arith(builder : ir.IRBuilder,op,typ,left,right):
     INT_OPS = {
         "RIGHT_SHIFT": builder.ashr,
@@ -96,6 +175,18 @@ def arith(builder : ir.IRBuilder,op,typ,left,right):
     }
     if isinstance(typ,ir.IntType):
         return INT_OPS[op](left,right)
+    if typ == ir.PointerType(ir.IntType(8)):
+        left_len = builder.call(STRLEN,[left])
+        right_len = builder.call(STRLEN,[right])
+        new_len = builder.add(builder.add(left_len,right_len),ir.Constant(ir.IntType(32),1))
+        new_size = builder.mul(new_len,gep_hack(builder,ir.IntType(8)))
+        new_pointer = builder.call(ALLOC,[new_size])
+        new_pointer = builder.inttoptr(builder.ptrtoint(new_pointer,ir.IntType(64)),ir.PointerType(ir.IntType(8)))
+        str_1_ptr = new_pointer
+        str_2_ptr = builder.gep(new_pointer,[left_len])
+        str_1_ptr = builder.call(STRCPY,[str_1_ptr,left])
+        str_2_ptr = builder.call(STRCPY,[str_2_ptr,right])
+        return new_pointer
     return FLOAT_OPS[op](left,right)
 
 def compare(builder : ir.IRBuilder,op,typ,left,right):
@@ -118,6 +209,7 @@ def do_binop(module,builder,op,left,right):
         raise Exception("Invalid Types")
     if left.type in base_types and right.type in base_types:
         left,right = promote(module,builder,left,right)
+        return arith(builder,op,left.type,left,right)
     if op in ["EQUAL","NOT_EQUAL",
                     "GREATER_OR_EQUAL","LESS_OR_EQUAL",
                     "GREATER","LESS"]:
@@ -128,7 +220,8 @@ def do_binop(module,builder,op,left,right):
                 "GREATER" : ">",
                 "LESS" : "<"}
         return compare(builder,ops[op],left.type,left,right)
-    return arith(builder,op,left.type,left,right)
+    raise Exception("BINOP NOT IMPLEMENTED")
+    
 
 def get_idx_1d(module,builder,dims,idx):
     ndims = len(dims)

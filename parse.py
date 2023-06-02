@@ -232,6 +232,10 @@ def get_parser(filename="tokens.txt"):
     def pass_line(state,p):
         return aster.Return(p[1])
     
+    @pg.production('line : RETURN SEMI_COLON')
+    def pass_line(state,p):
+        return aster.Return()
+    
     @pg.production('line : PASS SEMI_COLON')
     def pass_line(state,p):
         return aster.Pass()

@@ -10,6 +10,9 @@ comment
 @extern
 def float powf(float a)
 
-def int main(int a):
-    float test = powf(10.0)
+def int main():
+    str a = "First"
+    str b = "Second"
+    str c = a + b
+    print(c,a,b)
     return 0

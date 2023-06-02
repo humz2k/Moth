@@ -3,7 +3,7 @@ import helpers
 import re
 from rply import Token
 
-FUNCTIONS = {}
+#helpers.FUNCTIONS = {}
 
 class Program:
     def __init__(self):
@@ -13,14 +13,27 @@ class Program:
         self.items.append(item)
 
     def eval(self,module_name):
-        global FUNCTIONS
         module = ir.Module(name=module_name)
-        alloc_ty = ir.FunctionType(ir.PointerType(ir.IntType(8)),[ir.IntType(32)])
+        alloc_ty = ir.FunctionType(ir.PointerType(ir.IntType(16)),[ir.IntType(32)])
         alloc_func = ir.Function(module,alloc_ty,"bohem_malloc")
         alloc_init_ty = ir.FunctionType(ir.VoidType(),[])
         alloc_init = ir.Function(module,alloc_init_ty,"bohem_start")
-        FUNCTIONS["bohem_start"] = alloc_init
-        FUNCTIONS["alloc"] = alloc_func
+        helpers.FUNCTIONS["bohem_start"] = alloc_init
+        helpers.FUNCTIONS["alloc"] = alloc_func
+        helpers.ALLOC = alloc_func
+
+        printf_ty = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
+        printf = ir.Function(module, printf_ty, name="printf")
+        helpers.PRINT = printf
+
+        strlen_ty = ir.FunctionType(ir.IntType(32),[ir.PointerType(ir.IntType(8))])
+        helpers.STRLEN = ir.Function(module,strlen_ty,"strlen")
+
+        strcpy_ty = ir.FunctionType(ir.PointerType(ir.IntType(8)),[ir.PointerType(ir.IntType(8)),ir.PointerType(ir.IntType(8))])
+        helpers.STRCPY = ir.Function(module,strcpy_ty,"strcpy")
+
+        helpers.generate_formatters(module)
+
         for item in self.items:
             item.eval(module)
         return module
@@ -57,21 +70,25 @@ class IfStatement:
     
     def eval(self,module,builder : ir.IRBuilder, local_vars : dict, break_to = None):
         val = self.val.eval(module,builder,local_vars).get(module,builder)
+        if val.type != ir.IntType(1):
+            raise Exception("If statement that is not bool")
         if type(self.else_statement) == type(None):
             with builder.if_then(val) as then:
                 new_locals = local_vars.copy()
-                for i in self.lines:
-                    i.eval(module,builder,new_locals,break_to)
-                    if (isinstance(i,Break)):
-                        break
+                helpers.eval_lines(module,builder,new_locals,break_to,self.lines)
+                #for i in self.lines:
+                #    i.eval(module,builder,new_locals,break_to)
+                #    if (isinstance(i,Break)):
+                #        break
         else:
             with builder.if_else(val) as (then,otherwise):
                 with then:
                     new_locals = local_vars.copy()
-                    for i in self.lines:
-                        i.eval(module,builder,new_locals,break_to)
-                        if (isinstance(i,Break)):
-                            break
+                    helpers.eval_lines(module,builder,new_locals,break_to,self.lines)
+                    #for i in self.lines:
+                    #    i.eval(module,builder,new_locals,break_to)
+                    #    if (isinstance(i,Break)):
+                    #        break
                 with otherwise:
                     self.else_statement.eval(module,builder,local_vars)
 
@@ -81,10 +98,11 @@ class ElseStatement:
     
     def eval(self,module,builder : ir.IRBuilder, local_vars, break_to = None):
         new_locals = local_vars.copy()
-        for i in self.lines:
-            i.eval(module,builder,new_locals,break_to)
-            if (isinstance(i,Break)):
-                break
+        helpers.eval_lines(module,builder,new_locals,break_to,self.lines)
+        #for i in self.lines:
+        #    i.eval(module,builder,new_locals,break_to)
+        #    if (isinstance(i,Break)):
+        #        break
 
 class WhileLoop:
     def __init__(self,val,lines):
@@ -99,11 +117,15 @@ class WhileLoop:
         builder.branch(start)
         with builder.goto_block(start):
             val = self.val.eval(module,builder,local_vars).get(module,builder)
+            if val.type != ir.IntType(1):
+                raise Exception("While loop that is not bool")
             builder.cbranch(val,loop,end)
             with builder.goto_block(loop):
-                for i in self.lines:
-                    i.eval(module,builder,new_locals,end)
-                builder.branch(start)
+                helpers.eval_lines(module,builder,new_locals,end,self.lines)
+                #for i in self.lines:
+                #    i.eval(module,builder,new_locals,end)
+                if not builder.block.is_terminated:
+                    builder.branch(start)
         builder.position_at_start(end)
 
 class ForLoop:
@@ -124,7 +146,6 @@ class FunctionHeader:
         self.inputs = inputs
     
     def generate(self,module,modifiers,parent = None):
-        global FUNCTIONS
         ret_type = self.type.eval(module)
         inputs = [i[0].eval(module) for i in self.inputs]
         func_ty = ir.FunctionType(ret_type,inputs)
@@ -132,9 +153,10 @@ class FunctionHeader:
         if type(parent) != type(None):
             raise Exception("FUNCTION_HEADER_IMPLEMENTATION_ERROR")
         self.mangled = name
-        if self.mangled in FUNCTIONS:
-            if FUNCTIONS[self.mangled].is_declaration:
-                return FUNCTIONS[self.mangled]
+        if self.mangled in helpers.FUNCTIONS:
+            if helpers.FUNCTIONS[self.mangled].is_declaration:
+                self.func = helpers.FUNCTIONS[self.mangled]
+                return self.func
             raise Exception("FUNCTION EXISTS")
         if modifiers["extern"]:
             name = self.name.value
@@ -160,18 +182,21 @@ class Function:
         self.modifiers = {"inline": False, "extern": False}
     
     def eval(self,module : ir.Module,parent = None):
-        global FUNCTIONS
         func = self.header.generate(module,self.modifiers,parent)
-        FUNCTIONS[self.header.mangled] = func
+        helpers.FUNCTIONS[self.header.mangled] = func
         if len(self.lines) == 0:
             return
         block = func.append_basic_block(name="entry")
         builder = ir.IRBuilder(block)
         if self.header.name.value == "main":
-            builder.call(FUNCTIONS["bohem_start"],[])
+            builder.call(helpers.FUNCTIONS["bohem_start"],[])
         self.locals = self.header.get_inputs(module,builder)
-        for i in self.lines:
-            i.eval(module,builder,self.locals,None)
+        helpers.eval_lines(module,builder,self.locals,None,self.lines)
+        if not builder.block.is_terminated:
+            if func.type.pointee.return_type == ir.VoidType():
+                builder.ret_void()
+                return
+            raise Exception("Function does not return value")
 
 class KernelHeader:
     def __init__(self,iters,name,inputs=[]):
@@ -209,8 +234,13 @@ class Return:
     
     def eval(self,module,builder : ir.IRBuilder,local_vars,*args):
         if type(self.val) == type(None):
+            if builder.function.type.pointee.return_type != ir.VoidType():
+                raise Exception("Function returns wrong type")
             return builder.ret_void()
-        return builder.ret(self.val.eval(module,builder,local_vars).get(module,builder))
+        val = self.val.eval(module,builder,local_vars).get(module,builder)
+        if builder.function.type.pointee.return_type != val.type:
+            raise Exception("Function returns wrong type")
+        return builder.ret(val)
 
 class Print:
     def __init__(self):
@@ -223,6 +253,18 @@ class Print:
     def nonewline(self):
         self.nonewline = True
     
+    def eval(self,module,builder : ir.IRBuilder, local_vars, *args):
+        for i in self.vals[:-1]:
+            val = i.eval(module,builder,local_vars,None).get(module,builder)
+            if val.type in helpers.base_types:
+                helpers.print_base(module,builder,val)
+            helpers.print_space(module,builder)
+        val = self.vals[-1].eval(module,builder,local_vars,None).get(module,builder)
+        if val.type in helpers.base_types:
+            helpers.print_base(module,builder,val)
+        if not self.nonewline:
+            helpers.print_newline(module,builder)
+    
 class Pass:
     def __init__(self):
         pass
@@ -234,21 +276,25 @@ class Break:
     def __init__(self):
         pass
 
+    def eval(self,module,builder : ir.IRBuilder, local_vars, break_to, *args):
+        if type(break_to) == type(None):
+            raise Exception("Break not in loop")
+        return helpers.Constant(builder.branch(break_to))
+
 class FunctionCall:
     def __init__(self,name,inputs = []):
         self.name = name
         self.inputs = inputs
     
     def eval(self,module,builder : ir.IRBuilder,local_vars,*args):
-        global FUNCTIONS
         func = None
         inputs = [i.eval(module,builder,local_vars).get(module,builder) for i in self.inputs]
         if isinstance(self.name,Token):
             name = self.name.value
             if not name in ["alloc","exit"]:
                 name = helpers.mangle(self.name,[i.type for i in inputs])
-            if name in FUNCTIONS:
-                func = FUNCTIONS[name]
+            if name in helpers.FUNCTIONS:
+                func = helpers.FUNCTIONS[name]
         if type(func) == type(None):
             raise Exception("Function " + str(self.name) + " not found")
         return helpers.Constant(builder.call(func,inputs))
@@ -274,7 +320,7 @@ class Assign:
         if dest.type == out.type:
             dest.set(module,builder,out)
             return dest
-        if out.type == ir.PointerType(ir.IntType(8)):
+        if out.type == ir.PointerType(ir.IntType(16)):
             if isinstance(dest.type,ir.PointerType):
                 out = builder.inttoptr(builder.ptrtoint(out,ir.IntType(64)),dest.type)
                 dest.set(module,builder,out)
@@ -487,8 +533,7 @@ class BaseType:
         if self.name.value == "half":
             return ir.HalfType()
         if self.name.value == "str":
-            print("STRINGS NOT IMPLEMENTED")
-            exit()
+            return ir.PointerType(ir.IntType(8))
 
 class StructType:
     def __init__(self,name):
@@ -523,5 +568,9 @@ class PointerType:
 class String:
     def __init__(self,val):
         self.val = val
+    
+    def eval(self,module,builder,*args):
+        string = helpers.make_string(module,builder,self.val.value[1:-1])
+        return helpers.Constant(string)
 
     
