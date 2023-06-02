@@ -63,7 +63,7 @@ TYPE_QUERY \btype\b
 KERNEL \bkernel\b
 CAST \bcast\b
 SIZEOF \bsizeof\b
-INLINE \binline\b
+MODIFIER \binline\b
 RESTRICT \brestrict\b
 
 STRUCT \bstruct\b
@@ -84,12 +84,11 @@ FALSE \bFalse\b
 NEW \bnew\b
 NULL \bNULL\b
 NONEWLN \b__nonewln\b
+RANGE \brange\b
+MODIFIER \bextern\b
 
 FUNCTION_NAME \balloc\b
 FUNCTION_NAME \bexit\b
-FUNCTION_NAME \b__strlen\b
-FUNCTION_NAME \b__pow\b
-FUNCTION_NAME \b__powf\b
 
 FLOAT_LITERAL [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)f
 DOUBLE_LITERAL [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)d

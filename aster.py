@@ -112,6 +112,10 @@ class ForLoop:
         self.iter = iterator
         self.lines = lines
 
+class Range:
+    def __init__(self,*args):
+        self.args = args
+
 class FunctionHeader:
     def __init__(self,typ,name,inputs=[]):
         self.type = typ
@@ -119,7 +123,8 @@ class FunctionHeader:
         self.mangled = None
         self.inputs = inputs
     
-    def generate(self,module,parent = None):
+    def generate(self,module,modifiers,parent = None):
+        global FUNCTIONS
         ret_type = self.type.eval(module)
         inputs = [i[0].eval(module) for i in self.inputs]
         func_ty = ir.FunctionType(ret_type,inputs)
@@ -127,6 +132,12 @@ class FunctionHeader:
         if type(parent) != type(None):
             raise Exception("FUNCTION_HEADER_IMPLEMENTATION_ERROR")
         self.mangled = name
+        if self.mangled in FUNCTIONS:
+            if FUNCTIONS[self.mangled].is_declaration:
+                return FUNCTIONS[self.mangled]
+            raise Exception("FUNCTION EXISTS")
+        if modifiers["extern"]:
+            name = self.name.value
         self.func = ir.Function(module,func_ty,name)
         return self.func
     
@@ -146,11 +157,14 @@ class Function:
         self.header = header
         self.lines = lines
         self.locals = {}
+        self.modifiers = {"inline": False, "extern": False}
     
     def eval(self,module : ir.Module,parent = None):
         global FUNCTIONS
-        func = self.header.generate(module,parent)
+        func = self.header.generate(module,self.modifiers,parent)
         FUNCTIONS[self.header.mangled] = func
+        if len(self.lines) == 0:
+            return
         block = func.append_basic_block(name="entry")
         builder = ir.IRBuilder(block)
         if self.header.name.value == "main":

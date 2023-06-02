@@ -47,6 +47,12 @@ def get_parser(filename="tokens.txt"):
         p[0].add(p[1])
         return p[0]
     
+    @pg.production('function : AT MODIFIER SEMI_COLON function')
+    def modifier(state,p):
+        _,modifier,_,function = p
+        function.modifiers[modifier.value] = True
+        return function
+    
     @pg.production('function : function_header SEMI_COLON')
     def pass_func_def(state,p):
         return aster.Function(p[0],[])
@@ -95,23 +101,23 @@ def get_parser(filename="tokens.txt"):
     def pass_struct(state,p):
         return p[0]
     
-    @pg.production('cast_header : DEF CAST type OPEN_PAREN type IDENTIFIER CLOSE_PAREN COLON')
+    @pg.production('cast_header : DEF CAST type OPEN_PAREN type IDENTIFIER CLOSE_PAREN')
     def pass_cast_header(state,p):
-        _,_,typ,_,inptyp,inpname,_,_ = p
+        _,_,typ,_,inptyp,inpname,_ = p
         return aster.CastHeader(typ,[inptyp,inpname])
     
-    @pg.production('cast : cast_header OPEN_CURL lines CLOSE_CURL')
+    @pg.production('cast : cast_header COLON OPEN_CURL lines CLOSE_CURL')
     def pass_cast(state,p):
-        return aster.Cast(p[0],p[2])
+        return aster.Cast(p[0],p[3])
 
-    @pg.production('function : function_header OPEN_CURL lines CLOSE_CURL')
+    @pg.production('function : function_header COLON OPEN_CURL lines CLOSE_CURL')
     def return_function(state,p):
-        header,_,lines,_ = p
+        header,_,_,lines,_ = p
         return aster.Function(header,lines)
 
-    @pg.production('function_header : DEF type FUNCTION_NAME OPEN_PAREN CLOSE_PAREN COLON')
+    @pg.production('function_header : DEF type FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
     def function_header(state,p):
-        _,typ,name,_,_,_ = p
+        _,typ,name,_,_ = p
         return aster.FunctionHeader(typ,name)
     
     @pg.production('function_header_open : DEF type FUNCTION_NAME OPEN_PAREN type IDENTIFIER')
@@ -125,7 +131,7 @@ def get_parser(filename="tokens.txt"):
         tmp["inputs"].append([inptyp,inpname])
         return tmp
     
-    @pg.production('function_header : function_header_open CLOSE_PAREN COLON')
+    @pg.production('function_header : function_header_open CLOSE_PAREN')
     def function_header(state,p):
         tmp = p[0]
         return aster.FunctionHeader(tmp["type"],tmp["name"],tmp["inputs"])
@@ -144,14 +150,14 @@ def get_parser(filename="tokens.txt"):
     def kernel_iters(state,p):
         return p[0]
     
-    @pg.production('kernel : kernel_header OPEN_CURL lines CLOSE_CURL')
+    @pg.production('kernel : kernel_header COLON OPEN_CURL lines CLOSE_CURL')
     def return_function(state,p):
-        header,_,lines,_ = p
+        header,_,_,lines,_ = p
         return aster.Kernel(header,lines)
 
-    @pg.production('kernel_header : DEF KERNEL FUNCTION_NAME kernel_iters OPEN_PAREN CLOSE_PAREN COLON')
+    @pg.production('kernel_header : DEF KERNEL FUNCTION_NAME kernel_iters OPEN_PAREN CLOSE_PAREN')
     def function_header(state,p):
-        _,typ,name,iters,_,_,_ = p
+        _,typ,name,iters,_,_ = p
         return aster.KernelHeader(iters,name)
     
     @pg.production('kernel_header_open : DEF KERNEL FUNCTION_NAME kernel_iters OPEN_PAREN type IDENTIFIER')
@@ -165,10 +171,22 @@ def get_parser(filename="tokens.txt"):
         tmp["inputs"].append([inptyp,inpname])
         return tmp
     
-    @pg.production('kernel_header : kernel_header_open CLOSE_PAREN COLON')
+    @pg.production('kernel_header : kernel_header_open CLOSE_PAREN')
     def function_header(state,p):
         tmp = p[0]
         return aster.KernelHeader(tmp["iters"],tmp["name"],tmp["inputs"])
+    
+    @pg.production('expression : RANGE OPEN_PAREN expression CLOSE_PAREN')
+    def pass_range(state,p):
+        return aster.Range(p[2])
+    
+    @pg.production('expression : RANGE OPEN_PAREN expression COMMA expression CLOSE_PAREN')
+    def pass_range(state,p):
+        return aster.Range(p[2],p[4])
+    
+    @pg.production('expression : RANGE OPEN_PAREN expression COMMA expression COMMA expression CLOSE_PAREN')
+    def pass_range(state,p):
+        return aster.Range(p[2],p[4],p[6])
     
     @pg.production('line : IF expression COLON OPEN_CURL lines CLOSE_CURL else_statement')
     def if_statement(state,p):

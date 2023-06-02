@@ -7,5 +7,9 @@ multiline
 comment
 ###
 
+@extern
+def float powf(float a)
+
 def int main(int a):
+    float test = powf(10.0)
     return 0
