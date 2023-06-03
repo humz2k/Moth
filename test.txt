@@ -10,10 +10,12 @@ comment
 @extern
 def float powf(float a)
 
-def int len(str a):
-    return strlen(a)
+struct Test:
+    int a
+    int b
+    def void __init__(Test self):
+        self.a
 
 def int main():
-    int3 a = [1,2,3]
-    print(veclen(a))
+    int[:] a = new int[10]
     return 0

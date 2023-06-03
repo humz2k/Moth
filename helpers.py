@@ -1,6 +1,7 @@
 from llvmlite import ir
 
 FUNCTIONS = {}
+STRUCTS = {}
 
 base_types = [ir.IntType(1),
                 ir.IntType(8),
@@ -209,7 +210,9 @@ def compare(builder : ir.IRBuilder,op,typ,left,right):
         return builder.icmp_signed(op,left,right)
     return builder.fcmp_ordered(op,left,right)
 
-def mangle(name,inputs):
+def mangle(name,inputs,parent=None):
+    if type(parent) != type(None):
+        return parent + "_" + name.value + "_" + "_".join([str(i) for i in inputs])
     if name.value == "main":
         return name.value
     return name.value + "_" + "_".join([str(i) for i in inputs])

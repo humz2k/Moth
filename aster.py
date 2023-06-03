@@ -50,6 +50,23 @@ class Struct:
     
     def add_function(self,func):
         self.functions.append(func)
+    
+    def eval(self,module : ir.Module,*args):
+        type_name = self.name.value
+        typ = module.context.get_identified_type("STRUCT_" + type_name)
+        body = []
+        names = []
+        for i in self.attributes:
+            names.append(i.name.value)
+            body.append(i.type.eval(module))
+        typ.set_body(body)
+        typ.element_names = names
+        typ.bound_functions = []
+        helpers.STRUCTS[type_name] = typ
+        for i in self.functions:
+            print(i.eval(module,type_name))
+        print(module)
+        exit()
 
 class Object:
     def __init__(self,name):
@@ -150,10 +167,10 @@ class FunctionHeader:
         ret_type = self.type.eval(module)
         inputs = [i[0].eval(module) for i in self.inputs]
         func_ty = ir.FunctionType(ret_type,inputs)
-        name = helpers.mangle(self.name,inputs)
-        if type(parent) != type(None):
-            raise Exception("FUNCTION_HEADER_IMPLEMENTATION_ERROR")
+        name = helpers.mangle(self.name,inputs,parent)
         self.mangled = name
+        #if type(parent) != type(None):
+        #    self.mangled = parent + "_" + self.mangled
         if self.mangled in helpers.FUNCTIONS:
             if helpers.FUNCTIONS[self.mangled].is_declaration:
                 self.func = helpers.FUNCTIONS[self.mangled]
@@ -259,13 +276,6 @@ class Print:
         size = 1
         for i in dims:
             size *= i
-        muls = []
-        for i in range(len(dims)-1):
-            tmp = 1
-            for j in dims[i+1:]:
-                tmp *= j
-            muls.append(tmp)
-        print(muls)
         vals = [builder.extract_element(val,ir.Constant(ir.IntType(32),i)) for i in range(size)]
         #for i in range(len(dims)):
         #    helpers.print_open_sqr(module,builder)
@@ -290,26 +300,24 @@ class Print:
             else:
                 helpers.print_close_sqr(module,builder)
         return
-        for idx,i in enumerate(vals[:-1]):
-            if idx != 0:
-                index = []
-                for j in muls:
-                    index.append(idx//j)
-                print(index)
-            helpers.print_base(module,builder,i)
-            helpers.print_space(module,builder)
-        helpers.print_base(module,builder,vals[-1])
-        for i in range(len(dims)):
-            helpers.print_close_sqr(module,builder)
-        
+
+    def print_array(self,moduler,builder : ir.IRBuilder, val):
+        ndims = val.type.elements[0].count
+        raise Exception("printing arrays not implemented")
     
     def eval(self,module,builder : ir.IRBuilder, local_vars, *args):
         for i in self.vals[:-1]:
             val = i.eval(module,builder,local_vars,None).get(module,builder)
             if val.type in helpers.base_types:
                 helpers.print_base(module,builder,val)
-            if isinstance(val.type, ir.VectorType):
+            elif isinstance(val.type, ir.VectorType):
                 self.print_vector(module,builder,val)
+            elif isinstance(val.type,ir.LiteralStructType):
+                if len(val.type.elements) == 2:
+                    if isinstance(val.type.elements[0],ir.VectorType):
+                        if val.type.elements[0].element == ir.IntType(32):
+                            if isinstance(val.type.elements[1],ir.PointerType):
+                                self.print_array(module,builder,val)
             helpers.print_space(module,builder)
         val = self.vals[-1].eval(module,builder,local_vars,None).get(module,builder)
         if val.type in helpers.base_types:
@@ -317,6 +325,12 @@ class Print:
         else:
             if isinstance(val.type, ir.VectorType):
                 self.print_vector(module,builder,val)
+            elif isinstance(val.type,ir.LiteralStructType):
+                if len(val.type.elements) == 2:
+                    if isinstance(val.type.elements[0],ir.VectorType):
+                        if val.type.elements[0].element == ir.IntType(32):
+                            if isinstance(val.type.elements[1],ir.PointerType):
+                                self.print_array(module,builder,val)
             #exit()
         if not self.nonewline:
             helpers.print_newline(module,builder)
@@ -546,6 +560,19 @@ class VarReference:
     def __init__(self,parent,name):
         self.parent = parent
         self.name = name
+    
+    def eval(self,module,builder : ir.IRBuilder,local_vars,*args):
+        parent = self.parent.eval(module,builder,local_vars)
+        typ = parent.raw.type.pointee
+        element_names = typ.element_names
+        if not self.name.value in element_names:
+            raise Exception("Attr " + self.name.value + " doesn't exist")
+        idx = element_names.index(self.name.value)
+        if typ.name.startswith("STRUCT"):
+            ptr = parent.raw
+            print(builder.gep(ptr,[ir.Constant(ir.IntType(32),idx)]))
+        raise Exception("VAR REFERENCE NOT IMPLEMENTED")
+        exit()
 
 class FuncReference:
     def __init__(self,parent,name):
@@ -619,6 +646,10 @@ class BaseType:
 class StructType:
     def __init__(self,name):
         self.name = name
+    
+    def eval(self,module,*args):
+        if self.name.value in helpers.STRUCTS:
+            return helpers.STRUCTS[self.name.value]
 
 class ObjectType:
     def __init__(self,name):

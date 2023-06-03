@@ -40,12 +40,19 @@ define i32 @"main"()
 {
 entry:
   call void @"bohem_start"()
-  %".3" = alloca <3 x i32>
-  store <3 x i32> <i32 1, i32 2, i32 3>, <3 x i32>* %".3"
-  %".5" = load <3 x i32>, <3 x i32>* %".3"
-  %".6" = bitcast [3 x i8]* @"string2" to i8*
-  %".7" = call i32 (i8*, ...) @"printf"(i8* %".6", i32 3)
-  %".8" = bitcast [2 x i8]* @"string10" to i8*
-  %".9" = call i32 (i8*, ...) @"printf"(i8* %".8")
+  %".3" = getelementptr i32, i32* null, i32 1
+  %".4" = ptrtoint i32* %".3" to i32
+  %".5" = mul i32 10, %".4"
+  %".6" = call i16* @"bohem_malloc"(i32 %".5")
+  %".7" = ptrtoint i16* %".6" to i64
+  %".8" = inttoptr i64 %".7" to i32*
+  %".9" = alloca {<1 x i32>, i32*}
+  %".10" = getelementptr {<1 x i32>, i32*}, {<1 x i32>, i32*}* %".9", i32 0, i32 0
+  store <1 x i32> <i32 10>, <1 x i32>* %".10"
+  %".12" = getelementptr {<1 x i32>, i32*}, {<1 x i32>, i32*}* %".9", i32 0, i32 1
+  store i32* %".8", i32** %".12"
+  %".14" = load {<1 x i32>, i32*}, {<1 x i32>, i32*}* %".9"
+  %".15" = alloca {<1 x i32>, i32*}
+  store {<1 x i32>, i32*} %".14", {<1 x i32>, i32*}* %".15"
   ret i32 0
 }
