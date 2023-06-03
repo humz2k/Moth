@@ -14,5 +14,6 @@ def int main():
     str a = "First"
     str b = "Second"
     str c = a + b
-    print(c,a,b)
+    c[0] = 'f'
+    print(c)
     return 0

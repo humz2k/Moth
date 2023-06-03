@@ -52,20 +52,13 @@ entry:
   %".24" = alloca i8*
   store i8* %".20", i8** %".24"
   %".26" = load i8*, i8** %".24"
-  %".27" = bitcast [3 x i8]* @"string7" to i8*
-  %".28" = call i32 (i8*, ...) @"printf"(i8* %".27", i8* %".26")
-  %".29" = bitcast [2 x i8]* @"string11" to i8*
-  %".30" = call i32 (i8*, ...) @"printf"(i8* %".29")
-  %".31" = load i8*, i8** %".4"
-  %".32" = bitcast [3 x i8]* @"string7" to i8*
-  %".33" = call i32 (i8*, ...) @"printf"(i8* %".32", i8* %".31")
-  %".34" = bitcast [2 x i8]* @"string11" to i8*
-  %".35" = call i32 (i8*, ...) @"printf"(i8* %".34")
-  %".36" = load i8*, i8** %".7"
-  %".37" = bitcast [3 x i8]* @"string7" to i8*
-  %".38" = call i32 (i8*, ...) @"printf"(i8* %".37", i8* %".36")
-  %".39" = bitcast [2 x i8]* @"string10" to i8*
-  %".40" = call i32 (i8*, ...) @"printf"(i8* %".39")
+  %".27" = getelementptr i8, i8* %".26", i32 0
+  store i8 102, i8* %".27"
+  %".29" = load i8*, i8** %".24"
+  %".30" = bitcast [3 x i8]* @"string7" to i8*
+  %".31" = call i32 (i8*, ...) @"printf"(i8* %".30", i8* %".29")
+  %".32" = bitcast [2 x i8]* @"string10" to i8*
+  %".33" = call i32 (i8*, ...) @"printf"(i8* %".32")
   ret i32 0
 }
 
