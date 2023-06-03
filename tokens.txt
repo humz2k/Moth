@@ -89,6 +89,9 @@ MODIFIER \bextern\b
 
 FUNCTION_NAME \balloc\b
 FUNCTION_NAME \bexit\b
+FUNCTION_NAME \bstrlen\b
+
+VECTOR_LEN \bveclen\b
 
 FLOAT_LITERAL [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)f
 DOUBLE_LITERAL [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)d

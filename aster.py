@@ -28,6 +28,7 @@ class Program:
 
         strlen_ty = ir.FunctionType(ir.IntType(32),[ir.PointerType(ir.IntType(8))])
         helpers.STRLEN = ir.Function(module,strlen_ty,"strlen")
+        helpers.FUNCTIONS["strlen_i8*"] = helpers.STRLEN
 
         strcpy_ty = ir.FunctionType(ir.PointerType(ir.IntType(8)),[ir.PointerType(ir.IntType(8)),ir.PointerType(ir.IntType(8))])
         helpers.STRCPY = ir.Function(module,strcpy_ty,"strcpy")
@@ -252,16 +253,71 @@ class Print:
     
     def nonewline(self):
         self.nonewline = True
+
+    def print_vector(self,module,builder,val):
+        dims = val.type.dims
+        size = 1
+        for i in dims:
+            size *= i
+        muls = []
+        for i in range(len(dims)-1):
+            tmp = 1
+            for j in dims[i+1:]:
+                tmp *= j
+            muls.append(tmp)
+        print(muls)
+        vals = [builder.extract_element(val,ir.Constant(ir.IntType(32),i)) for i in range(size)]
+        #for i in range(len(dims)):
+        #    helpers.print_open_sqr(module,builder)
+        indexers = [0]*len(dims)
+        last = [1]*len(dims)
+        for idx,i in enumerate(vals):
+            for j in list(range(len(indexers)))[::-1]:
+                if indexers[j] == 0 and (last[j] != indexers[j]):
+                    helpers.print_open_sqr(module,builder)
+            last = indexers[:]
+            helpers.print_base(module,builder,i)
+            indexers[-1] += 1
+            for j in list(range(len(indexers)))[::-1][:-1]:
+                if indexers[j] == dims[j]:
+                    helpers.print_close_sqr(module,builder)
+                    if (j == 1) and (idx != (len(vals)-1)):
+                        helpers.print_newline(module,builder)
+                    indexers[j] = 0
+                    indexers[j-1] += 1
+            if idx != (len(vals)-1):
+                helpers.print_space(module,builder)
+            else:
+                helpers.print_close_sqr(module,builder)
+        return
+        for idx,i in enumerate(vals[:-1]):
+            if idx != 0:
+                index = []
+                for j in muls:
+                    index.append(idx//j)
+                print(index)
+            helpers.print_base(module,builder,i)
+            helpers.print_space(module,builder)
+        helpers.print_base(module,builder,vals[-1])
+        for i in range(len(dims)):
+            helpers.print_close_sqr(module,builder)
+        
     
     def eval(self,module,builder : ir.IRBuilder, local_vars, *args):
         for i in self.vals[:-1]:
             val = i.eval(module,builder,local_vars,None).get(module,builder)
             if val.type in helpers.base_types:
                 helpers.print_base(module,builder,val)
+            if isinstance(val.type, ir.VectorType):
+                self.print_vector(module,builder,val)
             helpers.print_space(module,builder)
         val = self.vals[-1].eval(module,builder,local_vars,None).get(module,builder)
         if val.type in helpers.base_types:
             helpers.print_base(module,builder,val)
+        else:
+            if isinstance(val.type, ir.VectorType):
+                self.print_vector(module,builder,val)
+            #exit()
         if not self.nonewline:
             helpers.print_newline(module,builder)
     
@@ -315,6 +371,14 @@ class Assign:
         self.val = val
     
     def eval(self,module,builder : ir.IRBuilder,local_vars,*args):
+        if isinstance(self.val,Constant):
+            val = self.val.get_python()
+            dest = self.dest.eval(module,builder,local_vars)
+            if isinstance(dest.type,ir.IntType):
+                val = int(val)
+            out = ir.Constant(dest.type,val)
+            dest.set(module,builder,helpers.cast(module,builder,out,dest.type))
+            return dest
         out = self.val.eval(module,builder,local_vars).get(module,builder)
         dest = self.dest.eval(module,builder,local_vars)
         if dest.type == out.type:
@@ -328,7 +392,7 @@ class Assign:
         if (isinstance(out.type,ir.IntType) and isinstance(dest.type,ir.IntType)) or ((out.type in [ir.HalfType(),ir.FloatType(),ir.DoubleType()]) and (dest.type in [ir.HalfType(),ir.FloatType(),ir.DoubleType()])):
             dest.set(module,builder,helpers.cast(module,builder,out,dest.type))
             return dest
-        if isinstance(self.val,Constant):
+        if (isinstance(out.type,ir.VectorType) and (isinstance(dest.type,ir.VectorType))):
             dest.set(module,builder,helpers.cast(module,builder,out,dest.type))
             return dest
         raise Exception("Invalid Assign")
@@ -349,26 +413,6 @@ class BinOp:
         global base_types
         left = self.left.eval(module,builder,local_vars).get(module,builder)
         right = self.right.eval(module,builder,local_vars).get(module,builder)
-        #if self.op in ["AND","OR"]:
-        #    if left.type == ir.IntType(1) and right.type == ir.IntType(1):
-        #        if self.op == "AND":
-        #            return helpers.Constant(builder.and_(left,right))
-        #        if self.op == "OR":
-        #            return helpers.Constant(builder.or_(left,right))
-        #    raise Exception("Invalid Types")
-        #if left.type in base_types and right.type in base_types:
-        #    left,right = promote(module,builder,left,right)
-        #if self.op in ["EQUAL","NOT_EQUAL",
-        #               "GREATER_OR_EQUAL","LESS_OR_EQUAL",
-        #               "GREATER","LESS"]:
-        #    ops = {"EQUAL" : "==",
-        #           "NOT_EQUAL" : "!=",
-        #            "GREATER_OR_EQUAL" : ">=",
-        #            "LESS_OR_EQUAL" : "<=",
-        #            "GREATER" : ">",
-        #            "LESS" : "<"}
-        #    return helpers.Constant(compare(builder,ops[self.op],left.type,left,right))
-        #out = arith(builder,self.op,left.type,left,right)
         return helpers.Constant(helpers.do_binop(module,builder,self.op,left,right))
 
 class UserBinOp:
@@ -393,16 +437,17 @@ class Index:
         self.idx = idx
     
     def eval(self,module,builder : ir.IRBuilder,local_vars,*args):
-        val = self.val.eval(module,builder,local_vars).get(module,builder)
+        val_eval = self.val.eval(module,builder,local_vars)
+        val = val_eval.get(module,builder)
         idx = self.idx.get_list(module,builder,local_vars)
         if not isinstance(idx[0].type,ir.IntType):
             raise Exception("Invalid type in index")
         if isinstance(val.type,ir.VectorType):
             if len(idx) == 1:
-                return helpers.VectorIndex(val,idx[0])
+                return helpers.VectorIndex(val_eval,val,idx[0],val.type.element)
             idx1d = helpers.get_idx_1d(module,builder,val.type.dims,idx)
             #out = builder.extract_element(val,idx1d)
-            return helpers.VectorIndex(val,idx1d)
+            return helpers.VectorIndex(val_eval,val,idx1d,val.type.element)
         if isinstance(val.type,ir.PointerType):
             if (val.type.pointee in helpers.base_types) or (isinstance(val.type.pointee,ir.PointerType)):
                 if len(idx) != 1:
@@ -410,11 +455,45 @@ class Index:
                 var = helpers.Variable(val.type.pointee)
                 var.raw = builder.gep(val,[idx[0]])
                 return var
+        if isinstance(val.type,ir.LiteralStructType):
+            if len(val.type.elements) == 2:
+                if isinstance(val.type.elements[0],ir.VectorType):
+                    if val.type.elements[0].element == ir.IntType(32):
+                        if isinstance(val.type.elements[1],ir.PointerType):
+                            raw = helpers.ArrayIndex(module,builder,local_vars,val,idx)
+                            var = helpers.Variable(raw.type.pointee)
+                            var.raw = raw
+                            return var
         raise Exception("Can't index type " + str(val.type))
 
 class Constant:
     def __init__(self,val):
         self.val = val
+    
+    def get_python(self):
+        if self.val.name == "NUMBER":
+            try:
+                return int(self.val.value)
+            except:
+                return float(self.val.value)
+        if self.val.name == "TRUE":
+            return 1
+        if self.val.name == "FALSE":
+            return 0
+        if self.val.name == "CHAR":
+            return ord(self.val.value[1:-1])
+        if self.val.name == "ENDSTR":
+            return ord("\0")
+        if self.val.name == "FLOAT_LITERAL":
+            return float(self.val.value[:-1])
+        if self.val.name == "DOUBLE_LITERAL":
+            return float(self.val.value[:-1])
+        if self.val.name == "HALF_LITERAL":
+            return float(self.val.value[:-1])
+        if self.val.name == "LONG_LITERAL":
+            return int(self.val.value[:-1])
+        print("CONSTANT " + self.val.name + " NOT IMPLEMENTED")
+        exit()
     
     def eval(self,module,builder : ir.IRBuilder,local_vars,*args):
         if self.val.name == "NUMBER":
@@ -459,7 +538,9 @@ class VectorLiteral:
         items = helpers.promote_many(module,builder,items)
         v_len = len(items)
         v_type = ir.VectorType(items[0].type,v_len)
-        return helpers.Constant(ir.Constant(v_type,items))
+        out = ir.Constant(v_type,items)
+        out.type.dims = [len(items)]
+        return helpers.Constant(out)
 
 class VarReference:
     def __init__(self,parent,name):
@@ -558,6 +639,43 @@ class VectorType:
         typ.dims = dims
         return typ
 
+class ArrayInit:
+    def __init__(self,typ,dims):
+        self.type = typ
+        self.dims = dims
+    
+    def eval(self,module,builder : ir.IRBuilder, local_vars,*args):
+        typ = self.type.eval(module)
+        dims = self.dims.get_list(module,builder,local_vars)
+        dims = helpers.promote_many(module,builder,dims)
+        if not isinstance(dims[0].type,ir.IntType):
+            raise Exception("Array Init not int")
+        dims = [helpers.cast(module,builder,i,ir.IntType(32)) for i in dims]
+        size = dims[0]
+        for i in dims[1:]:
+            size = builder.mul(size,i)
+        size = builder.mul(size,helpers.gep_hack(builder,typ))
+        dims_vec = ir.Constant(ir.VectorType(ir.IntType(32),len(dims)),dims)
+        out_ptr = builder.call(helpers.ALLOC,[size])
+        out_ptr = builder.inttoptr(builder.ptrtoint(out_ptr,ir.IntType(64)),ir.PointerType(typ))
+        out = builder.alloca(ir.LiteralStructType([ir.VectorType(ir.IntType(32),len(dims)),ir.PointerType(typ)]))
+        vec_part = builder.gep(out,[ir.Constant(ir.IntType(32),0),ir.Constant(ir.IntType(32),0)])
+        vec_part = builder.store(dims_vec,vec_part)
+        ptr_part = builder.gep(out,[ir.Constant(ir.IntType(32),0),ir.Constant(ir.IntType(32),1)])
+        ptr_part = builder.store(out_ptr,ptr_part)
+        var = helpers.Variable(ir.LiteralStructType([ir.VectorType(ir.IntType(32),len(dims)),ir.PointerType(typ)]))
+        var.raw = out
+        return var
+
+class ArrayType:
+    def __init__(self,typ,ndims):
+        self.type = typ
+        self.ndims = ndims
+    
+    def eval(self,module,*args):
+        base_type = self.type.eval(module)
+        return ir.LiteralStructType([ir.VectorType(ir.IntType(32),self.ndims),ir.PointerType(base_type)])
+
 class PointerType:
     def __init__(self,typ):
         self.type = typ
@@ -572,5 +690,18 @@ class String:
     def eval(self,module,builder,*args):
         string = helpers.make_string(module,builder,self.val.value[1:-1])
         return helpers.Constant(string)
+    
+class VecLen:
+    def __init__(self,expr):
+        self.expr = expr
+    
+    def eval(self,module,builder,local_vars,*args):
+        expr = self.expr.eval(module,builder,local_vars).get(module,builder)
+        dims = expr.type.dims
+        size = 1
+        for i in dims:
+            size *= i
+        out = ir.Constant(ir.IntType(32),size)
+        return helpers.Constant(out)
 
     

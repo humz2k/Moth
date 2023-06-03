@@ -471,6 +471,28 @@ def get_parser(filename="tokens.txt"):
     def pass_var(state,p):
         return aster.NamsespaceFunc(p[0],p[2])
     
+    @pg.production('expression : VECTOR_LEN OPEN_PAREN expression CLOSE_PAREN')
+    def pass_veclen(state,p):
+        return aster.VecLen(p[2])
+    
+    @pg.production('expression : NEW type vector')
+    def pass_array_init(state,p):
+        return aster.ArrayInit(p[1],p[2])
+    
+    @pg.production('array_type_open : type OPEN_SQUARE COLON')
+    def pass_array_type(state,p):
+        return p[0],1
+
+    @pg.production('array_type_open : array_type_open COMMA COLON')
+    def pass_array_type(state,p):
+        typ,ndims = p[0]
+        return typ,ndims+1
+    
+    @pg.production('type : array_type_open CLOSE_SQUARE')
+    def pass_array_type(state,p):
+        typ,ndims = p[0]
+        return aster.ArrayType(typ,ndims)
+    
     @pg.production('type : TYPE_NAME')
     def pass_type(state,p):
         return aster.BaseType(p[0])

@@ -50,14 +50,16 @@ def generate_formatters(module):
     FORMATTERS[ir.IntType(8)] = make_formatter(module,"%c")
     FORMATTERS[ir.IntType(32)] = make_formatter(module,"%d")
     FORMATTERS[ir.IntType(64)] = make_formatter(module,"%ld")
-    FORMATTERS[ir.HalfType()] = make_formatter(module,"%f")
-    FORMATTERS[ir.FloatType()] = make_formatter(module,"%f")
-    FORMATTERS[ir.DoubleType()] = make_formatter(module,"%f")
+    FORMATTERS[ir.HalfType()] = make_formatter(module,"%g")
+    FORMATTERS[ir.FloatType()] = make_formatter(module,"%g")
+    FORMATTERS[ir.DoubleType()] = make_formatter(module,"%g")
     FORMATTERS[ir.PointerType(ir.IntType(8))] = make_formatter(module,"%s")
     FORMATTERS["True"] = make_formatter(module,"True")
     FORMATTERS["False"] = make_formatter(module,"False")
     FORMATTERS["Newline"] = make_formatter(module,"\n")
     FORMATTERS["Space"] = make_formatter(module," ")
+    FORMATTERS["["] = make_formatter(module,"[")
+    FORMATTERS["]"] = make_formatter(module,"]")
 
 def print_base(module,builder : ir.IRBuilder,val):
     formatter = FORMATTERS[val.type]
@@ -78,6 +80,12 @@ def print_newline(module,builder : ir.IRBuilder):
 
 def print_space(module,builder : ir.IRBuilder):
     builder.call(PRINT,[builder.bitcast(FORMATTERS["Space"], ir.IntType(8).as_pointer())])
+
+def print_open_sqr(module,builder : ir.IRBuilder):
+    builder.call(PRINT,[builder.bitcast(FORMATTERS["["], ir.IntType(8).as_pointer())])
+
+def print_close_sqr(module,builder : ir.IRBuilder):
+    builder.call(PRINT,[builder.bitcast(FORMATTERS["]"], ir.IntType(8).as_pointer())])
 
 def eval_lines(module,builder,local_vars,break_to,lines):
     for i in lines:
@@ -112,10 +120,17 @@ def cast(module, builder : ir.IRBuilder,val,new_type):
             size = 1
             for i in val.type.dims:
                 size *= i
-            items = []
+            out = ir.Constant(ir.VectorType(new_type.element,size),[0]*size)
+            elems = []
             for i in range(size):
-                items.append(cast(module,builder,builder.extract_element(val,ir.Constant(ir.IntType(32),i)),new_type.element))
-            out = ir.Constant(new_type,items)
+                elems.append(builder.extract_element(val,ir.Constant(ir.IntType(32),i)))
+            vals = []
+            for i in range(size):
+                tmp = cast(module,builder,elems[i],new_type.element)
+                vals.append(tmp)
+            for i in range(size):
+                out = builder.insert_element(out,vals[i],ir.Constant(ir.IntType(32),i))
+            out.type.dims = new_type.dims
             return out
     raise Exception("NO CAST EXISTS")
 
@@ -199,6 +214,31 @@ def mangle(name,inputs):
         return name.value
     return name.value + "_" + "_".join([str(i) for i in inputs])
 
+def math_vectors(module,builder : ir.IRBuilder,op,left,right,func):
+    left_dims = tuple(left.type.dims)
+    right_dims = tuple(right.type.dims)
+    size = 1
+    for i in left_dims:
+        size *= i
+    if left_dims != right_dims:
+        raise Exception("Can't " + str(op) + " vectors with dims " + str(left_dims) + " and " + str(right_dims))
+    vals = [builder.extract_element(left,ir.Constant(ir.IntType(32),i)) for i in range(size)] + [builder.extract_element(right,ir.Constant(ir.IntType(32),i)) for i in range(size)]
+    vals = promote_many(module,builder,vals)
+    left_vals = vals[:size]
+    right_vals = vals[size:]
+    out = None
+    vals = []
+    for idx,i,j in zip(list(range(size)),left_vals,right_vals):
+        tmp = func(module,builder,op,i,j)
+        vals.append(tmp)
+        #print(tmp)
+        #print(tmp.type)
+    out = ir.Constant(ir.VectorType(vals[0].type,size),[0]*size)
+    for idx,i in enumerate(vals):
+        out = builder.insert_element(out,i,ir.Constant(ir.IntType(32),idx))
+    out.type.dims = left.type.dims[:]
+    return out
+
 def do_binop(module,builder,op,left,right):
     if op in ["AND","OR"]:
         if left.type == ir.IntType(1) and right.type == ir.IntType(1):
@@ -209,19 +249,21 @@ def do_binop(module,builder,op,left,right):
         raise Exception("Invalid Types")
     if left.type in base_types and right.type in base_types:
         left,right = promote(module,builder,left,right)
-        return arith(builder,op,left.type,left,right)
-    if op in ["EQUAL","NOT_EQUAL",
-                    "GREATER_OR_EQUAL","LESS_OR_EQUAL",
-                    "GREATER","LESS"]:
-        ops = {"EQUAL" : "==",
-                "NOT_EQUAL" : "!=",
-                "GREATER_OR_EQUAL" : ">=",
-                "LESS_OR_EQUAL" : "<=",
-                "GREATER" : ">",
-                "LESS" : "<"}
-        return compare(builder,ops[op],left.type,left,right)
+        if op in ["EQUAL","NOT_EQUAL",
+                        "GREATER_OR_EQUAL","LESS_OR_EQUAL",
+                        "GREATER","LESS"]:
+            ops = {"EQUAL" : "==",
+                    "NOT_EQUAL" : "!=",
+                    "GREATER_OR_EQUAL" : ">=",
+                    "LESS_OR_EQUAL" : "<=",
+                    "GREATER" : ">",
+                    "LESS" : "<"}
+            return compare(builder,ops[op],left.type,left,right)
+        else:
+            return arith(builder,op,left.type,left,right)
+    if isinstance(left.type,ir.VectorType) and isinstance(right.type,ir.VectorType):
+        return math_vectors(module,builder,op,left,right,do_binop)
     raise Exception("BINOP NOT IMPLEMENTED")
-    
 
 def get_idx_1d(module,builder,dims,idx):
     ndims = len(dims)
@@ -240,6 +282,37 @@ def get_idx_1d(module,builder,dims,idx):
         idx1d = builder.add(idx1d,builder.mul(cast(module,builder,idx[i],ir.IntType(32)),ir.Constant(ir.IntType(32),muls[i])))
     return idx1d
 
+def get_idx_1d_array(module,builder,dims,idx):
+    ndims = len(dims)
+    nindex = len(idx)
+    if ndims != nindex:
+        raise Exception("Invalid number of dimensions to index")
+    muls = [ir.Constant(ir.IntType(32),1)]
+    dims = [cast(module,builder,i,ir.IntType(32)) for i in dims]
+    for i in range(1,ndims):
+        dims = dims[i:]
+        mul = dims[0]
+        for j in dims[1:]:
+            mul = builder.mul(mul,j)
+        muls.append(mul)
+    idx1d = builder.mul(cast(module,builder,idx[0],ir.IntType(32)),muls[0])
+    for i in range(1,ndims):
+        idx1d = builder.add(idx1d,builder.mul(cast(module,builder,idx[i],ir.IntType(32)),muls[i]))
+    return idx1d
+
+def ArrayIndex(module,builder : ir.IRBuilder,local_vars,array : ir.Constant,index):
+    dims = builder.extract_value(array,0)#.gep([ir.Constant(ir.IntType(32),0)]))
+    pointer = builder.extract_value(array,1)
+    ndims = dims.type.count
+    if (len(index) != ndims) and (len(index) != 1):
+        raise Exception("Wrong number of indexers")
+    if len(index) == 1:
+        idx_1d = cast(module,builder,index[0],ir.IntType(32))
+    else:
+        out_dims = [builder.extract_element(dims,ir.Constant(ir.IntType(32),i)) for i in range(ndims)]
+        idx_1d = get_idx_1d_array(module,builder,out_dims,index)
+    return builder.gep(pointer,[idx_1d])
+
 class Variable:
     def __init__(self,typ):
         self.type = typ
@@ -257,13 +330,17 @@ class Variable:
         return builder.load(self.raw)
     
 class VectorIndex:
-    def __init__(self,vector,idx1d):
+    def __init__(self,vstore,vector,idx1d,typ):
+        self.vstore = vstore
         self.vector = vector
         self.idx1d = idx1d
-        self.type = self.vector.type.element
+        self.type = typ
     
     def set(self,module,builder : ir.IRBuilder, val):
-        builder.insert_element(self.vector,val,self.idx1d)
+        #print(self.vector.get(module,builder))
+        new = builder.insert_element(self.vector,val,self.idx1d)
+        self.vstore.set(module,builder,new)
+        #self.vector.set(module,builder,new)
     
     def get(self,module,builder : ir.IRBuilder):
         return builder.extract_element(self.vector,self.idx1d)

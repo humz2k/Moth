@@ -10,10 +10,10 @@ comment
 @extern
 def float powf(float a)
 
+def int len(str a):
+    return strlen(a)
+
 def int main():
-    str a = "First"
-    str b = "Second"
-    str c = a + b
-    c[0] = 'f'
-    print(c)
+    int3 a = [1,2,3]
+    print(veclen(a))
     return 0
