@@ -88,3 +88,18 @@ def get_lexer(filename = "tokens.txt", object_names = [], struct_names = [], fun
             lexer.add(i[0],i[1])
 
     return lexer.build()
+
+def lex(raw : str,path):
+    """Return tokens from string."""
+    raw = remove_comments(raw)
+    raw = convert(raw)
+
+    function_names = find_functions(raw)
+    object_names = find_objects(raw)
+    struct_names = find_structs(raw)
+    namespaces = find_namespaces(raw)
+
+    lexer = get_lexer(filename = path, function_names = function_names, object_names = object_names, struct_names = struct_names, namespaces = namespaces)
+
+    tokens = [i for i in lexer.lex(raw)]
+    return tokens

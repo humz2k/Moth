@@ -1,6 +1,6 @@
 from rply import ParserGenerator
 from rply.token import Token
-import aster
+from . import aster
 
 class ParserState(object):
     def __init__(self):
@@ -521,3 +521,8 @@ def get_parser(filename="tokens.txt"):
     out = pg.build()
     print(out.lr_table.sr_conflicts)
     return out
+
+def parse(tokens,path):
+    parser = get_parser(filename = path)
+    parsed = parser.parse(iter(tokens),ParserState())
+    return parsed
