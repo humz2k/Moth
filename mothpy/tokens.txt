@@ -11,8 +11,8 @@ STARSTAR_EQUAL \*\*\=
 STAR_EQUAL \*\=
 SLASH_EQUAL \/\=
 PERCENT_EQUAL \%\=
-RSHIFT_EQUAL \>\>\=
-LSHIFT_EQUAL \<\<\=
+RIGHT_SHIFT_EQUAL \>\>\=
+LEFT_SHIFT_EQUAL \<\<\=
 
 RIGHT_SHIFT \>\>
 LEFT_SHIFT \<\<
@@ -24,7 +24,7 @@ STAR \*
 SLASH \/
 PERCENT \%
 
-BACKSLASH \\
+USER_BINOP \\\w+
 
 AT \@
 
@@ -64,7 +64,6 @@ KERNEL \bkernel\b
 CAST \bcast\b
 SIZEOF \bsizeof\b
 MODIFIER \binline\b
-RESTRICT \brestrict\b
 
 STRUCT \bstruct\b
 OBJECT \bobject\b

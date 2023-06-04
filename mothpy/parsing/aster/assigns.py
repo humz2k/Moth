@@ -78,21 +78,28 @@ class Assign:
                 out = common.cast_ptr(builder,out,dest.type)
                 dest.set(common,builder,out)
                 return dest
-        if (common.is_int(out) and common.is_int(dest)) or (common.is_float(out) and common.is_float(dest)):
+        if (common.is_int(out) and common.type_is_int(dest.type)) or (common.is_float(out) and common.type_is_float(dest.type)):
             dest.set(common,builder,common.cast(builder,out,dest.type))
             return dest
-        if (common.is_vector(out) and common.is_vector(dest)):
+        if (common.is_vector(out) and common.type_is_vector(dest.type)):
             dest.set(common,builder,common.cast(builder,out,dest.type))
             return dest
         common.throw_error("Invalid Assign")
 
-class IncAssign:
-    def __init__(self,op,dest,val):
-        self.op = op
-        self.dest = dest
-        self.val = val
-
 class Incr:
-    def __init__(self,op,val):
+    def __init__(self,op,val,post):
         self.op = op
         self.val = val
+        self.post = post
+    
+    def eval(self,common,builder:ir.IRBuilder,local_vars,*args):
+        var = self.val.eval(common,builder,local_vars)
+        val = var.get(common,builder)
+        op = self.op.split("_")[0]
+        if common.is_base(val):
+            new_val = common.do_binop(builder,op,val,ir.Constant(ir.IntType(8),1))
+            var.set(common,builder,new_val)
+            if self.post:
+                return common.constant(val)
+            return common.constant(new_val)
+        common.throw_error("Incr not implemented for type " + str(val.type))

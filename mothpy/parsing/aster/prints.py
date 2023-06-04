@@ -13,7 +13,7 @@ class Print:
     def nonewline(self):
         self.nonewline = True
 
-    def print_vector(self,common,builder,val):
+    def print_vector(self,common,builder : ir.IRBuilder,val):
         dims = val.type.dims
         size = 1
         for i in dims:
@@ -21,42 +21,66 @@ class Print:
         vals = [builder.extract_element(val,ir.Constant(ir.IntType(32),i)) for i in range(size)]
         #for i in range(len(dims)):
         #    helpers.print_open_sqr(module,builder)
+        print_vals = []
+        print_fmt = ""
         indexers = [0]*len(dims)
         last = [1]*len(dims)
         for idx,i in enumerate(vals):
             for j in list(range(len(indexers)))[::-1]:
                 if indexers[j] == 0 and (last[j] != indexers[j]):
-                    common.printf(builder,"[")
+                    #common.printf(builder,"[")
+                    print_fmt += "["
             last = indexers[:]
-            common.printf(builder,i)
+            fmt,out_val = common.get_print_formatter(builder,i)
+            print_fmt += fmt
+            print_vals.append(out_val)
+            #common.printf(builder,i)
             indexers[-1] += 1
             for j in list(range(len(indexers)))[::-1][:-1]:
                 if indexers[j] == dims[j]:
-                    common.printf(builder,"]")
+                    #common.printf(builder,"]")
+                    print_fmt += "]"
                     if (j == 1) and (idx != (len(vals)-1)):
-                        common.printf(builder,"\n")
+                        #common.printf(builder,"\n")
+                        print_fmt += "\n"
                     indexers[j] = 0
                     indexers[j-1] += 1
             if idx != (len(vals)-1):
-                common.printf(builder," ")
+                #common.printf(builder," ")
+                print_fmt += " "
             else:
-                common.printf(builder,"]")
-        return
+                print_fmt += "]"
+                #common.printf(builder,"]")
+        return print_fmt,print_vals
+
 
     def print_array(self,common,builder : ir.IRBuilder, val):
         ndims = val.type.elements[0].count
         self.throw_error("printing arrays not implemented")
     
     def eval(self,common,builder : ir.IRBuilder, local_vars, *args):
+        out_fmt = ""
+        out_vals = []
         for idx,i in enumerate(self.vals):
             val = i.eval(common,builder,local_vars,None).get(common,builder)
             if common.is_base(val):
-                common.printf(builder,val)
+                fmt,out_val = common.get_print_formatter(builder,val)
+                out_fmt += fmt
+                out_vals.append(out_val)
             elif common.is_vector(val):
-                self.print_vector(common,builder,val)
-            elif common.is_array(val):
-                self.print_array(common,builder,val)
+                fmt,new_vals = self.print_vector(common,builder,val)
+                out_fmt += fmt
+                out_vals += new_vals
+            elif common.is_struct(val):
+                fmt,new_vals = common.get_struct_formatter(builder,val)
+                out_fmt += fmt
+                out_vals += new_vals
+            else:
+                common.throw_error("Can't print type " + str(val.type))
+            #elif common.is_array(val):
+            #    self.print_array(common,builder,val)
             if idx != (len(self.vals)-1):
-                common.printf(builder," ")
+                out_fmt += " "
         if not self.nonewline:
-            common.printf(builder,"\n")
+            out_fmt += "\n"
+        builder.call(common.print_func,[common.get_string(builder,out_fmt)] + out_vals)

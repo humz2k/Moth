@@ -16,6 +16,5 @@ os.system("clang tmp.o gc_tools.o -o tmp")
 
 tmp_lib = "tmp"
 tmp = ctypes.CDLL(tmp_lib)
-print("-----------")
 
 tmp.main()

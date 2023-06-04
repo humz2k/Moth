@@ -2,7 +2,7 @@ from rply import LexerGenerator
 import re
 
 def remove_comments(raw):
-    multilines = re.findall(r"\#\#\#.*\#\#\#",raw,re.DOTALL)
+    multilines = re.findall(r"\#\#\#.*?\#\#\#",raw,re.DOTALL)
     for i in multilines:
         raw = raw.replace(i,(i.count("\n")) * "\n")
     comments = re.findall(r"\#.*",raw)

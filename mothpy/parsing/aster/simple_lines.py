@@ -35,6 +35,10 @@ class Break:
 class Sizeof:
     def __init__(self,typ):
         self.type = typ
+    
+    def eval(self,common,builder : ir.IRBuilder, local_vars,*args):
+        typ = self.type.eval(common)
+        return common.constant(common.sizeof(builder,typ))
 
 class Typeof:
     def __init__(self,val):

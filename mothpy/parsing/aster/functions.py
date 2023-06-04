@@ -19,7 +19,7 @@ class FunctionHeader:
             if common.functions[self.mangled].is_declaration:
                 self.func = common.functions[self.mangled]
                 return self.func
-            self.throw_error("Function " + name + " already exists")
+            common.throw_error("Function " + name + " already exists")
         if modifiers["extern"]:
             name = self.name.value
         self.func = ir.Function(common.module,func_ty,name)
@@ -45,6 +45,8 @@ class Function:
     
     def eval(self,common,parent = None):
         func = self.header.generate(common,self.modifiers,parent)
+        if self.modifiers["inline"]:
+            func.attributes.add("alwaysinline")
         common.functions[self.header.mangled] = func
         if len(self.lines) == 0:
             return
@@ -58,7 +60,7 @@ class Function:
             if func.type.pointee.return_type == ir.VoidType():
                 builder.ret_void()
                 return
-            self.throw_error("Function does not return value")
+            common.throw_error("Function does not return value")
 
 class FunctionCall:
     def __init__(self,name,inputs = []):
@@ -75,7 +77,7 @@ class FunctionCall:
             if name in common.functions:
                 func = common.functions[name]
         if type(func) == type(None):
-            self.throw_error("Function " + str(self.name) + " not found")
+            common.throw_error("Function " + str(self.name) + " not found")
         return common.constant(builder.call(func,inputs))
     
 class FuncReference:

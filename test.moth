@@ -7,20 +7,13 @@ multiline
 comment
 ###
 
-@extern
-def float powf(float a)
-
-struct Test:
+object Test:
     int a
     int b
 
+    def void __init__(Test self):
+        self.a = 10
+
 def int main():
-    int[:] a = new int[10]
-    print(a[0])
-    a[0] = 10
-    print(a[0])
-    float3x3 basd = [1,2,3,4,5,6,7,8,9] - [1,2,3,4,5,6,7,8,9]
-    basd[0,1] = 10.0f
-    print(basd)
-    float b = 1
+    Test a = new Test()
     return 0

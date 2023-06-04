@@ -38,6 +38,10 @@ class ObjectType:
     def __init__(self,name):
         self.name = name
 
+    def eval(self,common,*args):
+        if self.name.value in common.objects:
+            return common.objects[self.name.value]
+
 class VectorType:
     def __init__(self,typ):
         self.type = typ

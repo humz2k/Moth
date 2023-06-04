@@ -13,7 +13,9 @@ def get_parser(filename="tokens.txt"):
     if "IGNORE" in tokens:
         tokens.remove("IGNORE")
     pg = ParserGenerator(tokens, precedence=[
-        ('left',["ASSIGN","PLUS_EQUAL","MINUS_EQUAL","STARSTAR_EQUAL","STAR_EQUAL","SLASH_EQUAL","PERCENT_EQUAL","RSHIFT_EQUAL","LSHIFT_EQUAL"]),
+        ('left',["PLUS_PLUS","MINUS_MINUS"]),
+        ('left',["ASSIGN","PLUS_EQUAL","MINUS_EQUAL","STARSTAR_EQUAL","STAR_EQUAL","SLASH_EQUAL","PERCENT_EQUAL","RIGHT_SHIFT_EQUAL","LEFT_SHIFT_EQUAL"]),
+        ('left', ['USER_BINOP']),
         ('left', ['PLUS', 'MINUS']),
         ('left', ['STAR', 'SLASH', 'AT']),
         ('left', ['PERCENT']),
@@ -22,7 +24,6 @@ def get_parser(filename="tokens.txt"):
         ('left', ['AMP', 'VERT','HAT','TILDE','LEFT_SHIFT','RIGHT_SHIFT']),
         ('left', ['AND', 'OR']),
         ('left', ['NOT']),
-        ('left', ['BACKSLASH']),
         ('left', ['PERIOD']),
         ('left',["OPEN_SQUARE"]),
         ('left',["OPEN_PAREN"])
@@ -286,10 +287,19 @@ def get_parser(filename="tokens.txt"):
     def pass_expression(state,p):
         return aster.SinOp(p[0].name,p[1])
     
+    @pg.production('expression : STAR expression')
+    def var_deref(state,p):
+        return aster.VarDeref(p[1])
+    
     @pg.production('expression : expression PLUS_PLUS')
     @pg.production('expression : expression MINUS_MINUS')
     def pass_expression(state,p):
-        return aster.Incr(p[1].name,p[0])
+        return aster.Incr(p[1].name,p[0],True)
+    
+    @pg.production('expression : PLUS_PLUS expression')
+    @pg.production('expression : MINUS_MINUS expression')
+    def pass_expression(state,p):
+        return aster.Incr(p[0].name,p[1],False)
     
     @pg.production('expression : FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
     @pg.production('expression : ref_func OPEN_PAREN CLOSE_PAREN')
@@ -309,13 +319,13 @@ def get_parser(filename="tokens.txt"):
     def pass_function(state,p):
         return aster.FunctionCall(p[0][0],p[0][1:])
     
-    @pg.production('expression : STRUCT_NAME OPEN_PAREN CLOSE_PAREN')
+    @pg.production('expression : NEW STRUCT_NAME OPEN_PAREN CLOSE_PAREN')
     def pass_function(state,p):
-        return aster.NewStruct(p[0])
+        return aster.NewStruct(p[1])
     
-    @pg.production('struct_call_open : STRUCT_NAME OPEN_PAREN expression')
+    @pg.production('struct_call_open : NEW STRUCT_NAME OPEN_PAREN expression')
     def pass_function(state,p):
-        return [p[0],p[2]]
+        return [p[1],p[3]]
     
     @pg.production('struct_call_open : struct_call_open COMMA expression')
     def pass_function(state,p):
@@ -325,13 +335,13 @@ def get_parser(filename="tokens.txt"):
     def pass_function(state,p):
         return aster.NewStruct(p[0][0],p[0][1:])
     
-    @pg.production('expression : OBJECT_NAME OPEN_PAREN CLOSE_PAREN')
+    @pg.production('expression : NEW OBJECT_NAME OPEN_PAREN CLOSE_PAREN')
     def pass_function(state,p):
-        return aster.NewObject(p[0])
+        return aster.NewObject(p[1])
     
-    @pg.production('object_call_open : OBJECT_NAME OPEN_PAREN expression')
+    @pg.production('object_call_open : NEW OBJECT_NAME OPEN_PAREN expression')
     def pass_function(state,p):
-        return [p[0],p[2]]
+        return [p[1],p[3]]
     
     @pg.production('object_call_open : object_call_open COMMA expression')
     def pass_function(state,p):
@@ -378,6 +388,12 @@ def get_parser(filename="tokens.txt"):
     def string(state,p):
         return aster.String(p[0])
     
+    @pg.production('expression : expression USER_BINOP expression')
+    def user_binop(state,p):
+        left,name,right = p
+        name = Token("FUNCTION_NAME",name.value[1:])
+        return aster.FunctionCall(name,[left,right])
+    
     @pg.production('expression : expression ASSIGN expression')
     def declaration(state,p):
         return aster.Assign(p[0],p[2])
@@ -388,10 +404,13 @@ def get_parser(filename="tokens.txt"):
     @pg.production('expression : expression STAR_EQUAL expression')
     @pg.production('expression : expression SLASH_EQUAL expression')
     @pg.production('expression : expression PERCENT_EQUAL expression')
-    @pg.production('expression : expression RSHIFT_EQUAL expression')
-    @pg.production('expression : expression LSHIFT_EQUAL expression')
+    @pg.production('expression : expression RIGHT_SHIFT_EQUAL expression')
+    @pg.production('expression : expression LEFT_SHIFT_EQUAL expression')
     def declaration(state,p):
-        return aster.IncAssign(p[1],p[0],p[2])
+        left,op,right = p
+        op = op.name.split("_EQUAL")[0]
+        binop = aster.BinOp(op,left,right)
+        return aster.Assign(left,binop)
     
     @pg.production('expression : PRINT OPEN_PAREN CLOSE_PAREN')
     def pass_print(state,p):
@@ -519,7 +538,8 @@ def get_parser(filename="tokens.txt"):
         exit()
 
     out = pg.build()
-    print(out.lr_table.sr_conflicts)
+    if len(out.lr_table.sr_conflicts) != 0:
+        print(out.lr_table.sr_conflicts)
     return out
 
 def parse(tokens,path):
