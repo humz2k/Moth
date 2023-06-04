@@ -152,6 +152,7 @@ old
 
 *.o
 *.ll
+tmp
 
 # PyCharm
 #  JetBrains specific template is maintainted in a separate JetBrains.gitignore that can
