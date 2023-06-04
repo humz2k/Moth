@@ -3,10 +3,10 @@ import os
 import sys
 import ctypes
 
-with open("test.txt","r") as f:
+with open("test.moth","r") as f:
     raw = f.read()
 
-out = mothpy.compileMoth(raw,"test.txt")
+out = mothpy.compileMoth(raw,"test.moth")
 
 with open("tmp.ll","w") as f:
     f.write(out)
