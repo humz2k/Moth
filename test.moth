@@ -7,7 +7,7 @@ multiline
 comment
 ###
 
-include numoth.moth
+include <numoth.moth>
 include <time.moth>
 
 def int main():
