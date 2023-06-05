@@ -47,12 +47,3 @@ class NewStruct:
             func = common.functions[mangled]
             out = builder.call(func,inputs)
             return common.constant(out)
-        #print(func)
-        #struct_ty = common.structs[self.name.value]
-        #var = common.variable(struct_ty)
-        #var.init(common,builder)
-        #print(var.raw.type)
-        #print(struct_ty)
-        #print(self.name.value)
-        #print(inputs)
-        exit()

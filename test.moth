@@ -7,12 +7,13 @@ multiline
 comment
 ###
 
-object Test:
+struct Test:
     int a
     int b
 
-    def void __init__(Test self):
-        self.a = 10
+struct Test:
+    int a
+    int b
 
 def int main():
     Test a = new Test()

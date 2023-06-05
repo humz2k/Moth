@@ -70,6 +70,10 @@ class FunctionCall:
     def eval(self,common,builder : ir.IRBuilder,local_vars,*args):
         func = None
         inputs = [i.eval(common,builder,local_vars).get(common,builder) for i in self.inputs]
+        if isinstance(self.name,FuncReference):
+            name,inputs = self.name.get(common,builder,local_vars,inputs)
+            if name in common.functions:
+                func = common.functions[name]
         if isinstance(self.name,Token):
             name = self.name.value
             #if not name in ["alloc","exit"]:
@@ -84,6 +88,17 @@ class FuncReference:
     def __init__(self,parent,name):
         self.parent = parent
         self.name = name
+    
+    def get(self,common,builder : ir.IRBuilder, local_vars, inputs):
+        parent = self.parent.eval(common,builder,local_vars)
+        if common.type_is_object(parent.raw.type.pointee):
+            type_name = parent.raw.type.pointee.pointee.name.split("OBJECT_")[1]
+            func_name = type_name + "_" + self.name.value
+            inputs = [parent.get(common,builder)] + inputs
+            input_types = [i.type for i in inputs]
+            mangled = common.mangle(Token("FUNCTION_NAME",func_name),input_types)
+            return mangled,inputs
+        common.throw_error("FuncRef for Structs not implemented")
 
 class NamsespaceFunc:
     def __init__(self,namespace,name):

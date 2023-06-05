@@ -75,6 +75,9 @@ class Print:
                 fmt,new_vals = common.get_struct_formatter(builder,val)
                 out_fmt += fmt
                 out_vals += new_vals
+            elif common.is_object(val):
+                name = val.type.pointee.name.split("OBJECT_")[1]
+                out_fmt += "object[" + name + "]"
             else:
                 common.throw_error("Can't print type " + str(val.type))
             #elif common.is_array(val):
