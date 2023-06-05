@@ -14,11 +14,18 @@ class Object:
     def add_function(self,func):
         self.functions.append(func)
     
-    def eval(self,common,*args):
+    def eval(self,common,module_prefix = "",*args):
         type_name = self.name.value
-        typ = common.make_object_type(type_name,self.attributes)
+        if module_prefix + type_name in common.objects:
+            existing_type = common.objects[module_prefix + type_name]
+            my_attrs = tuple([i.type.eval(common) for i in self.attributes])
+            if not my_attrs == existing_type.pointee.elements:
+                common.throw_error("Redef of object " + module_prefix + type_name)
+            typ = existing_type
+        else:
+            typ = common.make_object_type(type_name,self.attributes,module_prefix = module_prefix)
         for i in self.functions:
-            i.eval(common,type_name)
+            i.eval(common,type_name,module_prefix = module_prefix)
 
 class NewObject:
     def __init__(self,name,inputs = []):
@@ -27,10 +34,16 @@ class NewObject:
 
     def eval(self,common,builder : ir.IRBuilder,local_vars,*args):
         inputs = [i.eval(common,builder,local_vars).get(common,builder) for i in self.inputs]
-        if not self.name.value in common.objects:
-            common.throw_error("Object doesn't exist (this should not happen)")
-        object_ty = common.objects[self.name.value]
-        func_name = self.name.value + "_" + "__init__"
+        if (common.current_module + self.name.value in common.objects):
+            object_ty = common.objects[common.current_module + self.name.value]
+            func_name = common.current_module + self.name.value + "_" + "__init__"
+        else:
+            if self.name.value in common.objects:
+                object_ty = common.objects[self.name.value]
+                func_name = self.name.value + "_" + "__init__"
+            else:
+                common.throw_error("Object doesn't exist (this should not happen)")
+        
         size = common.sizeof(builder,object_ty.pointee)
         alloced = common.alloc(builder,size,object_ty)
         alloced.type.pointee.element_names = object_ty.pointee.element_names

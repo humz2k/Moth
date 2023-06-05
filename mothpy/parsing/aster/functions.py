@@ -9,11 +9,11 @@ class FunctionHeader:
         self.mangled = None
         self.inputs = inputs
     
-    def generate(self,common,modifiers,parent = None):
+    def generate(self,common,modifiers,parent = None,module_prefix = ""):
         ret_type = self.type.eval(common)
         inputs = [i[0].eval(common) for i in self.inputs]
         func_ty = ir.FunctionType(ret_type,inputs)
-        name = common.mangle(self.name,inputs,parent)
+        name = module_prefix + common.mangle(self.name,inputs,parent)
         self.mangled = name
         if self.mangled in common.functions:
             if common.functions[self.mangled].is_declaration:
@@ -43,8 +43,8 @@ class Function:
         self.locals = {}
         self.modifiers = {"inline": False, "extern": False}
     
-    def eval(self,common,parent = None):
-        func = self.header.generate(common,self.modifiers,parent)
+    def eval(self,common,parent = None,module_prefix = ""):
+        func = self.header.generate(common,self.modifiers,parent,module_prefix=module_prefix)
         if self.modifiers["inline"]:
             func.attributes.add("alwaysinline")
         common.functions[self.header.mangled] = func
@@ -74,10 +74,17 @@ class FunctionCall:
             name,inputs = self.name.get(common,builder,local_vars,inputs)
             if name in common.functions:
                 func = common.functions[name]
+        if isinstance(self.name,NamsespaceFunc):
+            name,inputs = self.name.get(common,builder,local_vars,inputs)
+            if name in common.functions:
+                func = common.functions[name]
         if isinstance(self.name,Token):
             name = self.name.value
             #if not name in ["alloc","exit"]:
             name = common.mangle(self.name,[i.type for i in inputs])
+            if name in common.functions:
+                func = common.functions[name]
+            name = common.current_module + name
             if name in common.functions:
                 func = common.functions[name]
         if type(func) == type(None):
@@ -104,3 +111,11 @@ class NamsespaceFunc:
     def __init__(self,namespace,name):
         self.namespace = namespace
         self.name = name
+    
+    def get(self,common,builder : ir.IRBuilder, local_vars, inputs):
+        return common.mangle(Token("FUNCTION_NAME",self.collapse()),[i.type for i in inputs]),inputs
+    
+    def collapse(self):
+        if isinstance(self.name,NamsespaceFunc):
+            self.name = self.collapse()
+        return self.namespace.value + "." + self.name.value

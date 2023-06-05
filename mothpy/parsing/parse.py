@@ -34,6 +34,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('program : object')
     @pg.production('program : cast')
     @pg.production('program : kernel')
+    @pg.production('program : module')
     def pass_program(state,p):
         program = aster.Program()
         program.add(p[0])
@@ -44,8 +45,35 @@ def get_parser(filename="tokens.txt"):
     @pg.production('program : program object')
     @pg.production('program : program cast')
     @pg.production('program : program kernel')
+    @pg.production('program : program module')
     def pass_program(state,p):
         p[0].add(p[1])
+        return p[0]
+    
+    @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL function')
+    @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL struct')
+    @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL object')
+    @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL cast')
+    @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL kernel')
+    @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL module')
+    def module(state,p):
+        out = aster.Module(p[1].value)
+        out.add(p[4])
+        return out
+    
+    @pg.production('module_open : module_open function')
+    @pg.production('module_open : module_open struct')
+    @pg.production('module_open : module_open object')
+    @pg.production('module_open : module_open cast')
+    @pg.production('module_open : module_open kernel')
+    @pg.production('module_open : module_open module')
+    def module(state,p):
+        out,new = p
+        out.add(new)
+        return out
+    
+    @pg.production('module : module_open CLOSE_CURL')
+    def module(state,p):
         return p[0]
     
     @pg.production('function : AT MODIFIER SEMI_COLON function')
@@ -179,11 +207,11 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('expression : RANGE OPEN_PAREN expression CLOSE_PAREN')
     def pass_range(state,p):
-        return aster.Range(p[2])
+        return aster.Range(aster.Constant(Token("NUMBER",0)),p[2],aster.Constant(Token("NUMBER",1)))
     
     @pg.production('expression : RANGE OPEN_PAREN expression COMMA expression CLOSE_PAREN')
     def pass_range(state,p):
-        return aster.Range(p[2],p[4])
+        return aster.Range(p[2],p[4],aster.Constant(Token("NUMBER",1)))
     
     @pg.production('expression : RANGE OPEN_PAREN expression COMMA expression COMMA expression CLOSE_PAREN')
     def pass_range(state,p):
@@ -318,12 +346,14 @@ def get_parser(filename="tokens.txt"):
     @pg.production('expression : func_call_open CLOSE_PAREN')
     def pass_function(state,p):
         return aster.FunctionCall(p[0][0],p[0][1:])
-    
+
     @pg.production('expression : NEW STRUCT_NAME OPEN_PAREN CLOSE_PAREN')
+    @pg.production('expression : NEW struct_namespace_ref OPEN_PAREN CLOSE_PAREN')
     def pass_function(state,p):
         return aster.NewStruct(p[1])
     
     @pg.production('struct_call_open : NEW STRUCT_NAME OPEN_PAREN expression')
+    @pg.production('struct_call_open : NEW struct_namespace_ref OPEN_PAREN expression')
     def pass_function(state,p):
         return [p[1],p[3]]
     
@@ -335,11 +365,29 @@ def get_parser(filename="tokens.txt"):
     def pass_function(state,p):
         return aster.NewStruct(p[0][0],p[0][1:])
     
+    @pg.production('namespace_ref : NAMESPACE')
+    def pass_thing(state,p):
+        return p[0].value
+    
+    @pg.production('namespace_ref : namespace_ref PERIOD NAMESPACE')
+    def pass_thing(state,p):
+        return p[0] + "." + p[2].value
+    
+    @pg.production('object_namespace_ref : namespace_ref PERIOD OBJECT_NAME')
+    def pass_thing(state,p):
+        return Token(p[2].name,p[0] + "." + p[2].value)
+    
+    @pg.production('struct_namespace_ref : namespace_ref PERIOD STRUCT_NAME')
+    def pass_thing(state,p):
+        return Token(p[2].name,p[0] + "." + p[2].value)
+    
     @pg.production('expression : NEW OBJECT_NAME OPEN_PAREN CLOSE_PAREN')
+    @pg.production('expression : NEW object_namespace_ref OPEN_PAREN CLOSE_PAREN')
     def pass_function(state,p):
         return aster.NewObject(p[1])
     
     @pg.production('object_call_open : NEW OBJECT_NAME OPEN_PAREN expression')
+    @pg.production('object_call_open : NEW object_namespace_ref OPEN_PAREN expression')
     def pass_function(state,p):
         return [p[1],p[3]]
     
@@ -419,7 +467,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('expression : PRINT OPEN_PAREN NONEWLN CLOSE_PAREN')
     def pass_print(state,p):
         tmp = aster.Print()
-        tmp.nonewline()
+        tmp.nonewline = True
         return tmp
     
     @pg.production('print_open : PRINT OPEN_PAREN expression')
@@ -447,7 +495,7 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('expression : print_open COMMA NONEWLN CLOSE_PAREN')
     def pass_print(state,p):
-        p[0].nonewline()
+        p[0].nonewline = True
         return p[0]
     
     @pg.production('vector_open : OPEN_SQUARE expression')
@@ -519,6 +567,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('type : STRUCT_NAME')
     def pass_type(state,p):
         return aster.StructType(p[0])
+    
+    @pg.production('type : NAMESPACE PERIOD type')
+    def pass_namespace_type(state,p):
+        return aster.NamespaceType(p[0].value,p[2])
     
     @pg.production('type : OBJECT_NAME')
     def pass_type(state,p):

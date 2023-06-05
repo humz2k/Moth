@@ -14,11 +14,18 @@ class Struct:
     def add_function(self,func):
         self.functions.append(func)
     
-    def eval(self,common,*args):
+    def eval(self,common,module_prefix = "",*args):
         type_name = self.name.value
-        typ = common.make_struct_type(type_name,self.attributes)
+        if module_prefix + type_name in common.structs:
+            existing_type = common.structs[module_prefix + type_name]
+            my_attrs = tuple([i.type.eval(common) for i in self.attributes])
+            if not my_attrs == existing_type.elements:
+                common.throw_error("Redefinition of struct " + type_name)
+            typ = existing_type
+        else:
+            typ = common.make_struct_type(type_name,self.attributes,module_prefix = module_prefix)
         for i in self.functions:
-            i.eval(common,type_name)
+            i.eval(common,type_name,module_prefix = module_prefix)
 
 class NewStruct:
     def __init__(self,name,inputs = []):

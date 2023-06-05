@@ -53,6 +53,8 @@ class Common:
         self.objects = {}
         self.casts = {}
 
+        self.current_module = ""
+
         self.types = {
             "bool": ir.IntType(1),
             "char": ir.IntType(8),
@@ -119,24 +121,28 @@ class Common:
 
     def is_struct(self,val):
         if isinstance(val.type, ir.IdentifiedStructType):
-            return val.type.name.startswith("STRUCT")
+            name = val.typ.name.split(".")[-1]
+            return name.startswith("STRUCT")
         return False
     
     def type_is_struct(self,typ):
         if isinstance(typ, ir.IdentifiedStructType):
-            return typ.name.startswith("STRUCT")
+            name = typ.name.split(".")[-1]
+            return name.startswith("STRUCT")
         return False
 
     def is_object(self,val):
         if isinstance(val.type, ir.PointerType):
             if isinstance(val.type.pointee,ir.IdentifiedStructType):
-                return val.type.pointee.name.startswith("OBJECT")
+                name = val.type.pointee.name.split(".")[-1]
+                return name.startswith("OBJECT")
         return False
     
     def type_is_object(self,typ):
         if isinstance(typ, ir.PointerType):
             if isinstance(typ.pointee,ir.IdentifiedStructType):
-                return typ.pointee.name.startswith("OBJECT")
+                name = typ.pointee.name.split(".")[-1]
+                return name.startswith("OBJECT")
         return False
     
     def is_void_ptr(self,val):
@@ -751,8 +757,9 @@ class Common:
         idx_1d = self.get_idx_1d(builder,out_dims,index)
         return builder.gep(pointer,[idx_1d])
     
-    def make_struct_type(self,name,attributes):
-        typ = self.module.context.get_identified_type("STRUCT_" + name)
+    def make_struct_type(self,name,attributes,module_prefix = ""):
+        typ = self.module.context.get_identified_type(module_prefix + "STRUCT_" + name)
+        name = module_prefix + name
         body = []
         names = []
         for i in attributes:
@@ -766,8 +773,8 @@ class Common:
         self.structs[name] = typ
         return typ
     
-    def make_object_type(self,name,attributes):
-        typ = self.module.context.get_identified_type("OBJECT_" + name)
+    def make_object_type(self,name,attributes,module_prefix = ""):
+        typ = self.module.context.get_identified_type(module_prefix + "OBJECT_" + name)
         body = []
         names = []
         for i in attributes:
@@ -776,10 +783,10 @@ class Common:
         typ.set_body(*body)
         typ.element_names = names
         typ = ir.PointerType(typ)
-        if name in self.objects:
-            if self.objects[name].elements != typ.elements:
+        if module_prefix + name in self.objects:
+            if self.objects[module_prefix + name].elements != typ.elements:
                 self.throw_error("Redefinition of struct")
-        self.objects[name] = typ
+        self.objects[module_prefix + name] = typ
         return typ
     
     def get_struct_type(self,name):
@@ -807,5 +814,21 @@ class Program:
         common = Common(ir.Module(name=module_name))
 
         for item in self.items:
-            item.eval(common)
+            item.eval(common,module_prefix = "")
         return common.module
+    
+class Module:
+    def __init__(self,name):
+        self.name = name
+        self.items = []
+    
+    def add(self,item):
+        self.items.append(item)
+    
+    def eval(self,common,module_prefix = ""):
+        previous_module = common.current_module
+        module_prefix = module_prefix + self.name + "."
+        common.current_module = module_prefix
+        for item in self.items:
+            item.eval(common,module_prefix = module_prefix)
+        common.current_module = previous_module

@@ -6,15 +6,30 @@ is a
 multiline
 comment
 ###
-
-struct Test:
-    int a
-    int b
-
-struct Test:
-    int a
-    int b
+###
+module nm:
+    def int[:] arange(int stop):
+        int[:] out = new int[stop]
+        for int i in range(stop):
+            out[i] = i
+        return out
+    
+    def int[:] arange(int start, int stop):
+        int[:] out = new int[stop-start]
+        for int i in range(stop-start):
+            out[i] = i + start
+        return out
+    
+    def int[:] arange(int start, int stop, int step):
+        int[:] out = new int[(stop-start)/step]
+        for int i in range((stop-start)/step):
+            out[i] = i*step + start
+        return out
+###
 
 def int main():
-    Test a = new Test()
+    int3[:] a = new int3[5]
+    for int3 i in a:
+        print(i)
+
     return 0

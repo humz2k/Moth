@@ -51,7 +51,7 @@ def convert(raw):
     return out
 
 def find_functions(raw):
-    out = re.findall(r"def (\w+) (\w+)",raw)
+    out = re.findall(r"def ([a-zA-Z_0-9\.\[\]\:]+) (\w+)",raw)
     return [i[1] for i in out if i[0] != 'cast']
 
 def find_objects(raw):
@@ -61,7 +61,7 @@ def find_structs(raw):
     return re.findall(r"struct (\w+)",raw)
 
 def find_namespaces(raw):
-    return re.findall(r"import (\w+)",raw)
+    return re.findall(r"module (\w+)",raw)
 
 def get_lexer(filename = "tokens.txt", object_names = [], struct_names = [], function_names = [], namespaces = []):
     

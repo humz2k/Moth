@@ -18,7 +18,9 @@ class ArrayInit:
         for i in dims[1:]:
             size = builder.mul(size,i)
         size = builder.mul(size,common.sizeof(builder,typ))
-        dims_vec = ir.Constant(ir.VectorType(ir.IntType(32),len(dims)),dims)
+        dims_vec = ir.Constant(ir.VectorType(ir.IntType(32),len(dims)),[0]*len(dims))
+        for idx,i in enumerate(dims):
+            dims_vec = builder.insert_element(dims_vec,i,ir.Constant(ir.IntType(32),idx))
         out_ptr = common.alloc(builder,size,ir.PointerType(typ))
         out = builder.alloca(ir.LiteralStructType([ir.VectorType(ir.IntType(32),len(dims)),ir.PointerType(typ)]))
         vec_part = builder.gep(out,[ir.Constant(ir.IntType(32),0),ir.Constant(ir.IntType(32),0)])

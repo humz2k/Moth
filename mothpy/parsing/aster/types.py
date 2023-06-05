@@ -30,17 +30,33 @@ class StructType:
     def __init__(self,name):
         self.name = name
     
-    def eval(self,common,*args):
-        if self.name.value in common.structs:
-            return common.structs[self.name.value]
+    def eval(self,common,module_prefix="",*args):
+        if module_prefix != "":
+            if module_prefix + self.name.value in common.structs:
+                return common.structs[module_prefix + self.name.value]
+        if common.current_module + self.name.value in common.structs:
+            return common.structs[common.current_module + self.name.value]
+        if module_prefix == "":
+            if self.name.value in common.structs:
+                return common.structs[self.name.value]
+        print("AHHH")
+        exit()
 
 class ObjectType:
     def __init__(self,name):
         self.name = name
 
-    def eval(self,common,*args):
-        if self.name.value in common.objects:
-            return common.objects[self.name.value]
+    def eval(self,common,module_prefix = "",*args):
+        if module_prefix != "":
+            if module_prefix + self.name.value in common.objects:
+                return common.objects[module_prefix + self.name.value]
+        if common.current_module + self.name.value in common.objects:
+            return common.objects[common.current_module + self.name.value]
+        if module_prefix == "":
+            if module_prefix + self.name.value in common.objects:
+                return common.objects[module_prefix + self.name.value]
+        print("AHHH")
+        exit()
 
 class VectorType:
     def __init__(self,typ):
@@ -72,3 +88,12 @@ class PointerType:
     
     def eval(self,common,*args):
         return ir.PointerType(self.type.eval(common))
+    
+class NamespaceType:
+    def __init__(self,name,typ):
+        self.name = name
+        self.type = typ
+    
+    def eval(self,common,module_prefix = "",*args):
+        self.name = module_prefix + self.name + "."
+        return self.type.eval(common,self.name)

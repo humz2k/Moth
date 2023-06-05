@@ -34,6 +34,14 @@ class VarReference:
             var.init(common,builder)
             var.raw = this_ptr
             return var
+        if common.type_is_array(typ):
+            if self.name.value == "dims":
+                arr = parent.get(common,builder)
+                out = builder.extract_value(arr,0)
+                out.type.dims = [out.type.count]
+                return common.constant(out)
+            else:
+                common.throw_error("Attr " + self.name.vale + " doesn't exist for type " + str(typ))
         common.throw_error("VAR REFERENCE NOT IMPLEMENTED")
 
 class VarDeref:
