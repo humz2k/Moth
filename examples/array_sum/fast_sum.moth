@@ -1,0 +1,22 @@
+include <time.moth>
+include <rand.moth>
+
+@inline
+def float sum(float[:] arr):
+    float total = 0
+    for float i in arr:
+        total += i
+    return total
+
+def kernel fill[i: arr.dims[0]](float[:] arr):
+    arr[i] = random.rand()
+
+def int main():
+    srand(21082001)
+    float[:] arr = new float[1000000]
+    fill(arr)
+    long start = clock()
+    float total = sum(arr)
+    long end = clock()
+    print("Time:", str(clock_to_sec(end-start)) + "s")
+    return 0

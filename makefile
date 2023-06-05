@@ -1,7 +1,11 @@
 build:
-	/Users/humzaqureshi/miniforge3/envs/llvm-stuff/bin/python /Users/humzaqureshi/GitHub/Moth/test.py
-	llc -filetype=obj tmp.ll -o tmp.o -O3
-	clang tmp.o gc_tools.o -o tmp
+	moth test.moth -o test.o -O3
 
 gc_tools:
-	clang gc_tools.c /Users/humzaqureshi/GitHub/Moth/gc-8.2.2/gc.a -ogc_tools.o -shared
+	clang mothpy/gc_tools.c -o mothpy/gc_tools.o -c
+
+c_tools:
+	clang mothpy/c_tools.c -o mothpy/c_tools.o -c
+
+thing:
+	/Users/humzaqureshi/GitHub/Moth/bdwgc/libgc.a

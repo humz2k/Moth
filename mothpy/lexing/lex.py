@@ -1,5 +1,6 @@
 from rply import LexerGenerator
 import re
+import os
 
 def remove_comments(raw):
     multilines = re.findall(r"\#\#\#.*?\#\#\#",raw,re.DOTALL)
@@ -89,17 +90,37 @@ def get_lexer(filename = "tokens.txt", object_names = [], struct_names = [], fun
 
     return lexer.build()
 
-def lex(raw : str,path):
-    """Return tokens from string."""
+def preprocess(fname : str, path, function_names = [],object_names = [],struct_names = [],namespaces = []):
+    with open(fname,"r") as f:
+        raw = f.read()
     raw = remove_comments(raw)
     raw = convert(raw)
-
-    function_names = find_functions(raw)
-    object_names = find_objects(raw)
-    struct_names = find_structs(raw)
-    namespaces = find_namespaces(raw)
+    includes = re.findall(r"include\b.*\;",raw)
+    for i in includes:
+        raw = raw.replace(i,"")
+    includes = [i.split("include ")[1][:-1] for i in includes]
+    tokens = []
+    stdlib_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..','..','stdlib'))
+    for i in includes:
+        name = i
+        if (i.startswith("<") and i.endswith(">")):
+            name = stdlib_path + "/" + i[1:-1]
+        this_tokens,this_function_names,this_object_names,this_struct_names,this_namespaces = preprocess(name,path)
+        tokens += this_tokens
+        function_names += this_function_names
+        object_names += this_object_names
+        struct_names += this_struct_names
+        namespaces += this_namespaces
+    function_names += find_functions(raw)
+    object_names += find_objects(raw)
+    struct_names += find_structs(raw)
+    namespaces += find_namespaces(raw)
 
     lexer = get_lexer(filename = path, function_names = function_names, object_names = object_names, struct_names = struct_names, namespaces = namespaces)
 
-    tokens = [i for i in lexer.lex(raw)]
+    tokens += [i for i in lexer.lex(raw)]
+    return tokens,function_names,object_names,struct_names,namespaces
+
+def lex(fname : str,path : str):
+    tokens,_,_,_,_ = preprocess(fname,path)
     return tokens

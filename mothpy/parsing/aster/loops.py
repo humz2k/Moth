@@ -56,7 +56,6 @@ class ForLoop:
         else:
             this_iter = self.iter.eval(common,builder,local_vars).get(common,builder)
             if common.is_array(this_iter):
-                print("IS_ARRAY")
                 dims = builder.extract_value(this_iter,0)
                 dims_list = []
                 for i in range(dims.type.count):

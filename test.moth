@@ -6,30 +6,15 @@ is a
 multiline
 comment
 ###
-###
-module nm:
-    def int[:] arange(int stop):
-        int[:] out = new int[stop]
-        for int i in range(stop):
-            out[i] = i
-        return out
-    
-    def int[:] arange(int start, int stop):
-        int[:] out = new int[stop-start]
-        for int i in range(stop-start):
-            out[i] = i + start
-        return out
-    
-    def int[:] arange(int start, int stop, int step):
-        int[:] out = new int[(stop-start)/step]
-        for int i in range((stop-start)/step):
-            out[i] = i*step + start
-        return out
-###
+
+include numoth.moth
+include <time.moth>
 
 def int main():
-    int3[:] a = new int3[5]
-    for int3 i in a:
+    long start = clock()
+    int[:] a = nm.arange(10)
+    for int i in a:
         print(i)
-
+    long end = clock()
+    print(clock_to_sec(end-start),"s")
     return 0

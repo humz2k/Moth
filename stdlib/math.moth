@@ -1,0 +1,5 @@
+@extern
+def float sqrtf(float a)
+
+@extern
+def double sqrt(double a)

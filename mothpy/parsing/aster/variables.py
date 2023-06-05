@@ -76,6 +76,19 @@ class VarDec:
         new_var.init(common,builder)
         local_vars[self.name.value] = new_var
         return new_var
+    
+class Global:
+    def __init__(self,typ,name):
+        self.type = typ
+        self.name = name
+        self.extern = False
+    
+    def eval(self,common,module_prefix="",*args):
+        name = module_prefix + self.name.value
+        typ = self.type.eval(common)
+        out = ir.GlobalVariable(common.module,typ,name)
+        if not self.extern:
+            out.initializer = ir.Constant(typ,None)
 
 class Var:
     def __init__(self,name):
@@ -84,4 +97,23 @@ class Var:
     def eval(self,common,builder,local_vars,*args):
         if self.name.value in local_vars:
             return local_vars[self.name.value]
+        
+        try:
+            out = common.module.get_global(common.current_module + self.name.value)
+            typ = out.type.pointee
+            var = common.variable(typ)
+            var.init(common,builder)
+            var.raw = out
+            return var
+        except:
+            pass
+        try:
+            out = common.module.get_global(self.name.value)
+            typ = out.type.pointee
+            var = common.variable(typ)
+            var.init(common,builder)
+            var.raw = out
+            return var
+        except:
+            pass
         common.throw_error("Var " + self.name.value + " does not exist")

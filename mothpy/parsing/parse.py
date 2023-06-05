@@ -35,6 +35,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('program : cast')
     @pg.production('program : kernel')
     @pg.production('program : module')
+    @pg.production('program : global_var')
     def pass_program(state,p):
         program = aster.Program()
         program.add(p[0])
@@ -46,6 +47,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('program : program cast')
     @pg.production('program : program kernel')
     @pg.production('program : program module')
+    @pg.production('program : program global_var')
     def pass_program(state,p):
         p[0].add(p[1])
         return p[0]
@@ -56,6 +58,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL cast')
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL kernel')
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL module')
+    @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL global_var')
     def module(state,p):
         out = aster.Module(p[1].value)
         out.add(p[4])
@@ -67,6 +70,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('module_open : module_open cast')
     @pg.production('module_open : module_open kernel')
     @pg.production('module_open : module_open module')
+    @pg.production('module_open : module_open global_var')
     def module(state,p):
         out,new = p
         out.add(new)
@@ -75,6 +79,17 @@ def get_parser(filename="tokens.txt"):
     @pg.production('module : module_open CLOSE_CURL')
     def module(state,p):
         return p[0]
+    
+    @pg.production('global_var : type IDENTIFIER SEMI_COLON')
+    def global_var(state,p):
+        return aster.Global(p[0],p[1])
+    
+    @pg.production('global_var : AT MODIFIER SEMI_COLON global_var')
+    def global_var(state,p):
+        _,m,_,g = p
+        if m.value == "extern":
+            g.extern = True
+        return g
     
     @pg.production('function : AT MODIFIER SEMI_COLON function')
     def modifier(state,p):
@@ -530,9 +545,17 @@ def get_parser(filename="tokens.txt"):
     def pass_var(state,p):
         return aster.FuncReference(p[0],p[2])
     
-    @pg.production('expression : NAMESPACE PERIOD IDENTIFIER')
+    @pg.production('identifier : NAMESPACE PERIOD IDENTIFIER')
     def pass_var(state,p):
-        return aster.NamespaceVar(p[0],p[2])
+        return Token("IDENTIFIER",p[0].value + "." + p[2].value)
+    
+    @pg.production('identifier : NAMESPACE PERIOD identifier')
+    def pass_var(state,p):
+        return Token("IDENTIFIER",p[0].value + "." + p[2].value)
+    
+    @pg.production('expression : identifier')
+    def pass_global_var(state,p):
+        return aster.Var(p[0])
     
     @pg.production('ref_func : NAMESPACE PERIOD FUNCTION_NAME')
     def pass_var(state,p):

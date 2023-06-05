@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import ctypes
+import argparse
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
+import mothpy
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Compile .moth")
+    parser.add_argument('files',metavar="<mothfile>",type=str, nargs='+')
+    parser.add_argument('-o',metavar="<output>",type=str,default="a.out")
+    parser.add_argument('-c',action='store_true',default=False)
+    parser.add_argument('-O',metavar="<opt>",type=int,default=3)
+    parser.add_argument('--save-temps','-S',action='store_true',default=False)
+    parser.add_argument('--shared',action='store_true',default=False)
+    args = parser.parse_args()
+    to_compile = [i for i in args.files if i.endswith(".moth")]
+    to_link = [i for i in args.files if i.endswith(".o")]
+    tmp_lls = []
+    opt_lls = []
+    tmp_os = []
+    for i in to_compile:
+        tmp_o,opt_ll,tmp_ll = mothpy.compileMoth(i,opt = args.O)
+        tmp_os.append(tmp_o)
+        tmp_lls.append(tmp_ll)
+        opt_lls.append(opt_ll)
+    to_link += tmp_os
+    mothpy.link(to_link,args.o,args.shared,args.c)
+    if not args.save_temps:
+        for i in tmp_lls:
+            os.remove(i)
+        for i in tmp_os:
+            os.remove(i)
+        for i in opt_lls:
+            os.remove(i)

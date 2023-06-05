@@ -52,6 +52,7 @@ class Common:
         self.structs = {}
         self.objects = {}
         self.casts = {}
+        self.globals = {}
 
         self.current_module = ""
 
