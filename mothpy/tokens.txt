@@ -86,6 +86,7 @@ NONEWLN \b__nonewln\b
 RANGE \brange\b
 MODIFIER \bextern\b
 MODULE \bmodule\b
+OPERATOR \boperator\b
 
 FUNCTION_NAME \balloc\b
 FUNCTION_NAME \bexit\b

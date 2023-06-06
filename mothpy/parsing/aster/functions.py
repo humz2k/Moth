@@ -62,6 +62,30 @@ class Function:
                 return
             common.throw_error("Function does not return value")
 
+class CastHeader:
+    def __init__(self,typ,inp):
+        self.type = typ
+        self.input = inp
+    
+    def generate(self,common,modifiers):
+        func_name = Token("FUNCTION_NAME","cast_" + str(self.type.eval(common)) + "->" + str(self.input[0].eval(common)))
+        inputs = [self.input]
+        func_header = FunctionHeader(self.type,func_name,inputs)
+        return func_header
+
+class Cast:
+    def __init__(self,header,lines):
+        self.header = header
+        self.lines = lines
+        self.modifiers = {"inline" : False, "extern" : False}
+    
+    def eval(self,common,module_prefix = "",*args):
+        self.modifiers["extern"] = False
+        func_header = self.header.generate(common,self.modifiers)
+        func_obj = Function(func_header,self.lines)
+        func_obj.modifiers = self.modifiers
+        func_obj.eval(common)
+
 class FunctionCall:
     def __init__(self,name,inputs = []):
         self.name = name

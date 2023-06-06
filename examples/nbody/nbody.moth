@@ -6,9 +6,7 @@ def kernel zero[i: arr.dims[0]](float3[:] arr):
     arr[i] = [0,0,0]
 
 def kernel init_particles[i: arr.dims[0]](float3[:] arr):
-    arr[i][0] = random.rand()*3
-    arr[i][1] = random.rand()*3
-    arr[i][2] = random.rand()*3
+    arr[i] = [random.rand()*3,random.rand()*3,random.rand()*3]
 
 def kernel calc_force[i: pos.dims[0]](float3[:] pos, float3[:] acc, float eps2):
     float3 my_particle = pos[i]
@@ -19,21 +17,11 @@ def kernel calc_force[i: pos.dims[0]](float3[:] pos, float3[:] acc, float eps2):
         if (dist2 != 0):
             dist2 += eps2
             float force = 1/sqrtf(dist2*dist2*dist2)
-            delta[0] *= force
-            delta[1] *= force
-            delta[2] *= force
-            total += delta
+            total += delta * force
     acc[i] = total
 
-def kernel add2D[i: a.dims[0]](float3[:] a, float3[:] b):
-    a[i] += b[i]
-
 def kernel add2D[i: a.dims[0]](float3[:] a, float3[:] b, float mul):
-    float3 tmp = b[i]
-    tmp[0] *= mul
-    tmp[1] *= mul
-    tmp[2] *= mul
-    a[i] += tmp
+    a[i] += b[i] * mul
 
 def int main():
     int np = 10
@@ -45,7 +33,6 @@ def int main():
     zero(vel)
     zero(acc)
     init_particles(pos)
-    #print(pos[0])
     calc_force(pos,acc,0.05)
     add2D(vel,acc,0.5*dt)
     add2D(pos,vel,dt)
@@ -53,5 +40,4 @@ def int main():
         calc_force(pos,acc,0.05)
         add2D(vel,acc,dt)
         add2D(pos,vel,dt)
-    #print(pos[0])
     return 0

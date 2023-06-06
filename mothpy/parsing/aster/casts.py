@@ -2,16 +2,6 @@ from llvmlite import ir
 import re
 from rply import Token
 
-class CastHeader:
-    def __init__(self,typ,inp):
-        self.type = typ
-        self.input = inp
-
-class Cast:
-    def __init__(self,header,lines):
-        self.header = header
-        self.lines = lines
-
 class CastVal:
     def __init__(self,typ,val):
         self.type = typ

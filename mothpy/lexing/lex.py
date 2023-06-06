@@ -53,7 +53,7 @@ def convert(raw):
 
 def find_functions(raw):
     out = re.findall(r"def ([a-zA-Z_0-9\.\[\]\:]+) (\w+)",raw)
-    return [i[1] for i in out if i[0] != 'cast']
+    return [i[1] for i in out if i[0] != 'cast' and i[1] != 'operator']
 
 def find_objects(raw):
     return re.findall(r"object (\w+)",raw)

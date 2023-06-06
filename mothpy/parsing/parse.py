@@ -55,7 +55,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL function')
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL struct')
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL object')
-    @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL cast')
+    #@pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL cast')
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL kernel')
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL module')
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL global_var')
@@ -67,7 +67,7 @@ def get_parser(filename="tokens.txt"):
     @pg.production('module_open : module_open function')
     @pg.production('module_open : module_open struct')
     @pg.production('module_open : module_open object')
-    @pg.production('module_open : module_open cast')
+    #@pg.production('module_open : module_open cast')
     @pg.production('module_open : module_open kernel')
     @pg.production('module_open : module_open module')
     @pg.production('module_open : module_open global_var')
@@ -158,6 +158,36 @@ def get_parser(filename="tokens.txt"):
     def return_function(state,p):
         header,_,_,lines,_ = p
         return aster.Function(header,lines)
+    
+    #@pg.production('operator_open : ')
+    #def operator_open(state,p):
+    #    _,typ,_ = p
+    #    return typ
+
+    @pg.production('function_header : DEF type OPERATOR RIGHT_SHIFT OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR LEFT_SHIFT OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR PLUS OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR MINUS OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR STARSTAR OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR STAR OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR SLASH OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR PERCENT OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR EQUAL OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR NOT_EQUAL OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR GREATER_OR_EQUAL OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR LESS_OR_EQUAL OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR GREATER OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR LESS OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR AND OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR OR OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR AMP OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR VERT OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR HAT OPEN_PAREN type IDENTIFIER COMMA type IDENTIFIER CLOSE_PAREN')
+    def operator_header(state,p):
+        _,typ,_,op,_,l_type,left,_,r_type,right,_ = p
+        func_name = Token("FUNCTION_NAME","operator->" + op.name)
+        inputs = [[l_type,left],[r_type,right]]
+        return aster.FunctionHeader(typ,func_name,inputs)
 
     @pg.production('function_header : DEF type FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
     def function_header(state,p):

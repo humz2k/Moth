@@ -20,7 +20,16 @@ class VectorLiteral:
         items = common.promote_many(builder,items)
         v_len = len(items)
         v_type = ir.VectorType(items[0].type,v_len)
-        out = ir.Constant(v_type,items)
+        literal_items = []
+        for i in items:
+            if isinstance(i,ir.Constant):
+                literal_items.append(i)
+            else:
+                literal_items.append(ir.Constant(items[0].type,None))
+        out = ir.Constant(v_type,literal_items)
+        for idx,i in enumerate(items):
+            if not isinstance(i,ir.Constant):
+                out = builder.insert_element(out,i,ir.Constant(ir.IntType(32),idx))
         out.type.dims = [len(items)]
         return common.constant(out)
     

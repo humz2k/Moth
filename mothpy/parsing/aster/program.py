@@ -122,7 +122,7 @@ class Common:
 
     def is_struct(self,val):
         if isinstance(val.type, ir.IdentifiedStructType):
-            name = val.typ.name.split(".")[-1]
+            name = val.type.name.split(".")[-1]
             return name.startswith("STRUCT")
         return False
     
@@ -424,6 +424,11 @@ class Common:
                             return builder.fpext(val,new_type)
                     if val.type.element == ir.DoubleType():
                         return builder.fptrunc(val,new_type)
+        func_name = Token("FUNCTION_NAME","cast_" + str(new_type) + "->" + str(val.type))
+        func_name = self.mangle(func_name,[val.type])
+        if func_name in self.functions:
+            func = self.functions[func_name]
+            return builder.call(func,[val])
         self.throw_error("No cast exists from " + str(val.type) + " to " + str(new_type))
     
     def get_print_formatter(self,builder : ir.IRBuilder, val):
@@ -701,17 +706,43 @@ class Common:
             return builder.gep(left,[builder.neg(right)])
         self.throw_error("Op " + op + " is invalid for pointer math")
 
-    def do_binop(self,builder,op,left,right):
+    def math_vector_scalar(self,builder : ir.IRBuilder, op, left, right):
+        left,right = self.vector_scalar_promote(builder,left,right)
+        out = left
+        for i in range(left.type.count):
+            item = builder.extract_element(left,ir.Constant(ir.IntType(32),i))
+            out = builder.insert_element(out,self.math_base(builder,op,item,right),ir.Constant(ir.IntType(32),i))
+        return out
+    
+    def math_scalar_vector(self,builder : ir.IRBuilder, op, left, right):
+        right,left = self.vector_scalar_promote(builder,right,left)
+        out = right
+        for i in range(right.type.count):
+            item = builder.extract_element(right,ir.Constant(ir.IntType(32),i))
+            out = builder.insert_element(out,self.math_base(builder,op,left,item),ir.Constant(ir.IntType(32),i))
+        return out
+        
+    def do_binop(self,builder : ir.IRBuilder,op,left,right):
         if op == "STARSTAR":
             return self.power(builder,left,right)
         if self.is_base(left) and self.is_base(right):
             return self.math_base(builder,op,left,right)
         if self.is_vector(left) and self.is_vector(right):
             return self.math_vectors(builder,op,left,right)
+        if self.is_vector(left) and self.is_base(right):
+            return self.math_vector_scalar(builder,op,left,right)
+        if self.is_base(left) and self.is_vector(right):
+            return self.math_scalar_vector(builder,op,left,right)
         if self.is_ptr(left) and self.is_int(right):
             return self.pointer_math(builder,op,left,right)
         if self.is_ptr(right) and  self.is_int(left):
             return self.pointer_math(builder,op,right,left)
+        op_name = Token("FUNCTION_NAME","operator->" + op)
+        mangled = self.mangle(op_name,[left.type,right.type])
+        if mangled in self.functions:
+            func = self.functions[mangled]
+            out = builder.call(func,[left,right])
+            return out
         self.throw_error("BINOP NOT IMPLEMENTED")
 
     def get_idx_1d(self,builder,dims,idx):
