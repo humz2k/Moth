@@ -118,7 +118,10 @@ def preprocess(fname : str, path, function_names = [],object_names = [],struct_n
 
     lexer = get_lexer(filename = path, function_names = function_names, object_names = object_names, struct_names = struct_names, namespaces = namespaces)
 
-    tokens += [i for i in lexer.lex(raw)]
+    new_tokens = [i for i in lexer.lex(raw)]
+    for i in new_tokens:
+        i.fileoforigin = fname
+    tokens += new_tokens
     return tokens,function_names,object_names,struct_names,namespaces
 
 def lex(fname : str,path : str):

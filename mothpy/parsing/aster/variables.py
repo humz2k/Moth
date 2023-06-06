@@ -116,4 +116,5 @@ class Var:
             return var
         except:
             pass
-        common.throw_error("Var " + self.name.value + " does not exist")
+        error_t = "Variable " + self.name.value + " does not exist in this scope"
+        common.throw_error(error_t = error_t,fileoforigin = self.fileoforigin, lineno = self.lineno)

@@ -87,8 +87,39 @@ class Common:
                 ir.PointerType(ir.IntType(8))]
         self.float_types = [ir.HalfType(),ir.FloatType(),ir.DoubleType()]
 
-    def throw_error(self,string):
-        raise Exception(string)
+    def throw_error(self,string = "Error???",error_t = None, fileoforigin = None, lineno = None):
+        if type(fileoforigin) == type(None):
+            raise Exception(string)
+        else:
+            print("\x1b[1;31mCodegen Error\x1b[0;0m \x1b[1;29m(" + "\x1b[1;30m" + fileoforigin + "\x1b[0;0m\x1b[0;31m @\x1b[1;30m line " + str(lineno) + "\x1b[0;0m\x1b[1;29m):\x1b[0;0m")
+            print("   \x1b[1;35m" + error_t + "\x1b[0;0m")
+            with open(fileoforigin,"r") as f:
+                lines = f.read().splitlines()
+            if lineno < len(lines):
+                line = lineno - 1
+                start = line - 3
+                if start < 0:
+                    start = 0
+                end = line + 4
+                if end > len(lines):
+                    end = len(lines)
+                tmp = [i.rstrip() for i in lines[start:end]]
+                lens = [len(i) - len(i.lstrip()) for i in tmp if len(i.strip()) != 0]
+                min_len = min(lens)
+                out = []
+                for i,idx in zip(tmp,list(range(start,end))):
+                    if idx == line:
+                        out.append("      " + i[min_len:] + "  \x1b[1;31m<--\x1b[1;30m")
+                    else:
+                        out.append("      " + i[min_len:])
+                if start != 0:
+                    out = ["      ..."] + out
+                if end != len(lines):
+                    out.append("      ...")
+                out = "\n".join(out)
+                out = "\x1b[1;30m" + out + "\x1b[0;0m"
+                print(out)
+            exit()
     
     def is_base(self,val):
         return val.type in self.base_types
@@ -726,16 +757,20 @@ class Common:
         if op == "STARSTAR":
             return self.power(builder,left,right)
         if self.is_base(left) and self.is_base(right):
-            return self.math_base(builder,op,left,right)
+            if left.type == self.str_type() and right.type == self.str_type():
+                if op == "PLUS":
+                    return self.math_base(builder,op,left,right)
+            elif left.type != self.str_type() and right.type != self.str_type():
+                return self.math_base(builder,op,left,right)
         if self.is_vector(left) and self.is_vector(right):
             return self.math_vectors(builder,op,left,right)
         if self.is_vector(left) and self.is_base(right):
             return self.math_vector_scalar(builder,op,left,right)
         if self.is_base(left) and self.is_vector(right):
             return self.math_scalar_vector(builder,op,left,right)
-        if self.is_ptr(left) and self.is_int(right):
+        if self.is_ptr(left) and self.is_int(right) and not (left.type == self.str_type()):
             return self.pointer_math(builder,op,left,right)
-        if self.is_ptr(right) and  self.is_int(left):
+        if self.is_ptr(right) and self.is_int(left) and not (right.type == self.str_type()):
             return self.pointer_math(builder,op,right,left)
         op_name = Token("FUNCTION_NAME","operator->" + op)
         mangled = self.mangle(op_name,[left.type,right.type])
@@ -834,6 +869,45 @@ class Common:
     
     def vector_index(self,vstore,vector,idx1d,typ):
         return VectorIndex(vstore,vector,idx1d,typ)
+    
+    def type_to_str(self,typ):
+        if typ == ir.VoidType():
+            return r"type{void}"
+        if typ == ir.IntType(1):
+            return r"type{bool}"
+        if typ == ir.IntType(8):
+            return r"type{char}"
+        if typ == ir.PointerType(ir.IntType(16)):
+            return r"type{void*}"
+        if typ == ir.IntType(32):
+            return r"type{int}"
+        if typ == ir.IntType(64):
+            return r"type{long}"
+        if typ == ir.HalfType():
+            return r"type{half}"
+        if typ == ir.FloatType():
+            return r"type{float}"
+        if typ == ir.DoubleType():
+            return r"type{double}"
+        if typ == ir.PointerType(ir.IntType(8)):
+            return r"type{str}"
+        if self.type_is_vector(typ):
+            element_t = self.type_to_str(typ.element).split("{")[1].split("}")[0]
+            str_dims = "x".join([str(i) for i in typ.dims])
+            return r"type{" + element_t + str_dims + r"}"
+        if self.type_is_array(typ):
+            ndims = typ.elements[0].count
+            dim_str = "[" + ",".join([":"] * ndims) + "]"
+            element_t = self.type_to_str(typ.elements[1].pointee).split("{")[1].split("}")[0]
+            return r"type{" + element_t + dim_str + r"}"
+        if self.type_is_struct(typ):
+            return "type{struct " + str(typ).split("_")[1][:-1] + "}"
+        if self.type_is_object(typ):
+            return "type{object " + str(typ).split("_")[1].split('"')[0] + "}"
+        if self.type_is_ptr(typ):
+            out = self.type_to_str(typ.pointee).split("{")[1].split("}")[0]
+            return "type{" + out + "*" + "}"
+        self.throw_error("Something went super wrong")
 
 class Program:
     def __init__(self):

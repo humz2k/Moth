@@ -43,3 +43,8 @@ class Sizeof:
 class Typeof:
     def __init__(self,val):
         self.val = val
+    
+    def eval(self,common,builder : ir.IRBuilder, local_vars, *args):
+        var = self.val.eval(common,builder,local_vars).get(common,builder)
+        out = common.get_string(builder,common.type_to_str(var.type))
+        return common.constant(out)

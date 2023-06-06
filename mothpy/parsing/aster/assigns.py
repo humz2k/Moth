@@ -60,7 +60,8 @@ class Assign:
         self.val = val
     
     def eval(self,common,builder : ir.IRBuilder,local_vars,*args):
-        if isinstance(self.val,Constant):
+        dest = self.dest.eval(common,builder,local_vars)
+        if isinstance(self.val,Constant) and common.type_is_base(dest.type) and not dest.type == common.str_type():
             val = self.val.get_python(common)
             dest = self.dest.eval(common,builder,local_vars)
             if isinstance(dest.type,ir.IntType):
@@ -69,7 +70,6 @@ class Assign:
             dest.set(common,builder,common.cast(builder,out,dest.type))
             return dest
         out = self.val.eval(common,builder,local_vars).get(common,builder)
-        dest = self.dest.eval(common,builder,local_vars)
         if dest.type == out.type:
             dest.set(common,builder,out)
             return dest
@@ -84,7 +84,9 @@ class Assign:
         if (common.is_vector(out) and common.type_is_vector(dest.type)):
             dest.set(common,builder,common.cast(builder,out,dest.type))
             return dest
-        common.throw_error("Invalid Assign")
+        print(self.fileoforigin,self.lineno)
+        error_t = "Can't assign " + common.type_to_str(out.type) + " to " + common.type_to_str(dest.type)
+        common.throw_error(error_t = error_t, fileoforigin = self.fileoforigin, lineno = self.lineno)
 
 class Incr:
     def __init__(self,op,val,post):

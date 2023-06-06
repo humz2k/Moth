@@ -4,7 +4,10 @@ from . import aster
 
 class ParserState(object):
     def __init__(self):
-        pass
+        self.chain = []
+    
+    def last(self,item):
+        self.chain.append(item)
 
 def get_parser(filename="tokens.txt"):
     with open(filename,"r") as f:
@@ -475,7 +478,10 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('expression : IDENTIFIER')
     def declaration(state,p):
-        return aster.Var(p[0])
+        out = aster.Var(p[0])
+        out.fileoforigin = p[0].fileoforigin
+        out.lineno = p[0].source_pos.lineno
+        return out
     
     @pg.production('expression : STRING')
     def string(state,p):
@@ -489,7 +495,10 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('expression : expression ASSIGN expression')
     def declaration(state,p):
-        return aster.Assign(p[0],p[2])
+        out = aster.Assign(p[0],p[2])
+        out.fileoforigin = p[1].fileoforigin
+        out.lineno = p[1].source_pos.lineno
+        return out
     
     @pg.production('expression : expression PLUS_EQUAL expression')
     @pg.production('expression : expression MINUS_EQUAL expression')
@@ -577,16 +586,25 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('identifier : NAMESPACE PERIOD IDENTIFIER')
     def pass_var(state,p):
-        return Token("IDENTIFIER",p[0].value + "." + p[2].value)
+        out = Token("IDENTIFIER",p[0].value + "." + p[2].value)
+        out.fileoforigin = p[0].fileoforigin
+        out.source_pos = p[0].source_pos
+        return out
     
     @pg.production('identifier : NAMESPACE PERIOD identifier')
     def pass_var(state,p):
-        return Token("IDENTIFIER",p[0].value + "." + p[2].value)
+        out = Token("IDENTIFIER",p[0].value + "." + p[2].value)
+        out.fileoforigin = p[0].fileoforigin
+        out.source_pos = p[0].source_pos
+        return out
     
     @pg.production('expression : identifier')
     def pass_global_var(state,p):
-        return aster.Var(p[0])
-    
+        out = aster.Var(p[0])
+        out.fileoforigin = p[0].fileoforigin
+        out.lineno = p[0].source_pos.lineno
+        return out
+
     @pg.production('ref_func : NAMESPACE PERIOD FUNCTION_NAME')
     def pass_var(state,p):
         return aster.NamsespaceFunc(p[0],p[2])
@@ -639,7 +657,37 @@ def get_parser(filename="tokens.txt"):
 
     @pg.error
     def error_handler(state,token):
-        print("ERROR AT",token,token.source_pos)
+        print("\x1b[1;31mLexing Error\x1b[0;0m \x1b[1;29m(" + "\x1b[1;30m" + token.fileoforigin + "\x1b[0;0m\x1b[0;31m @\x1b[1;30m line " + str(token.source_pos.lineno) + "\x1b[0;0m\x1b[1;29m):\x1b[0;0m")
+        if token.value != ";":
+            print("   \x1b[1;35mToken \x1b[1;33m" + token.value + "\x1b[0;0m \x1b[1;35mwas unexpected...\x1b[0;0m")
+        else:
+            print("   \x1b[1;35mSyntax error\x1b[0;0m")
+        with open(token.fileoforigin,"r") as f:
+            lines = f.read().splitlines()
+        if token.source_pos.lineno < len(lines):
+            line = token.source_pos.lineno - 1
+            start = line - 3
+            if start < 0:
+                start = 0
+            end = line + 4
+            if end > len(lines):
+                end = len(lines)
+            tmp = [i.rstrip() for i in lines[start:end]]
+            lens = [len(i) - len(i.lstrip()) for i in tmp if len(i.strip()) != 0]
+            min_len = min(lens)
+            out = []
+            for i,idx in zip(tmp,list(range(start,end))):
+                if idx == line:
+                    out.append("      " + i[min_len:] + "  \x1b[1;31m<--\x1b[1;30m")
+                else:
+                    out.append("      " + i[min_len:])
+            if start != 0:
+                out = ["      ..."] + out
+            if end != len(lines):
+                out.append("      ...")
+            out = "\n".join(out)
+            out = "\x1b[1;30m" + out + "\x1b[0;0m"
+            print(out)
         exit()
 
     out = pg.build()
