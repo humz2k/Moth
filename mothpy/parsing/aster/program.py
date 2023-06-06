@@ -95,7 +95,7 @@ class Common:
             print("   \x1b[1;35m" + error_t + "\x1b[0;0m")
             with open(fileoforigin,"r") as f:
                 lines = f.read().splitlines()
-            if lineno < len(lines):
+            if lineno <= len(lines):
                 line = lineno - 1
                 start = line - 3
                 if start < 0:

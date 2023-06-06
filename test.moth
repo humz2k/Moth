@@ -8,7 +8,7 @@ comment
 ###
 
 #include <numoth.moth>
-#include <time.moth>
+include <time.moth>
 include <stdlib.moth>
 
 struct Test:
@@ -23,5 +23,4 @@ def cast int(Test left):
 #    return out
 
 def int main():
-    b = 5
     return 0

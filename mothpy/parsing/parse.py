@@ -664,7 +664,7 @@ def get_parser(filename="tokens.txt"):
             print("   \x1b[1;35mSyntax error\x1b[0;0m")
         with open(token.fileoforigin,"r") as f:
             lines = f.read().splitlines()
-        if token.source_pos.lineno < len(lines):
+        if token.source_pos.lineno <= len(lines):
             line = token.source_pos.lineno - 1
             start = line - 3
             if start < 0:
