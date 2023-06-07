@@ -4,7 +4,7 @@ include <rand.moth>
 @inline
 def float sum(float[:] arr):
     float total = 0
-    for float i in arr:
+    for i in arr: #iterate through array
         total += i
     return total
 
@@ -13,10 +13,10 @@ def kernel fill[i: arr.dims[0]](float[:] arr):
 
 def int main():
     srand(21082001)
-    float[:] arr = new float[1000000]
+    float[:] arr = new float[1000000] #declare a 1D array of floats
     fill(arr)
-    long start = clock()
-    float total = sum(arr)
-    long end = clock()
-    print("Time:", str(clock_to_sec(end-start)) + "s")
+    long start = clock() #optional type declarations
+    total = sum(arr)
+    end = clock()
+    print("Time:", str(clock_to_sec(end-start)) + "s, total",total)
     return 0

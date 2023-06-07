@@ -18,6 +18,7 @@ inline float sum(const float* restrict arr, const int n){
 }
 
 int main(){
+    srand(21082001);
     int n = 1000000;
     float* arr = (float*)malloc(n * sizeof(float));
     fill(arr,n);
