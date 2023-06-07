@@ -383,6 +383,10 @@ def get_parser(filename="tokens.txt"):
     def var_deref(state,p):
         return aster.VarDeref(p[1])
     
+    @pg.production('expression : STARSTAR expression')
+    def var_deref(state,p):
+        return aster.VarDeref(aster.VarDeref(p[1]))
+    
     @pg.production('expression : expression PLUS_PLUS')
     @pg.production('expression : expression MINUS_MINUS')
     def pass_expression(state,p):
@@ -673,6 +677,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('type : type STAR')
     def pass_type(state,p):
         return aster.PointerType(p[0])
+    
+    @pg.production('type : type STARSTAR')
+    def pass_type(state,p):
+        return aster.PointerType(aster.PointerType(p[0]))
     
     @pg.production('open_printf : PRINTF OPEN_PAREN expression')
     def open_printf(state,p):

@@ -87,7 +87,10 @@ class PointerType:
         self.type = typ
     
     def eval(self,common,*args):
-        return ir.PointerType(self.type.eval(common))
+        base = self.type.eval(common)
+        if base == ir.VoidType():
+            return ir.PointerType(ir.IntType(16))
+        return ir.PointerType(base)
     
 class NamespaceType:
     def __init__(self,name,typ):

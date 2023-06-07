@@ -233,6 +233,8 @@ class Common:
         return ir.PointerType(ir.IntType(16))
     
     def cast_ptr(self,builder : ir.IRBuilder,ptr,typ):
+        if ptr.type == typ:
+            return ptr
         return builder.inttoptr(builder.ptrtoint(ptr,ir.IntType(64)),typ)
     
     def alloc(self,builder : ir.IRBuilder, size, ptr_type):
@@ -430,6 +432,8 @@ class Common:
                     return builder.fpext(val,new_type)
             if val.type == ir.DoubleType():
                 return builder.fptrunc(val,new_type)
+        if self.is_array(val) and isinstance(new_type,ir.PointerType) and not new_type == self.str_type():
+            return self.cast_ptr(builder,builder.extract_value(val,1),new_type)
         if self.is_vector(val) and self.type_is_vector(new_type):
             size_val = 1
             for i in val.type.dims:
