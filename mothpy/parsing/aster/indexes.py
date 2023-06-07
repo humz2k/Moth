@@ -7,7 +7,7 @@ class Index:
         self.val = val
         self.idx = idx
     
-    def eval(self,common,builder : ir.IRBuilder,local_vars,*args):
+    def eval(self,common,builder : ir.IRBuilder,local_vars,from_assign = None, assign_type = None,*args):
         val_eval = self.val.eval(common,builder,local_vars)
         val = val_eval.get(common,builder)
         idx = self.idx.get_list(common,builder,local_vars)
@@ -26,4 +26,30 @@ class Index:
             var = common.variable(raw.type.pointee)
             var.raw = raw
             return var
+        if common.is_object(val):
+            parent = val_eval
+            type_name = parent.raw.type.pointee.pointee.name.split("OBJECT_")[1]
+            func_name = type_name + "_" + "__index__"
+            idx_literal = ir.Constant.literal_array(idx)
+            idx_var = builder.alloca(idx_literal.type)
+            builder.store(idx_literal,idx_var)
+            ptr = builder.bitcast(idx_var,ir.PointerType(ir.IntType(32)))
+            n = ir.Constant(ir.IntType(32),len(idx))
+            input_types = [val.type,ptr.type,n.type]
+            mangled = common.mangle(Token("FUNCTION_NAME",func_name),input_types)
+            if mangled in common.functions:
+                func = common.functions[mangled]
+                out = builder.call(func,[val,ptr,n])
+                if out.type == ir.PointerType(ir.IntType(8)):
+                    raise Exception("Fuck this is bad")
+                if isinstance(out.type,ir.PointerType) and out.type != ir.PointerType(ir.IntType(8)):
+                    out_t = out.type.pointee
+                    var = common.variable(out_t)
+                    var.init(common,builder)
+                    var.raw = out
+                    return var
+                else:
+                    return common.constant(out)
+            else:
+                pass
         common.throw_error("Can't index type " + str(val.type))

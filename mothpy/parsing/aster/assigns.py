@@ -60,16 +60,33 @@ class Assign:
         self.val = val
     
     def eval(self,common,builder : ir.IRBuilder,local_vars,*args):
-        dest = self.dest.eval(common,builder,local_vars)
+        out_t = None
+        out = None
+        from_assign = False
+        out_t = None
+        if isinstance(self.val,Constant):
+            val = self.val.get_python(common)
+            if type(val) == float:
+                out_t = ir.FloatType()
+                from_assign = True
+            if type(val) == int:
+                out_t = ir.IntType(32)
+                from_assign = True
+        else:
+            out = self.val.eval(common,builder,local_vars).get(common,builder)
+            from_assign = True
+            out_t = out.type
+        dest = self.dest.eval(common,builder,local_vars,from_assign = from_assign, assign_type = out_t)
+        #exit()
         if isinstance(self.val,Constant) and common.type_is_base(dest.type) and not dest.type == common.str_type():
             val = self.val.get_python(common)
-            dest = self.dest.eval(common,builder,local_vars)
             if isinstance(dest.type,ir.IntType):
                 val = int(val)
             out = ir.Constant(dest.type,val)
             dest.set(common,builder,common.cast(builder,out,dest.type))
             return dest
-        out = self.val.eval(common,builder,local_vars).get(common,builder)
+        if type(out) == type(None):
+            out = self.val.eval(common,builder,local_vars).get(common,builder)
         if dest.type == out.type:
             dest.set(common,builder,out)
             return dest

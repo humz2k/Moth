@@ -191,6 +191,15 @@ def get_parser(filename="tokens.txt"):
         func_name = Token("FUNCTION_NAME","operator->" + op.name)
         inputs = [[l_type,left],[r_type,right]]
         return aster.FunctionHeader(typ,func_name,inputs)
+    
+    @pg.production('function_header : DEF type OPERATOR MINUS OPEN_PAREN type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR TILDE OPEN_PAREN type IDENTIFIER CLOSE_PAREN')
+    @pg.production('function_header : DEF type OPERATOR NOT OPEN_PAREN type IDENTIFIER CLOSE_PAREN')
+    def operator_header(state,p):
+        _,typ,_,op,_,l_type,left,_ = p
+        func_name = Token("FUNCTION_NAME","operator->" + op.name)
+        inputs = [[l_type,left]]
+        return aster.FunctionHeader(typ,func_name,inputs)
 
     @pg.production('function_header : DEF type FUNCTION_NAME OPEN_PAREN CLOSE_PAREN')
     def function_header(state,p):
@@ -295,7 +304,10 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('line : FOR expression IN expression COLON OPEN_CURL lines CLOSE_CURL')
     def for_loop(state,p):
-        return aster.ForLoop(p[1],p[3],p[6])
+        out = aster.ForLoop(p[1],p[3],p[6])
+        out.lineno = p[0].source_pos.lineno
+        out.fileoforigin = p[0].fileoforigin
+        return out
 
     @pg.production('lines : line')
     def pass_lines(state,p):
@@ -361,7 +373,11 @@ def get_parser(filename="tokens.txt"):
     @pg.production('expression : NOT expression')
     @pg.production('expression : TILDE expression')
     def pass_expression(state,p):
-        return aster.SinOp(p[0].name,p[1])
+        out = aster.SinOp(p[0].name,p[1])
+        out.fileoforigin = p[0].fileoforigin
+        out.lineno = p[0].source_pos.lineno
+        out.token = p[0].value
+        return out
     
     @pg.production('expression : STAR expression')
     def var_deref(state,p):
@@ -470,7 +486,10 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('vardec : type IDENTIFIER')
     def declaration(state,p):
-        return aster.VarDec(p[0],p[1])
+        out = aster.VarDec(p[0],p[1])
+        out.lineno = p[1].source_pos.lineno
+        out.fileoforigin = p[1].fileoforigin
+        return out
     
     @pg.production('expression : vardec')
     def declaration(state,p):
@@ -654,6 +673,18 @@ def get_parser(filename="tokens.txt"):
     @pg.production('type : type STAR')
     def pass_type(state,p):
         return aster.PointerType(p[0])
+    
+    @pg.production('open_printf : PRINTF OPEN_PAREN expression')
+    def open_printf(state,p):
+        return [p[2]]
+    
+    @pg.production('open_printf : open_printf COMMA expression')
+    def open_printf(state,p):
+        return p[0] + [p[2]]
+    
+    @pg.production('expression : open_printf CLOSE_PAREN')
+    def close_printf(state,p):
+        return aster.Printf(p[0])
 
     @pg.error
     def error_handler(state,token):

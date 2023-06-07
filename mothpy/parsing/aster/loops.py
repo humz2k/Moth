@@ -32,10 +32,13 @@ class ForLoop:
 
     def eval(self,common,builder : ir.IRBuilder, local_vars, *args):
         new_locals = local_vars.copy()
-        var = self.val.eval(common,builder,new_locals)
         if isinstance(self.iter,Range):
+            var = self.val.eval(common,builder,new_locals,from_assign = True,assign_type = common.int_type())
             if not var.raw.type.pointee == common.int_type():
-                common.throw_error("Invalid type for For Loop and range")
+                error_t = "Iterator variable must be " + common.format_error_var(common.type_to_str(common.int_type()))
+                lineno = self.lineno
+                fileoforigin = self.fileoforigin
+                common.throw_error(error_t = error_t, lineno = lineno, fileoforigin = fileoforigin)
             start_val = self.iter.start.eval(common,builder,local_vars).get(common,builder)
             end_val = self.iter.end.eval(common,builder,local_vars).get(common,builder)
             step_val = self.iter.step.eval(common,builder,local_vars).get(common,builder)
@@ -65,13 +68,19 @@ class ForLoop:
                     out_ty = this_iter.type.elements[1].pointee
                 else:
                     out_ty = ir.LiteralStructType([ir.VectorType(ir.IntType(32),dims.type.count-1),this_iter.type.elements[1]])
+                
+                var = self.val.eval(common,builder,new_locals,from_assign = True,assign_type = out_ty)
+                
+                if var.raw.type.pointee != out_ty:
+                    common.throw_error("Invalid type in for loop")
+
+                if dims.type.count != 1:
                     vec_ptr = builder.gep(var.raw,[ir.Constant(ir.IntType(32),0),ir.Constant(ir.IntType(32),0)])
                     new_dims = ir.Constant(ir.VectorType(ir.IntType(32),dims.type.count-1),[0]*(dims.type.count-1))
                     for idx,i in enumerate(dims_list[1:]):
                         new_dims = builder.insert_element(new_dims,i,ir.Constant(ir.IntType(32),idx))
                     builder.store(new_dims,vec_ptr)
-                if var.raw.type.pointee != out_ty:
-                    common.throw_error("Invalid type in for loop")
+
                 len_loop = builder.extract_element(dims,ir.Constant(ir.IntType(32),0))
                 iter_var = common.variable(ir.IntType(32))
                 iter_var.init(common,builder)
@@ -96,6 +105,8 @@ class ForLoop:
                             iter_var.set(common,builder,builder.add(val,ir.Constant(ir.IntType(32),1)))
                             builder.branch(start)
                 builder.position_at_start(end)
+            else:
+                raise Exception("Iter not implemented")
 
 class Range:
     def __init__(self,*args):

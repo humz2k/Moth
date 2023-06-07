@@ -7,7 +7,7 @@ class VarReference:
         self.parent = parent
         self.name = name
     
-    def eval(self,common,builder : ir.IRBuilder,local_vars,*args):
+    def eval(self,common,builder : ir.IRBuilder,local_vars, from_assign = None, assign_type = None, *args):
         parent = self.parent.eval(common,builder,local_vars)
         typ = parent.raw.type.pointee
         if common.type_is_struct(typ):
@@ -48,7 +48,7 @@ class VarDeref:
     def __init__(self,var):
         self.var = var
     
-    def eval(self,common,builder : ir.IRBuilder, local_vars, *args):
+    def eval(self,common,builder : ir.IRBuilder, local_vars, from_assign = None, assign_type = None, *args):
         var = self.var.eval(common,builder,local_vars)
         val = var.get(common,builder)
         if not common.is_ptr(val):
@@ -69,9 +69,12 @@ class VarDec:
         self.type = typ
         self.name = name
     
-    def eval(self,common,builder : ir.IRBuilder,local_vars,*args):
+    def eval(self,common,builder : ir.IRBuilder,local_vars,from_assign = None, assign_type = None,*args):
         if self.name.value in local_vars:
-            common.throw_error("Var " + self.name.value + " already exists")
+            error_t = "Variable " + common.format_error_var(self.name.value) + " already declared in this scope"
+            lineno = self.lineno
+            fileoforigin = self.fileoforigin
+            common.throw_error(error_t = error_t, lineno = lineno, fileoforigin = fileoforigin)
         new_var = common.variable(self.type.eval(common))
         new_var.init(common,builder)
         local_vars[self.name.value] = new_var
@@ -83,7 +86,7 @@ class Global:
         self.name = name
         self.extern = False
     
-    def eval(self,common,module_prefix="",*args):
+    def eval(self,common,module_prefix="",from_assign = None, assign_type = None,*args):
         name = module_prefix + self.name.value
         typ = self.type.eval(common)
         out = ir.GlobalVariable(common.module,typ,name)
@@ -94,7 +97,7 @@ class Var:
     def __init__(self,name):
         self.name = name
     
-    def eval(self,common,builder,local_vars,*args):
+    def eval(self,common,builder,local_vars,from_assign = False,assign_type = None,*args):
         if self.name.value in local_vars:
             return local_vars[self.name.value]
         
@@ -116,5 +119,10 @@ class Var:
             return var
         except:
             pass
-        error_t = "Variable " + self.name.value + " does not exist in this scope"
+        if from_assign:
+            new_var = common.variable(assign_type)
+            new_var.init(common,builder)
+            local_vars[self.name.value] = new_var
+            return new_var
+        error_t = "Variable " + common.format_error_var(self.name.value) + " does not exist in this scope"
         common.throw_error(error_t = error_t,fileoforigin = self.fileoforigin, lineno = self.lineno)

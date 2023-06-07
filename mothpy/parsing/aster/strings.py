@@ -7,5 +7,6 @@ class String:
         self.val = val
     
     def eval(self,common,builder,*args):
-        string = common.get_string(builder,self.val.value[1:-1])
+        out = eval(self.val.value)
+        string = common.get_string(builder,out)
         return common.constant(string)

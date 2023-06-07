@@ -1,0 +1,39 @@
+
+@extern
+def int* __allocFile__()
+
+@extern
+def void __openFile__(int* voidfp, str filename, str mode)
+
+@extern
+def void __writeLine__(int* voidfp, str line)
+
+@extern
+def void __closeFile__(int* voidfp)
+
+@extern
+def str __readFile__(int* voidfp)
+
+object File:
+    int* raw
+    str mode
+
+    def void __init__(File self):
+        self.raw = __allocFile__()
+
+    def void open(File self, str filename, str mode):
+        __openFile__(self.raw,filename,mode)
+    
+    def void write(File self, str line):
+        __writeLine__(self.raw,line)
+    
+    def void close(File self):
+        __closeFile__(self.raw)
+    
+    def str read(File self):
+        return __readFile__(self.raw)
+
+def File open(str filename, str mode):
+    File f = new File()
+    f.open(filename,mode)
+    return f

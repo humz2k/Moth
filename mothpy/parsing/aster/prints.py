@@ -2,6 +2,14 @@ from llvmlite import ir
 import re
 from rply import Token
 
+class Printf:
+    def __init__(self,vals):
+        self.vals = vals
+
+    def eval(self,common,builder : ir.IRBuilder, local_vars,*args):
+        vals = [i.eval(common,builder,local_vars).get(common,builder) for i in self.vals]
+        return common.constant(builder.call(common.print_func,vals))
+
 class Print:
     def __init__(self):
         self.vals = []

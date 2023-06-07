@@ -87,6 +87,7 @@ RANGE \brange\b
 MODIFIER \bextern\b
 MODULE \bmodule\b
 OPERATOR \boperator\b
+PRINTF \bprintf\b
 
 FUNCTION_NAME \balloc\b
 FUNCTION_NAME \bexit\b

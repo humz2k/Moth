@@ -87,6 +87,9 @@ class Common:
                 ir.PointerType(ir.IntType(8))]
         self.float_types = [ir.HalfType(),ir.FloatType(),ir.DoubleType()]
 
+    def format_error_var(self,string : str):
+        return "\x1b[1;33m" + string + "\x1b[1;35m"
+
     def throw_error(self,string = "Error???",error_t = None, fileoforigin = None, lineno = None):
         if type(fileoforigin) == type(None):
             raise Exception(string)
@@ -752,6 +755,31 @@ class Common:
             item = builder.extract_element(right,ir.Constant(ir.IntType(32),i))
             out = builder.insert_element(out,self.math_base(builder,op,left,item),ir.Constant(ir.IntType(32),i))
         return out
+    
+    def do_sinop(self,builder : ir.IRBuilder, op, val):
+        if self.is_base(val):
+            if val.type == ir.IntType(1):
+                if op == "TILDE":
+                    return builder.not_(val)
+                if op == "NOT":
+                    return builder.not_(val)
+            elif self.is_int(val):
+                if op == "MINUS":
+                    return builder.neg(val)
+                if op == "TILDE":
+                    return builder.not_(val)
+            elif self.is_float(val):
+                if op == "MINUS":
+                    return builder.fneg(val)
+        op_name = Token("FUNCTION_NAME","operator->" + op)
+        mangled = self.mangle(op_name,[val.type])
+        if mangled in self.functions:
+            func = self.functions[mangled]
+            out = builder.call(func,[val])
+            return out
+        return None
+        #self.throw_error("SINOP NOT IMPLEMENTED")
+        #exit()
         
     def do_binop(self,builder : ir.IRBuilder,op,left,right):
         if op == "STARSTAR":

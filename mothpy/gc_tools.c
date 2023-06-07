@@ -1,4 +1,4 @@
-#include "../gc-8.2.2/include/gc.h"
+#include "../bdwgc/include/gc.h"
 
 void bohem_start(){
     GC_INIT();

@@ -7,20 +7,11 @@ multiline
 comment
 ###
 
-#include <numoth.moth>
-include <time.moth>
-include <stdlib.moth>
-
-struct Test:
-    int a
-
-def cast int(Test left):
-    return left.a
-
-#def Test operator-(Test left, Test right):
-#    Test out
-#    out.a = left.a - right.a
-#    return out
+include <io.moth>
 
 def int main():
+    f = open("yeet.txt","r")
+    out = f.read()
+    f.close()
+    print(out)
     return 0

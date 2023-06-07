@@ -22,13 +22,15 @@ def compileMoth(fname,ll = "llc",opt = 3):
     os.system(ll + " -filetype=obj " + opt_ll + " -o " + tmp_o + " -O" + str(opt))
     return tmp_o,opt_ll,tmp_ll
 
-def link(fnames,out,is_shared,c,cc="clang",gc_tools=None,c_tools = None):
+def link(fnames,out,is_shared,c,cc="clang",gc_tools=None,c_tools = None,file_tools = None):
     if type(gc_tools) == type(None):
         gc_tools = os.path.dirname(os.path.abspath(__file__)) + "/gc_tools.o"
     if type(c_tools) == type(None):
         c_tools = os.path.dirname(os.path.abspath(__file__)) + "/c_tools.o"
+    if type(file_tools) == type(None):
+        file_tools = os.path.dirname(os.path.abspath(__file__)) + "/file_tools.o"
     gc_a = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..','bdwgc','libgc.a'))
-    fnames += [gc_tools,c_tools,gc_a]
+    fnames += [gc_tools,c_tools,gc_a,file_tools]
     files = " ".join(fnames)
     shared = ""
     if is_shared:
