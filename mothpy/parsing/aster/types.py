@@ -39,7 +39,7 @@ class StructType:
         if module_prefix == "":
             if self.name.value in common.structs:
                 return common.structs[self.name.value]
-        print("AHHH")
+        print("CANT FIND STRUCT???")
         exit()
 
 class ObjectType:

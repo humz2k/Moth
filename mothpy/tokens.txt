@@ -90,6 +90,8 @@ MODULE \bmodule\b
 OPERATOR \boperator\b
 PRINTF \bprintf\b
 
+OPAQUE \bopaque\b
+
 FUNCTION_NAME \balloc\b
 FUNCTION_NAME \bexit\b
 FUNCTION_NAME \bstrlen\b

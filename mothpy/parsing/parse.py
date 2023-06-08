@@ -55,6 +55,10 @@ def get_parser(filename="tokens.txt"):
         p[0].add(p[1])
         return p[0]
     
+    @pg.production('struct : OPAQUE STRUCT STRUCT_NAME SEMI_COLON')
+    def ahh(state,p):
+        return aster.OpaqueStruct(p[2])
+    
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL function')
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL struct')
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL object')

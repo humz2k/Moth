@@ -28,6 +28,8 @@ class Constant:
             return float(self.val.value[:-1])
         if self.val.name == "LONG_LITERAL":
             return int(self.val.value[:-1])
+        if self.val.name == "NULL":
+            return None
         common.throw_error("CONSTANT " + self.val.name + " NOT IMPLEMENTED")
     
     def eval(self,common,builder : ir.IRBuilder,local_vars,*args):
@@ -52,6 +54,8 @@ class Constant:
             return common.constant(ir.Constant(ir.HalfType(),float(self.val.value[:-1])))
         if self.val.name == "LONG_LITERAL":
             return common.constant(ir.Constant(ir.IntType(64),int(self.val.value[:-1])))
+        if self.val.name == "NULL":
+            return common.constant(ir.Constant(ir.PointerType(ir.IntType(16)),None))
         common.throw_error("CONSTANT " + self.val.name + " NOT IMPLEMENTED")
 
 class Assign:

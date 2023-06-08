@@ -8,24 +8,26 @@ comment
 ###
 #include <numoth.moth>
 #include <io.moth>
-include <time.moth>
+#include <time.moth>
+
+#opaque struct MPI_Comm
 
 @extern
-def float sqrtf(float a)
+int MPI_COMM_WORLD
 
-def kernel testKernel[i: 100](float[:] a):
-    #print("Hello from thread",i)
-    #print(total)
-    total = 100.f
-    for k in range(1000000):
-        total -= sqrtf(total)
-    a[i] = total
-    pass
+@extern
+def int MPI_Init(void* a, void* b)
+
+@extern
+def int MPI_Finalize()
+
+@extern
+def int MPI_Comm_rank(int comm, int* world_rank)
 
 def int main():
-    myArray = new float[100]
-    start = CPUTimer()
-    testKernel(myArray)
-    end = CPUTimer()
-    print(end-start)
+    MPI_Init(NULL,NULL)
+    int* out = alloc(sizeof(int))
+    MPI_Comm_rank(MPI_COMM_WORLD,out)
+    print(*out)
+    MPI_Finalize()
     return 0

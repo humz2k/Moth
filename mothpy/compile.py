@@ -4,7 +4,7 @@ import os
 from llvmlite import binding
 
 
-def compileMoth(fname,ll = "llc",opt = 3,threaded = False, nthreads = 5):
+def compileMoth(fname,ll = "llc",opt = 3,threaded = False, nthreads = 5,echo_compile=False):
     path = os.path.dirname(os.path.abspath(__file__)) + "/tokens.txt"
     tokens = lex(fname,path)
     parsed = parse(tokens,path)
@@ -17,12 +17,16 @@ def compileMoth(fname,ll = "llc",opt = 3,threaded = False, nthreads = 5):
         f.write(out)
     opt_ll = fname + ".tmp.opt.ll" #-polly-vectorizer=polly
     #os.system('opt ' + tmp_ll + " -passes='always-inline' -S -o " + opt_ll)
+    if echo_compile:
+        print('opt ' + tmp_ll + " -passes='always-inline,mem2reg' -S -o " + opt_ll)
     os.system('opt ' + tmp_ll + " -passes='always-inline,mem2reg' -S -o " + opt_ll)
     tmp_o = fname + ".tmp.o"
+    if echo_compile:
+        print(ll + " -filetype=obj " + opt_ll + " -o " + tmp_o + " -O" + str(opt))
     os.system(ll + " -filetype=obj " + opt_ll + " -o " + tmp_o + " -O" + str(opt))
     return tmp_o,opt_ll,tmp_ll
 
-def link(fnames,out,is_shared,c,cc="gcc-13",gc_tools=None,c_tools = None,file_tools = None,threading_tools = None,threaded = False, nthreads = 5):
+def link(fnames,out,is_shared,c,cc="gcc-13",gc_tools=None,c_tools = None,file_tools = None,threading_tools = None,threaded = False, nthreads = 5, echo_compile=False):
     if type(gc_tools) == type(None):
         gc_tools = os.path.dirname(os.path.abspath(__file__)) + "/gc_tools.c"
     if type(c_tools) == type(None):
@@ -47,4 +51,6 @@ def link(fnames,out,is_shared,c,cc="gcc-13",gc_tools=None,c_tools = None,file_to
         c_str += " -pthread"
     #print(cc + " " + files + " -o " + out + shared)
     #print(cc + " " + files + " -o " + out + shared + c_str)
+    if echo_compile:
+        print(cc + " " + files + " -o " + out + shared + c_str)
     os.system(cc + " " + files + " -o " + out + shared + c_str)

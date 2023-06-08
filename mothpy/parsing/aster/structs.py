@@ -2,6 +2,15 @@ from llvmlite import ir
 import re
 from rply import Token
 
+class OpaqueStruct:
+    def __init__(self,name):
+        self.name = name
+
+    def eval(self,common,module_prefix="",*args):
+        out = common.module.context.get_identified_type(self.name.value)
+        common.structs[self.name.value] = out
+        return out
+
 class Struct:
     def __init__(self,name):
         self.name = name

@@ -14,8 +14,6 @@ int rand_max(){
 
 //#define check
 
-typedef unsigned long long CPUTimer_t;
-
 unsigned long long CPUTimer(){
 
   struct timeval tv;

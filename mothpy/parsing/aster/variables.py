@@ -104,9 +104,14 @@ class Var:
         try:
             out = common.module.get_global(common.current_module + self.name.value)
             typ = out.type.pointee
+            if isinstance(typ,ir.IdentifiedStructType):
+                if typ.elements == None:
+                    return common.constant(builder.load(out))
             var = common.variable(typ)
             var.init(common,builder)
             var.raw = out
+            print("???")
+            exit()
             return var
         except:
             pass

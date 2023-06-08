@@ -24,8 +24,9 @@ def kernel calc_force[i: pos.dims[0]](float3[:] pos, float3[:] acc, float[:] mas
             total += delta * force
     acc[i] = total
 
-def kernel add2D[i: a.dims[0]](float3[:] a, float3[:] b, float mul):
-    a[i] += b[i] * mul
+#@parallel
+def kernel add2D[idx: a.dims[0]](float3[:] a, float3[:] b, float mul):
+    a[idx] += b[idx] * mul
 
 def void writedata(str filename, float3[:] data):
     f = open(filename,"a+")
@@ -36,7 +37,7 @@ def void writedata(str filename, float3[:] data):
     f.close()
 
 def int main():
-    np = 10000
+    np = 100000
     nsteps = 1
     dt = 0.05f*0.5
     pos = new float3[np]
