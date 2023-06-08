@@ -57,10 +57,10 @@ class Kernel:
     def __init__(self,header,lines):
         self.header = header
         self.lines = lines
-        self.modifiers = {"extern": False, "inline": True}
+        self.modifiers = {"extern": False, "inline": True, "parallel": False}
     
     def eval(self,common,parent = None,module_prefix = ""):
-        if common.threaded:
+        if common.threaded and self.modifiers["parallel"]:
             func,iters,args_t = self.header.generate_threaded_header(common,self.modifiers)
             #print(args_t)
             block = func.append_basic_block(name="entry")

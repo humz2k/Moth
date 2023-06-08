@@ -64,6 +64,7 @@ KERNEL \bkernel\b
 CAST \bcast\b
 SIZEOF \bsizeof\b
 MODIFIER \binline\b
+MODIFIER \bparallel\b
 
 STRUCT \bstruct\b
 OBJECT \bobject\b

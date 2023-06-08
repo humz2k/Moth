@@ -3,18 +3,16 @@ include <rand.moth>
 include <math.moth>
 include <io.moth>
 
-def void zero(float3[:] arr):
-    for i in range(arr.dims[0]):
-        arr[i] = [0,0,0]
+def kernel zero[i: arr.dims[0]](float3[:] arr):
+    arr[i] = [0,0,0]
 
-def void one(float[:] arr):
-    for i in range(arr.dims[0]):
-        arr[i] = 1
+def kernel one[i: arr.dims[0]](float[:] arr):
+    arr[i] = 1
 
-def void init_particles(float3[:] arr):
-    for i in range(arr.dims[0]):
-        arr[i] = [random.rand()*3,random.rand()*3,random.rand()*3]
+def kernel init_particles[i: arr.dims[0]](float3[:] arr):
+    arr[i] = [random.rand()*3,random.rand()*3,random.rand()*3]
 
+@parallel
 def kernel calc_force[i: pos.dims[0]](float3[:] pos, float3[:] acc, float[:] mass):
     my_particle = pos[i]
     total = [0.0f,0.0f,0.0f]
@@ -26,9 +24,8 @@ def kernel calc_force[i: pos.dims[0]](float3[:] pos, float3[:] acc, float[:] mas
             total += delta * force
     acc[i] = total
 
-def void add2D(float3[:] a, float3[:] b, float mul):
-    for i in range(a.dims[0]):
-        a[i] += b[i] * mul
+def kernel add2D[i: a.dims[0]](float3[:] a, float3[:] b, float mul):
+    a[i] += b[i] * mul
 
 def void writedata(str filename, float3[:] data):
     f = open(filename,"a+")
@@ -39,7 +36,7 @@ def void writedata(str filename, float3[:] data):
     f.close()
 
 def int main():
-    np = 100000
+    np = 10000
     nsteps = 1
     dt = 0.05f*0.5
     pos = new float3[np]

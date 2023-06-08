@@ -100,6 +100,12 @@ def get_parser(filename="tokens.txt"):
         function.modifiers[modifier.value] = True
         return function
     
+    @pg.production('kernel : AT MODIFIER SEMI_COLON kernel')
+    def modifier(state,p):
+        _,modifier,_,function = p
+        function.modifiers[modifier.value] = True
+        return function
+    
     @pg.production('function : function_header SEMI_COLON')
     def pass_func_def(state,p):
         return aster.Function(p[0],[])
