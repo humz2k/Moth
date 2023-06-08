@@ -6,10 +6,26 @@ is a
 multiline
 comment
 ###
-include <numoth.moth>
-include <io.moth>
+#include <numoth.moth>
+#include <io.moth>
+include <time.moth>
+
+@extern
+def float sqrtf(float a)
+
+def kernel testKernel[i: 100](float[:] a):
+    #print("Hello from thread",i)
+    #print(total)
+    total = 100.f
+    for k in range(1000000):
+        total -= sqrtf(total)
+    a[i] = total
+    pass
 
 def int main():
-    int[:,:] a = nm.ones([10,10])
-    print(a[2])
+    myArray = new float[100]
+    start = CPUTimer()
+    testKernel(myArray)
+    end = CPUTimer()
+    print(end-start)
     return 0

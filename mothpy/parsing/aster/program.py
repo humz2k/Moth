@@ -46,13 +46,16 @@ class TmpConstant:
         return self.val
 
 class Common:
-    def __init__(self,module : ir.Module):
+    def __init__(self,module : ir.Module,threaded = False, nthreads = 5):
         self.module = module
         self.functions = {}
         self.structs = {}
         self.objects = {}
         self.casts = {}
         self.globals = {}
+        self.threaded = threaded
+        self.nthreads = nthreads
+        self.nkernels = 0
 
         self.current_module = ""
 
@@ -75,6 +78,8 @@ class Common:
         self.strcpy_func = self.get_strcpy_func()
         self.pow_func = self.get_pow_func()
         self.powf_func = self.get_powf_func()
+        if self.threaded:
+            self.thread_func = self.get_thread_func()
         self.n_strings = -1
         self.formatters = {}
         self.base_types = [ir.IntType(1),
@@ -288,6 +293,11 @@ class Common:
     def get_powf_func(self):
         powf_ty = ir.FunctionType(ir.PointerType(ir.FloatType()),[ir.FloatType(),ir.FloatType()])
         func = ir.Function(self.module,powf_ty,"powf")
+        return func
+    
+    def get_thread_func(self):
+        thread_ty = ir.FunctionType(ir.VoidType(),[ir.IntType(32),ir.IntType(32),ir.PointerType(ir.IntType(16)),ir.PointerType(ir.IntType(16))])
+        func = ir.Function(self.module,thread_ty,"__launch_threads")
         return func
     
     def get_formatter(self,string):
@@ -948,8 +958,8 @@ class Program:
     def add(self, item):
         self.items.append(item)
 
-    def eval(self,module_name : str):
-        common = Common(ir.Module(name=module_name))
+    def eval(self,module_name : str,threaded = False,nthreads = 5):
+        common = Common(ir.Module(name=module_name),threaded = threaded,nthreads = nthreads)
 
         for item in self.items:
             item.eval(common,module_prefix = "")

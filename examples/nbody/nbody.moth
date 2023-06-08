@@ -3,11 +3,17 @@ include <rand.moth>
 include <math.moth>
 include <io.moth>
 
-def kernel zero[i: arr.dims[0]](float3[:] arr):
-    arr[i] = [0,0,0]
+def void zero(float3[:] arr):
+    for i in range(arr.dims[0]):
+        arr[i] = [0,0,0]
 
-def kernel init_particles[i: arr.dims[0]](float3[:] arr):
-    arr[i] = [random.rand()*3,random.rand()*3,random.rand()*3]
+def void one(float[:] arr):
+    for i in range(arr.dims[0]):
+        arr[i] = 1
+
+def void init_particles(float3[:] arr):
+    for i in range(arr.dims[0]):
+        arr[i] = [random.rand()*3,random.rand()*3,random.rand()*3]
 
 def kernel calc_force[i: pos.dims[0]](float3[:] pos, float3[:] acc, float[:] mass):
     my_particle = pos[i]
@@ -20,8 +26,9 @@ def kernel calc_force[i: pos.dims[0]](float3[:] pos, float3[:] acc, float[:] mas
             total += delta * force
     acc[i] = total
 
-def kernel add2D[i: a.dims[0]](float3[:] a, float3[:] b, float mul):
-    a[i] += b[i] * mul
+def void add2D(float3[:] a, float3[:] b, float mul):
+    for i in range(a.dims[0]):
+        a[i] += b[i] * mul
 
 def void writedata(str filename, float3[:] data):
     f = open(filename,"a+")
@@ -32,8 +39,8 @@ def void writedata(str filename, float3[:] data):
     f.close()
 
 def int main():
-    np = 2
-    nsteps = 100
+    np = 100000
+    nsteps = 1
     dt = 0.05f*0.5
     pos = new float3[np]
     vel = new float3[np]
@@ -41,19 +48,20 @@ def int main():
     mass = new float[np]
     zero(vel)
     zero(acc)
-    mass[0] = 100
-    mass[1] = 1
-    #init_particles(pos)
+    one(mass)
+    #mass[0] = 100
+    #mass[1] = 1
+    init_particles(pos)
     
-    pos[0] = [0,0,0]
-    pos[1] = [10,0,0]
-    vel[0] = [0,0,0]
-    vel[1] = [0,1,0]
+    #pos[0] = [0,0,0]
+    #pos[1] = [10,0,0]
+    #vel[0] = [0,0,0]
+    #vel[1] = [0,1,0]
     
     f = open("data","w+")
     f.close()
     writedata("data",pos)
-    start = clock()
+    start = CPUTimer()
     calc_force(pos,acc,mass)
     add2D(vel,acc,0.5*dt)
     add2D(pos,vel,dt)
@@ -63,6 +71,6 @@ def int main():
         add2D(vel,acc,dt)
         add2D(pos,vel,dt)
         writedata("data",pos)
-    end = clock()
+    end = CPUTimer()
     print(clock_to_sec(end-start))
     return 0
