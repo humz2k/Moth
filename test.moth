@@ -1,18 +1,13 @@
 #This is a comment
 
-include <mpi.moth>
-
 ###
 This
 is a
 multiline
 comment
 ###
-#include <numoth.moth>
-#include <io.moth>
-#include <time.moth>
 
-#opaque struct MPI_Comm
+include <mpi.moth>
 
 def int main():
     MPI_Init(NULL,NULL)
