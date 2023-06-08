@@ -15,6 +15,7 @@ if __name__ == "__main__":
     parser.add_argument('-O',metavar="<opt>",type=int,default=3)
     parser.add_argument('--save-temps','-S',action='store_true',default=False)
     parser.add_argument('--shared',action='store_true',default=False)
+    parser.add_argument('--echo',action='store_true',default=False)
     parser.add_argument('--threaded',action='store_true',default=False)
     parser.add_argument('--nthreads',metavar="nthreads",type=int,default=5)
     args = parser.parse_args()
@@ -24,12 +25,12 @@ if __name__ == "__main__":
     opt_lls = []
     tmp_os = []
     for i in to_compile:
-        tmp_o,opt_ll,tmp_ll = mothpy.compileMoth(i,opt = args.O,threaded=args.threaded,nthreads = args.nthreads)
+        tmp_o,opt_ll,tmp_ll = mothpy.compileMoth(i,opt = args.O,threaded=args.threaded,nthreads = args.nthreads,echo_compile=args.echo)
         tmp_os.append(tmp_o)
         tmp_lls.append(tmp_ll)
         opt_lls.append(opt_ll)
     to_link += tmp_os
-    mothpy.link(to_link,args.o,args.shared,args.c,threaded=args.threaded,nthreads = args.nthreads)
+    mothpy.link(to_link,args.o,args.shared,args.c,threaded=args.threaded,nthreads = args.nthreads,echo_compile=args.echo)
     if not args.save_temps:
         for i in tmp_lls:
             os.remove(i)
