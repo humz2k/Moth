@@ -47,14 +47,7 @@ def int main():
     zero(vel)
     zero(acc)
     one(mass)
-    #mass[0] = 100
-    #mass[1] = 1
     init_particles(pos)
-    
-    #pos[0] = [0,0,0]
-    #pos[1] = [10,0,0]
-    #vel[0] = [0,0,0]
-    #vel[1] = [0,1,0]
     
     f = open("data","w+")
     f.close()
