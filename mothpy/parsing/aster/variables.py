@@ -93,6 +93,17 @@ class Global:
         if not self.extern:
             out.initializer = ir.Constant(typ,None)
 
+class GetPtr:
+    def __init__(self,var):
+        self.var = var
+    
+    def eval(self,common,builder,local_vars,from_assign = False,assign_type = None,*args):
+        var = self.var.eval(common,builder,local_vars)
+        try:
+            return common.constant(var.raw)
+        except:
+            common.throw_error("can't get ptr")
+
 class Var:
     def __init__(self,name):
         self.name = name
@@ -110,8 +121,8 @@ class Var:
             var = common.variable(typ)
             var.init(common,builder)
             var.raw = out
-            print("???")
-            exit()
+            #print("???")
+            #exit()
             return var
         except:
             pass

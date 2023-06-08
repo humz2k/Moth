@@ -26,13 +26,15 @@ def compileMoth(fname,ll = "llc",opt = 3,threaded = False, nthreads = 5,echo_com
     os.system(ll + " -filetype=obj " + opt_ll + " -o " + tmp_o + " -O" + str(opt))
     return tmp_o,opt_ll,tmp_ll
 
-def link(fnames,out,is_shared,c,cc="gcc-13",gc_tools=None,c_tools = None,file_tools = None,threading_tools = None,threaded = False, nthreads = 5, echo_compile=False):
+def link(fnames,out,is_shared,c,cc="gcc-13",gc_tools=None,c_tools = None,file_tools = None,threading_tools = None,threaded = False, nthreads = 5, echo_compile=False, mpi_tools = None):
     if type(gc_tools) == type(None):
         gc_tools = os.path.dirname(os.path.abspath(__file__)) + "/gc_tools.c"
     if type(c_tools) == type(None):
         c_tools = os.path.dirname(os.path.abspath(__file__)) + "/c_tools.c"
     if type(file_tools) == type(None):
         file_tools = os.path.dirname(os.path.abspath(__file__)) + "/file_tools.c"
+    if type(mpi_tools) == type(None):
+        mpi_tools = os.path.dirname(os.path.abspath(__file__)) + "/mpi_tools.c"
     if threaded:
         if type(threading_tools) == type(None):
             threading_tools = os.path.dirname(os.path.abspath(__file__)) + "/threading_tools.c"
@@ -49,6 +51,8 @@ def link(fnames,out,is_shared,c,cc="gcc-13",gc_tools=None,c_tools = None,file_to
         c_str += " -c"
     if threaded:
         c_str += " -pthread"
+    if "mpi" in cc:
+        files += " " + mpi_tools
     #print(cc + " " + files + " -o " + out + shared)
     #print(cc + " " + files + " -o " + out + shared + c_str)
     if echo_compile:

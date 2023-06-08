@@ -1,5 +1,7 @@
 #This is a comment
 
+include <mpi.moth>
+
 ###
 This
 is a
@@ -12,22 +14,22 @@ comment
 
 #opaque struct MPI_Comm
 
-@extern
-int MPI_COMM_WORLD
-
-@extern
-def int MPI_Init(void* a, void* b)
-
-@extern
-def int MPI_Finalize()
-
-@extern
-def int MPI_Comm_rank(int comm, int* world_rank)
-
 def int main():
     MPI_Init(NULL,NULL)
-    int* out = alloc(sizeof(int))
-    MPI_Comm_rank(MPI_COMM_WORLD,out)
-    print(*out)
+    int world_rank
+    MPI_Comm_rank(MPI_COMM_WORLD,&world_rank)
+    int world_size
+    MPI_Comm_size(MPI_COMM_WORLD,&world_size)
+    if world_rank == 0:
+        print("RANK:",world_rank)
+        print("SIZE:",world_size)
+    ndims = 3
+    dims = new int[3]
+    MPI_Dims_create(world_size,ndims,int*(dims))
+    if world_rank == 0:
+        print("DIMS: ",__nonewln)
+        for i in dims:
+            print(i,"",__nonewln)
+        print()
     MPI_Finalize()
     return 0

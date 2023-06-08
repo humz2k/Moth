@@ -1,5 +1,5 @@
 build:
-	mpimoth test.moth -o test.o -O3 --save-temps
+	mpimoth test.moth -o test.o -O3 --save-temps --echo
 
 gc_tools:
 	gcc-13 mothpy/gc_tools.c -o mothpy/gc_tools.o -c

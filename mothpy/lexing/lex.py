@@ -90,7 +90,7 @@ def get_lexer(filename = "tokens.txt", object_names = [], struct_names = [], fun
 
     return lexer.build()
 
-def preprocess(fname : str, path, function_names = [],object_names = [],struct_names = [],namespaces = []):
+def preprocess(fname : str, path, function_names = [],object_names = [],struct_names = [],namespaces = [],aliases = {}):
     with open(fname,"r") as f:
         raw = f.read()
     raw = remove_comments(raw)
@@ -105,12 +105,24 @@ def preprocess(fname : str, path, function_names = [],object_names = [],struct_n
         name = i
         if (i.startswith("<") and i.endswith(">")):
             name = stdlib_path + "/" + i[1:-1]
-        this_tokens,this_function_names,this_object_names,this_struct_names,this_namespaces = preprocess(name,path)
+        this_tokens,this_function_names,this_object_names,this_struct_names,this_namespaces,this_aliases = preprocess(name,path)
+        aliases.update(this_aliases)
         tokens += this_tokens
         function_names += this_function_names
         object_names += this_object_names
         struct_names += this_struct_names
         namespaces += this_namespaces
+    tmp_aliases = re.findall(r"alias\b.*\;",raw)
+    for i in tmp_aliases:
+        raw = raw.replace(i,"")
+    for i in tmp_aliases:
+        label = i.strip().split(" ")[1]
+        value = " ".join(i.strip().split(" ")[2:])[:-1]
+        aliases[label] = value
+    for label in aliases.keys():
+        val = aliases[label]
+        raw = re.sub(r"\b" + label.strip() + r"\b",val,raw)
+
     function_names += find_functions(raw)
     object_names += find_objects(raw)
     struct_names += find_structs(raw)
@@ -122,8 +134,8 @@ def preprocess(fname : str, path, function_names = [],object_names = [],struct_n
     for i in new_tokens:
         i.fileoforigin = fname
     tokens += new_tokens
-    return tokens,function_names,object_names,struct_names,namespaces
+    return tokens,function_names,object_names,struct_names,namespaces,aliases
 
 def lex(fname : str,path : str):
-    tokens,_,_,_,_ = preprocess(fname,path)
+    tokens,_,_,_,_,_ = preprocess(fname,path)
     return tokens

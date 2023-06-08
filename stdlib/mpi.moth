@@ -1,0 +1,96 @@
+alias MPI_Comm void*
+alias MPI_Datatype void*
+alias MPI_Op void*
+
+alias MPI_COMM_WORLD mpi_comm_world
+alias MPI_INT mpi_int
+alias MPI_CHAR mpi_char
+alias MPI_BYTE mpi_byte
+alias MPI_LONG mpi_long
+alias MPI_FLOAT mpi_float
+alias MPI_DOUBLE mpi_double
+alias MPI_HALF mpi_half
+alias MPI_BOOL mpi_bool
+
+alias MPI_MAX mpi_max
+alias MPI_MIN mpi_min
+alias MPI_SUM mpi_sum
+alias MPI_PROD mpi_prod
+alias MPI_LAND mpi_land
+alias MPI_BAND mpi_band
+alias MPI_LOR mpi_lor
+alias MPI_BOR mpi_bor
+alias MPI_LXOR mpi_lxor
+alias MPI_BXOR mpi_bxor
+alias MPI_MINLOC mpi_minloc
+alias MPI_MAXLOC mpi_maxloc
+alias MPI_REPLACE mpi_replace
+alias MPI_NO_OP mpi_no_op
+
+
+@extern
+MPI_Comm mpi_comm_world
+
+@extern
+MPI_Datatype mpi_int
+@extern
+MPI_Datatype mpi_char
+@extern
+MPI_Datatype mpi_byte
+@extern
+MPI_Datatype mpi_long
+@extern
+MPI_Datatype mpi_float
+@extern
+MPI_Datatype mpi_double
+@extern
+MPI_Datatype mpi_half
+@extern
+MPI_Datatype mpi_bool
+
+@extern
+MPI_Op mpi_max
+@extern
+MPI_Op mpi_min
+@extern
+MPI_Op mpi_sum
+@extern
+MPI_Op mpi_prod
+@extern
+MPI_Op mpi_land
+@extern
+MPI_Op mpi_band
+@extern
+MPI_Op mpi_lor
+@extern
+MPI_Op mpi_bor
+@extern
+MPI_Op mpi_lxor
+@extern
+MPI_Op mpi_bxor
+@extern
+MPI_Op mpi_minloc
+@extern
+MPI_Op mpi_maxloc
+@extern
+MPI_Op mpi_replace
+@extern
+MPI_Op mpi_no_op
+
+@extern
+def int __init_mpi(void* a, void* b)
+
+def int MPI_Init(void* a, void* b):
+    return __init_mpi(a,b)
+
+@extern
+def int MPI_Finalize()
+
+@extern
+def int MPI_Comm_rank(MPI_Comm comm, int* world_rank)
+
+@extern
+def int MPI_Comm_size(MPI_Comm comm, int* world_size)
+
+@extern
+def int MPI_Dims_create(int world_size, int ndims, int* dims)

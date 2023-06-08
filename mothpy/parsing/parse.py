@@ -547,6 +547,10 @@ def get_parser(filename="tokens.txt"):
         binop = aster.BinOp(op,left,right)
         return aster.Assign(left,binop)
     
+    @pg.production('expression : AMP expression')
+    def get_pointer(state,p):
+        return aster.GetPtr(p[1])
+    
     @pg.production('expression : PRINT OPEN_PAREN CLOSE_PAREN')
     def pass_print(state,p):
         return aster.Print()
