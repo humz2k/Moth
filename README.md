@@ -9,7 +9,7 @@ More detailed documentation to come, but here is a brief overview of some of Mot
 ### The Cannonical Hello World
 
     def int main:
-       print("hello world")
-       return 0
+        print("hello world")
+        return 0
 
 
