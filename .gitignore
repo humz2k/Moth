@@ -155,6 +155,7 @@ old
 tmp
 misc
 test.moth
+test_mpi.moth
 makefile
 
 # PyCharm
