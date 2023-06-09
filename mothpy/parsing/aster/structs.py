@@ -29,7 +29,8 @@ class Struct:
             existing_type = common.structs[module_prefix + type_name]
             my_attrs = tuple([i.type.eval(common) for i in self.attributes])
             if not my_attrs == existing_type.elements:
-                common.throw_error("Redefinition of struct " + type_name)
+                error_t = "Redefinition of " + common.format_error_var(common.type_to_str(existing_type))
+                common.throw_error(error_t = error_t, lineno = self.lineno, fileoforigin = self.fileoforigin)
             typ = existing_type
         else:
             typ = common.make_struct_type(type_name,self.attributes,module_prefix = module_prefix)
@@ -44,7 +45,7 @@ class NewStruct:
     def eval(self,common,builder : ir.IRBuilder,local_vars,*args):
         inputs = [i.eval(common,builder,local_vars).get(common,builder) for i in self.inputs]
         if not self.name.value in common.structs:
-            common.throw_error("Struct doesn't exist (this should not happen lol)")
+            raise Exception("Struct doesn't exist??? This should not happen???")
         func_name = self.name.value + "_" + "__init__"
         mangled = common.mangle(Token("FUNCTION_NAME",func_name),[i.type for i in inputs])
         if not mangled in common.functions:
@@ -58,7 +59,8 @@ class NewStruct:
                     this_ptr = builder.gep(ptr,[ir.Constant(ir.IntType(32),0),ir.Constant(ir.IntType(32),idx)])
                     builder.store(i,this_ptr)
                 return var
-            common.throw_error("No matching struct constructor found (" + mangled + ")")
+            error_t = "No matching constructor found for " + common.format_error_var(common.type_to_str(struct_ty)) + " with inputs " + "(" + ",".join([common.format_error_var(common.type_to_str(i)) for i in types]) + ")"
+            common.throw_error(error_t = error_t, lineno = self.lineno, fileoforigin = self.fileoforigin)
         else:
             func = common.functions[mangled]
             out = builder.call(func,inputs)

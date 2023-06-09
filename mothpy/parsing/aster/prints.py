@@ -87,7 +87,8 @@ class Print:
                 name = val.type.pointee.name.split("OBJECT_")[1]
                 out_fmt += "object[" + name + "]"
             else:
-                common.throw_error("Can't print type " + str(val.type))
+                error_t = "Can't print type " + common.format_error_var(common.type_to_str(val.type))
+                common.throw_error(error_t = error_t, fileoforigin = self.fileoforigin, lineno = self.lineno)
             #elif common.is_array(val):
             #    self.print_array(common,builder,val)
             if idx != (len(self.vals)-1):

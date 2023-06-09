@@ -39,8 +39,7 @@ class StructType:
         if module_prefix == "":
             if self.name.value in common.structs:
                 return common.structs[self.name.value]
-        print("CANT FIND STRUCT???")
-        exit()
+        raise Exception("CANT FIND STRUCT??? THIS SHOULD NOT HAPPEN???")
 
 class ObjectType:
     def __init__(self,name):
@@ -55,8 +54,7 @@ class ObjectType:
         if module_prefix == "":
             if module_prefix + self.name.value in common.objects:
                 return common.objects[module_prefix + self.name.value]
-        print("AHHH")
-        exit()
+        raise Exception("CANT FIND OBJECT??? THIS SHOULD NOT HAPPEN???")
 
 class VectorType:
     def __init__(self,typ):

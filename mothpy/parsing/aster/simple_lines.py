@@ -9,11 +9,14 @@ class Return:
     def eval(self,common,builder : ir.IRBuilder,local_vars,*args):
         if type(self.val) == type(None):
             if builder.function.type.pointee.return_type != ir.VoidType():
-                common.throw_error("Function returns wrong type")
+                error_t = common.format_error_var(common.type_to_str(builder.function.type.pointee.return_type)) + " function does not return a value"
+                common.throw_error(error_t = error_t, lineno = self.lineno, fileoforigin = self.fileoforigin)
             return builder.ret_void()
         val = self.val.eval(common,builder,local_vars).get(common,builder)
         if builder.function.type.pointee.return_type != val.type:
-            raise common.throw_error("Function returns wrong type")
+            error_t = common.format_error_var(common.type_to_str(builder.function.type.pointee.return_type)) + " function returns " + common.format_error_var(common.type_to_str(val.type))
+            common.throw_error(error_t = error_t, lineno = self.lineno, fileoforigin = self.fileoforigin)
+            #raise common.throw_error("Function returns wrong type")
         return builder.ret(val)
     
 class Pass:

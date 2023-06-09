@@ -13,7 +13,9 @@ class VarReference:
         if common.type_is_struct(typ):
             element_names = typ.element_names
             if not self.name.value in element_names:
-                raise Exception("Attr " + self.name.value + " doesn't exist")
+                error_t = "Attribute " + common.format_error_var(self.name.value) + " does not exist for " + common.format_error_var(common.type_to_str(typ))
+                common.throw_error(error_t = error_t, fileoforigin = self.fileoforigin, lineno = self.lineno)
+                #raise Exception("Attr " + self.name.value + " doesn't exist")
             idx = element_names.index(self.name.value)
             ptr = parent.raw
             this_ptr = builder.gep(ptr,[ir.Constant(ir.IntType(32),0),ir.Constant(ir.IntType(32),idx)])
@@ -25,7 +27,9 @@ class VarReference:
         if common.type_is_object(typ):
             element_names = typ.pointee.element_names
             if not self.name.value in element_names:
-                raise Exception("Attr " + self.name.value + " doesn't exist")
+                error_t = "Attribute " + common.format_error_var(self.name.value) + " does not exist for " + common.format_error_var(common.type_to_str(typ))
+                common.throw_error(error_t = error_t, fileoforigin = self.fileoforigin, lineno = self.lineno)
+                #raise Exception("Attr " + self.name.value + " doesn't exist")
             idx = element_names.index(self.name.value)
             ptr = parent.get(common,builder)
             this_ptr = builder.gep(ptr,[ir.Constant(ir.IntType(32),0),ir.Constant(ir.IntType(32),idx)])
@@ -41,8 +45,11 @@ class VarReference:
                 out.type.dims = [out.type.count]
                 return common.constant(out)
             else:
-                common.throw_error("Attr " + self.name.vale + " doesn't exist for type " + str(typ))
-        common.throw_error("VAR REFERENCE NOT IMPLEMENTED")
+                error_t = "Attribute " + common.format_error_var(self.name.value) + " does not exist for " + common.format_error_var(common.type_to_str(typ))
+                common.throw_error(error_t = error_t, fileoforigin = self.fileoforigin, lineno = self.lineno)
+                #common.throw_error("Attr " + self.name.vale + " doesn't exist for type " + str(typ))
+        error_t = "Attribute " + common.format_error_var(self.name.value) + " does not exist for " + common.format_error_var(common.type_to_str(typ))
+        common.throw_error(error_t = error_t, fileoforigin = self.fileoforigin, lineno = self.lineno)
 
 class VarDeref:
     def __init__(self,var):
@@ -52,7 +59,8 @@ class VarDeref:
         var = self.var.eval(common,builder,local_vars)
         val = var.get(common,builder)
         if not common.is_ptr(val):
-            common.throw_error("Trying to deref non pointer")
+            error_t = common.format_error_var(common.type_to_str(val.type)) + " is not a pointer"
+            common.throw_error(error_t = error_t, fileoforigin = self.fileoforigin, lineno = self.lineno)
         typ = val.type.pointee
         new_var = common.variable(typ)
         new_var.init(common,builder)
@@ -102,7 +110,8 @@ class GetPtr:
         try:
             return common.constant(var.raw)
         except:
-            common.throw_error("can't get ptr")
+            error_t = "Getting address of temporary"
+            common.throw_error(error_t = error_t, lineno = self.lineno, fileoforigin = self.fileoforigin)
 
 class Var:
     def __init__(self,name):

@@ -55,10 +55,6 @@ def get_parser(filename="tokens.txt"):
         p[0].add(p[1])
         return p[0]
     
-    @pg.production('struct : OPAQUE STRUCT STRUCT_NAME SEMI_COLON')
-    def ahh(state,p):
-        return aster.OpaqueStruct(p[2])
-    
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL function')
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL struct')
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL object')
@@ -68,6 +64,8 @@ def get_parser(filename="tokens.txt"):
     @pg.production('module_open : MODULE NAMESPACE COLON OPEN_CURL global_var')
     def module(state,p):
         out = aster.Module(p[1].value)
+        out.lineno = p[0].source_pos.lineno
+        out.fileoforigin = p[0].fileoforigin
         out.add(p[4])
         return out
     
@@ -89,7 +87,10 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('global_var : type IDENTIFIER SEMI_COLON')
     def global_var(state,p):
-        return aster.Global(p[0],p[1])
+        out = aster.Global(p[0],p[1])
+        out.lineno = p[1].source_pos.lineno
+        out.fileoforigin = p[1].fileoforigin
+        return out
     
     @pg.production('global_var : AT MODIFIER SEMI_COLON global_var')
     def global_var(state,p):
@@ -112,19 +113,31 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('function : function_header SEMI_COLON')
     def pass_func_def(state,p):
-        return aster.Function(p[0],[])
+        out = aster.Function(p[0],[])
+        out.lineno = p[1].source_pos.lineno
+        out.fileoforigin = p[1].fileoforigin
+        return out
     
     @pg.production('kernel : kernel_header SEMI_COLON')
     def pass_func_def(state,p):
-        return aster.Kernel(p[0],[])
+        out = aster.Kernel(p[0],[])
+        out.lineno = p[1].source_pos.lineno
+        out.fileoforigin = p[1].fileoforigin
+        return out
     
     @pg.production('cast : cast_header SEMI_COLON')
     def pass_func_def(state,p):
-        return aster.Cast(p[0],[])
+        out = aster.Cast(p[0],[])
+        out.lineno = p[1].source_pos.lineno
+        out.fileoforigin = p[1].fileoforigin
+        return out
 
     @pg.production('struct_open : STRUCT STRUCT_NAME COLON OPEN_CURL')
     def pass_struct_open(state,p):
-        return aster.Struct(p[1])
+        out = aster.Struct(p[1])
+        out.lineno = p[0].source_pos.lineno
+        out.fileoforigin = p[0].fileoforigin
+        return out
     
     @pg.production('struct_open : struct_open vardec SEMI_COLON')
     def pass_struct_open(state,p):
@@ -329,11 +342,17 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('line : RETURN expression SEMI_COLON')
     def pass_line(state,p):
-        return aster.Return(p[1])
+        out = aster.Return(p[1])
+        out.lineno = p[0].source_pos.lineno
+        out.fileoforigin = p[0].fileoforigin
+        return out
     
     @pg.production('line : RETURN SEMI_COLON')
     def pass_line(state,p):
-        return aster.Return()
+        out = aster.Return()
+        out.lineno = p[0].source_pos.lineno
+        out.fileoforigin = p[0].fileoforigin
+        return out
     
     @pg.production('line : PASS SEMI_COLON')
     def pass_line(state,p):
@@ -391,11 +410,20 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('expression : STAR expression')
     def var_deref(state,p):
-        return aster.VarDeref(p[1])
+        out = aster.VarDeref(p[1])
+        out.fileoforigin = p[0].fileoforigin
+        out.lineno = p[0].source_pos.lineno
+        return out
     
     @pg.production('expression : STARSTAR expression')
     def var_deref(state,p):
-        return aster.VarDeref(aster.VarDeref(p[1]))
+        tmp = aster.VarDeref(p[1])
+        tmp.fileoforigin = p[0].fileoforigin
+        tmp.lineno = p[0].source_pos.lineno
+        out = aster.VarDeref(tmp)
+        out.fileoforigin = p[0].fileoforigin
+        out.lineno = p[0].source_pos.lineno
+        return out
     
     @pg.production('expression : expression PLUS_PLUS')
     @pg.production('expression : expression MINUS_MINUS')
@@ -428,7 +456,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('expression : NEW STRUCT_NAME OPEN_PAREN CLOSE_PAREN')
     @pg.production('expression : NEW struct_namespace_ref OPEN_PAREN CLOSE_PAREN')
     def pass_function(state,p):
-        return aster.NewStruct(p[1])
+        out = aster.NewStruct(p[1])
+        out.lineno = p[0].source_pos.lineno
+        out.fileoforigin = p[0].fileoforigin
+        return out
     
     @pg.production('struct_call_open : NEW STRUCT_NAME OPEN_PAREN expression')
     @pg.production('struct_call_open : NEW struct_namespace_ref OPEN_PAREN expression')
@@ -441,7 +472,10 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('expression : struct_call_open CLOSE_PAREN')
     def pass_function(state,p):
-        return aster.NewStruct(p[0][0],p[0][1:])
+        out = aster.NewStruct(p[0][0],p[0][1:])
+        out.lineno = p[1].source_pos.lineno
+        out.fileoforigin = p[1].fileoforigin
+        return out
     
     @pg.production('namespace_ref : NAMESPACE')
     def pass_thing(state,p):
@@ -549,21 +583,31 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('expression : AMP expression')
     def get_pointer(state,p):
-        return aster.GetPtr(p[1])
+        out = aster.GetPtr(p[1])
+        out.fileoforigin = p[0].fileoforigin
+        out.lineno = p[0].source_pos.lineno
+        return out
     
     @pg.production('expression : PRINT OPEN_PAREN CLOSE_PAREN')
     def pass_print(state,p):
-        return aster.Print()
+        out = aster.Print()
+        out.lineno = p[0].source_pos.lineno
+        out.fileoforigin = p[0].fileoforigin
+        return out
     
     @pg.production('expression : PRINT OPEN_PAREN NONEWLN CLOSE_PAREN')
     def pass_print(state,p):
         tmp = aster.Print()
+        tmp.lineno = p[0].source_pos.lineno
+        tmp.fileoforigin = p[0].fileoforigin
         tmp.nonewline = True
         return tmp
     
     @pg.production('print_open : PRINT OPEN_PAREN expression')
     def pass_print(state,p):
         tmp = aster.Print()
+        tmp.lineno = p[0].source_pos.lineno
+        tmp.fileoforigin = p[0].fileoforigin
         tmp.add(p[2])
         return tmp
     
@@ -615,7 +659,10 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('expression : expression PERIOD IDENTIFIER')
     def pass_var(state,p):
-        return aster.VarReference(p[0],p[2])
+        out = aster.VarReference(p[0],p[2])
+        out.lineno = p[1].source_pos.lineno
+        out.fileoforigin = p[1].fileoforigin
+        return out
     
     @pg.production('ref_func : expression PERIOD FUNCTION_NAME')
     def pass_var(state,p):
@@ -710,11 +757,18 @@ def get_parser(filename="tokens.txt"):
 
     @pg.error
     def error_handler(state,token):
+        if token.value == '$end':
+            token.fileoforigin = "???"
+            token.source_pos = TMP()
+            token.source_pos.lineno = "???"
+            
         print("\x1b[1;31mLexing Error\x1b[0;0m \x1b[1;29m(" + "\x1b[1;30m" + token.fileoforigin + "\x1b[0;0m\x1b[0;31m @\x1b[1;30m line " + str(token.source_pos.lineno) + "\x1b[0;0m\x1b[1;29m):\x1b[0;0m")
         if token.value != ";":
             print("   \x1b[1;35mToken \x1b[1;33m" + token.value + "\x1b[0;0m \x1b[1;35mwas unexpected...\x1b[0;0m")
         else:
             print("   \x1b[1;35mSyntax error\x1b[0;0m")
+        if token.fileoforigin == "???":
+            exit()
         with open(token.fileoforigin,"r") as f:
             lines = f.read().splitlines()
         if token.source_pos.lineno <= len(lines):
@@ -752,3 +806,7 @@ def parse(tokens,path):
     parser = get_parser(filename = path)
     parsed = parser.parse(iter(tokens),ParserState())
     return parsed
+
+class TMP:
+    def __init__(self):
+        pass
