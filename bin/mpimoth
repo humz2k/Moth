@@ -25,12 +25,12 @@ if __name__ == "__main__":
     opt_lls = []
     tmp_os = []
     for i in to_compile:
-        tmp_o,opt_ll,tmp_ll = mothpy.compileMoth(i,opt = args.O,threaded=args.threaded,nthreads = args.nthreads,echo_compile=args.echo)
+        tmp_o,opt_ll,tmp_ll = mothpy.compile_moth(i,optimization_level = args.O,threaded=args.threaded,n_threads = args.nthreads,echo_compile=args.echo)
         tmp_os.append(tmp_o)
         tmp_lls.append(tmp_ll)
         opt_lls.append(opt_ll)
     to_link += tmp_os
-    mothpy.link(to_link,args.o,args.shared,args.c,cc="mpicc",threaded=args.threaded,nthreads = args.nthreads,echo_compile=args.echo)
+    mothpy.link_files(to_link,args.o,args.shared,args.c,compiler = "mpicc",threaded=args.threaded,n_threads = args.nthreads,echo_compile=args.echo)
     if not args.save_temps:
         for i in tmp_lls:
             os.remove(i)
