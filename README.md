@@ -6,6 +6,15 @@ This repository contains the latest Moth compiler, tools and stdlib.
 
 More detailed documentation to come, but here is a brief overview of some of Moth's features.
 
+### Compiling
+Add bin to path
+
+    usage: moth [-h] [-o <output>] [-c] [-O <opt>] [--save-temps] [--shared] [--echo] [--threaded] [--nthreads nthreads] <mothfile> [<mothfile> ...]
+
+MPI (WIP)
+
+    usage: mpimoth [-h] [-o <output>] [-c] [-O <opt>] [--save-temps] [--shared] [--echo] [--threaded] [--nthreads nthreads] <mothfile> [<mothfile> ...]
+
 ### The Cannonical Hello World
 
     def int main():
@@ -103,3 +112,64 @@ Objects are passed by reference
         TestObject a = new TestObject()
         b = new TestObject(1,1.0f)
         return 0
+
+### Casts
+
+    struct TestStruct
+        int a
+    
+    def cast int(TestStruct val):
+        return val.a
+    
+    def int main():
+        my_struct = new TestStruct(10)
+        as_int = int(my_struct)
+        print(my_struct)
+        print("As int:",as_int)
+        return 0
+
+### Operators
+
+    struct TestStruct
+        int a
+    
+    def operator +(TestStruct left, TestStruct right):
+        return new TestStruct(left.a + right.a)
+    
+    def int main():
+        a = new TestStruct(10) + new TestStruct(10)
+        print(a)
+        return 0
+
+### C style pointers + Garbage collection
+
+    def void test(int* ptr):
+        *ptr = 10
+
+    def int main():
+        int* a = alloc(10 * sizeof(int))
+        a[0] = 10
+        int b
+        test(&b)
+        print(b)
+        return 0
+
+### Kernels
+
+    def void as_for_loop(int[:] a):
+        for i in range(a.dims[0]):
+            a[i] = i
+    
+    def kernel as_kernel[i: a.dims[0]](int[:] a):
+        a[i] = i
+
+    @parallel
+    def kernel as_threaded_kernel[i: a.dims[0]](int[:] a):
+        a[i] = i
+    
+    def int main():
+        empty_array = new int[10]
+        as_for_loop(empty_array)
+        as_kernel(empty_array)
+        as_threaded_kernel(empty_array)
+
