@@ -26,6 +26,6 @@ int main(){
     float out = sum(arr,n);
     clock_t end = clock();
     float time = ((float)(end-start))/((float)CLOCKS_PER_SEC);
-    printf("Time: %fs, total %f\n",time,out);
+    printf("C: %fs, total %f\n",time,out);
     free(arr);
 }
