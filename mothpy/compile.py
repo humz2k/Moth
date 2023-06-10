@@ -106,6 +106,7 @@ def link_files(filepaths, output_filepath, is_shared, compile_only=False, compil
     mpi_tools : str, optional
         The path to the MPI tools file (default is None).
     """
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     
     if garbage_collector_tools is None:

@@ -1,15 +1,17 @@
 # Moth
 
-This repository contains the latest Moth compiler, tools and stdlib.
+This repository contains the latest (still WIP!!!) Moth compiler, tools and stdlib.
 
 ## Getting Started
 
 More detailed documentation to come, but here is a brief overview of some of Moth's features. See `examples` for some basic examples.
 
 ### Compiling
+You need LLVM and a C compiler installed.
+
 Add `bin` to path
 
-    usage: moth [-h] [-o <output>] [-c] [-O <opt>] [--save-temps] [--shared] [--echo] [--threaded] [--nthreads nthreads] <mothfile> [<mothfile> ...]
+    usage: moth [-h] [-o <output>] [-cc <cc>] [-c] [-O <opt>] [--save-temps] [--shared] [--echo] [--threaded] [--nthreads nthreads] <mothfile> [<mothfile> ...]
 
 MPI (WIP)
 

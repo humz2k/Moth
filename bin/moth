@@ -11,6 +11,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compile .moth")
     parser.add_argument('files',metavar="<mothfile>",type=str, nargs='+')
     parser.add_argument('-o',metavar="<output>",type=str,default="a.out")
+    parser.add_argument('-cc',metavar="<cc>",type=str,default="gcc")
     parser.add_argument('-c',action='store_true',default=False)
     parser.add_argument('-O',metavar="<opt>",type=int,default=3)
     parser.add_argument('--save-temps','-S',action='store_true',default=False)
@@ -30,7 +31,7 @@ if __name__ == "__main__":
         tmp_lls.append(tmp_ll)
         opt_lls.append(opt_ll)
     to_link += tmp_os
-    mothpy.link_files(to_link,args.o,args.shared,args.c,threaded=args.threaded,n_threads = args.nthreads,echo_compile=args.echo)
+    mothpy.link_files(to_link,args.o,args.shared,args.c,threaded=args.threaded,n_threads = args.nthreads,echo_compile=args.echo,compiler=args.cc)
     if not args.save_temps:
         for i in tmp_lls:
             os.remove(i)
