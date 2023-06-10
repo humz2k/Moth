@@ -51,3 +51,12 @@ class Typeof:
         var = self.val.eval(common,builder,local_vars).get(common,builder)
         out = common.get_string(builder,common.type_to_str(var.type))
         return common.constant(out)
+    
+class TypeStr:
+    def __init__(self,typ):
+        self.type = typ
+    
+    def eval(self,common,builder : ir.IRBuilder, local_vars, *args):
+        var = self.type.eval(common)
+        out = common.get_string(builder,common.type_to_str(var))
+        return common.constant(out)

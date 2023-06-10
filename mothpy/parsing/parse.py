@@ -396,7 +396,10 @@ def get_parser(filename="tokens.txt"):
     @pg.production('expression : expression VERT expression')
     @pg.production('expression : expression HAT expression')
     def pass_expression(state,p):
-        return aster.BinOp(p[1].name,p[0],p[2])
+        out = aster.BinOp(p[1],p[0],p[2])
+        out.lineno = p[1].source_pos.lineno
+        out.fileoforigin = p[1].fileoforigin
+        return out
     
     @pg.production('expression : MINUS expression')
     @pg.production('expression : NOT expression')
@@ -578,8 +581,13 @@ def get_parser(filename="tokens.txt"):
     def declaration(state,p):
         left,op,right = p
         op = op.name.split("_EQUAL")[0]
-        binop = aster.BinOp(op,left,right)
-        return aster.Assign(left,binop)
+        binop = aster.BinOp(Token(op,p[1].value),left,right)
+        binop.lineno = p[1].source_pos.lineno
+        binop.fileoforigin = p[1].fileoforigin
+        out = aster.Assign(left,binop)
+        out.lineno = p[1].source_pos.lineno
+        out.fileoforigin = p[1].fileoforigin
+        return out
     
     @pg.production('expression : AMP expression')
     def get_pointer(state,p):
@@ -624,6 +632,10 @@ def get_parser(filename="tokens.txt"):
     def pass_sizeof(state,p):
         return aster.Typeof(p[2])
     
+    @pg.production('expression : TYPE_QUERY OPEN_PAREN type CLOSE_PAREN')
+    def pass_sizeof(state,p):
+        return aster.TypeStr(p[2])
+    
     @pg.production('expression : print_open CLOSE_PAREN')
     def pass_print(state,p):
         return p[0]
@@ -644,6 +656,18 @@ def get_parser(filename="tokens.txt"):
     @pg.production('vector : vector_open CLOSE_SQUARE')
     def pass_vector(state,p):
         return aster.VectorLiteral(p[0])
+    
+    @pg.production('array_literal_open : OPEN_CURL expression')
+    def pass_arr_lit(state,p):
+        return [p[1]]
+    
+    @pg.production('array_literal_open : array_literal_open COMMA expression')
+    def pass_arr_lit(state,p):
+        return p[0] + [p[-1]]
+    
+    @pg.production('expression : array_literal_open CLOSE_CURL')
+    def pass_arr_lit(state,p):
+        return aster.ArrayLiteral(p[0])
     
     @pg.production('expression : vector')
     def pass_vector(state,p):
@@ -753,7 +777,10 @@ def get_parser(filename="tokens.txt"):
     
     @pg.production('expression : open_printf CLOSE_PAREN')
     def close_printf(state,p):
-        return aster.Printf(p[0])
+        out = aster.Printf(p[0])
+        out.fileoforigin = p[1].fileoforigin
+        out.lineno = p[1].source_pos.lineno
+        return out
 
     @pg.error
     def error_handler(state,token):

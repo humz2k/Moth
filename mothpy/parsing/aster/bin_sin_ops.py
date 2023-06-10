@@ -11,7 +11,13 @@ class BinOp:
     def eval(self,common,builder,local_vars,from_assign = None, assign_type = None,*args):
         left = self.left.eval(common,builder,local_vars).get(common,builder)
         right = self.right.eval(common,builder,local_vars).get(common,builder)
-        return common.constant(common.do_binop(builder,self.op,left,right))
+        try:
+            out = common.do_binop(builder,self.op.name,left,right)
+        except:
+
+            error_t = "No operator " + common.format_error_var(self.op.value) + " exists for " + common.format_error_var(common.type_to_str(left.type)) + " and " + common.format_error_var(common.type_to_str(right.type))
+            common.throw_error(error_t = error_t, lineno = self.lineno, fileoforigin = self.fileoforigin)
+        return common.constant(out)
 
 class UserBinOp:
     def __init__(self,op,left,right):

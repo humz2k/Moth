@@ -1,6 +1,9 @@
 @extern
 def int strcmp(str left, str right)
 
+@extern
+def int exit(int code)
+
 def bool operator==(str left, str right):
     int cmp = strcmp(left,right)
     if cmp == 0:

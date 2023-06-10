@@ -55,6 +55,7 @@ def convert_to_c_style(code_str):
     for line in lines:
         # Skip empty lines
         if len(line.strip()) == 0:
+            output_code += "\n"
             continue
 
         indents = line.count("    ")  # Count the number of indentations (4 spaces)
@@ -257,6 +258,7 @@ def preprocess_file(filename, path, function_names=[], object_names=[], struct_n
 
     # Remove comments and convert to C-style syntax
     code = remove_comments(code)
+
     code = convert_to_c_style(code)
 
     # Handle included files

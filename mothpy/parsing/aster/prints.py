@@ -87,8 +87,14 @@ class Print:
                 name = val.type.pointee.name.split("OBJECT_")[1]
                 out_fmt += "object[" + name + "]"
             else:
-                error_t = "Can't print type " + common.format_error_var(common.type_to_str(val.type))
-                common.throw_error(error_t = error_t, fileoforigin = self.fileoforigin, lineno = self.lineno)
+                try:
+                    new_val = common.cast(builder,val,ir.PointerType(ir.IntType(8)))
+                    fmt,out_val = common.get_print_formatter(builder,new_val)
+                    out_fmt += fmt
+                    out_vals.append(out_val)
+                except:
+                    error_t = "Can't print type " + common.format_error_var(common.type_to_str(val.type))
+                    common.throw_error(error_t = error_t, fileoforigin = self.fileoforigin, lineno = self.lineno)
             #elif common.is_array(val):
             #    self.print_array(common,builder,val)
             if idx != (len(self.vals)-1):
