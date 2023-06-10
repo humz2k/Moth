@@ -175,4 +175,5 @@ Objects are passed by reference
         as_for_loop(empty_array)
         as_kernel(empty_array)
         as_threaded_kernel(empty_array)
+        return 0
 
