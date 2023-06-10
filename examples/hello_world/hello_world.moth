@@ -1,0 +1,5 @@
+include <stdlib.moth>
+
+def int main():
+    print("Hello, World!")
+    return 0

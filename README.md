@@ -4,10 +4,10 @@ This repository contains the latest Moth compiler, tools and stdlib.
 
 ## Getting Started
 
-More detailed documentation to come, but here is a brief overview of some of Moth's features.
+More detailed documentation to come, but here is a brief overview of some of Moth's features. See `examples` for some basic examples.
 
 ### Compiling
-Add bin to path
+Add `bin` to path
 
     usage: moth [-h] [-o <output>] [-c] [-O <opt>] [--save-temps] [--shared] [--echo] [--threaded] [--nthreads nthreads] <mothfile> [<mothfile> ...]
 
@@ -165,6 +165,7 @@ Objects are passed by reference
 
     @parallel
     def kernel as_threaded_kernel[i: a.dims[0]](int[:] a):
+        print("Hello from thread",i)
         a[i] = i
     
     def int main():

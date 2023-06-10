@@ -156,7 +156,7 @@ tmp
 misc
 test.moth
 test_mpi.moth
-makefile
+GNUMakefile
 
 # PyCharm
 #  JetBrains specific template is maintainted in a separate JetBrains.gitignore that can
