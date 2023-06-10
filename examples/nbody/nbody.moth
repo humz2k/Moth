@@ -37,7 +37,7 @@ def void writedata(str filename, float3[:] data):
     f.close()
 
 def int main():
-    np = 100000
+    np = 10000
     nsteps = 1
     dt = 0.05f*0.5
     pos = new float3[np]
