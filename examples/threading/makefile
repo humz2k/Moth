@@ -1,2 +1,2 @@
 main:
-	moth threading.moth -o threading.o -O3 --save-temps --threaded --nthreads 10 --echo
+	moth threading.moth -o threading.o -O3 --threaded --nthreads 10
