@@ -374,6 +374,99 @@ class Common:
         fmt += "}"
         return fmt,new_vals
     
+    def arr_index_to_str(self,builder,arr,indexes):
+        #dims = builder.extract_value(arr,0)
+        #pointer = builder.extract_value(arr,1)
+        #ndims = dims.type.count
+        #out_dims = [builder.extract_element(dims,ir.Constant(ir.IntType(32),i)) for i in range(ndims)]
+        #idx_1d = self.get_idx_1d(builder,out_dims,indexes)
+        #return self.cast(builder,idx_1d,ir.PointerType(ir.IntType(8)))
+        return self.cast(builder,builder.load(self.array_index(builder,arr,indexes)),ir.PointerType(ir.IntType(8)))
+    
+    def array_to_str(self,builder : ir.IRBuilder,arr):
+        ndims = arr.type.elements[0].count
+        #indexes = []
+        #last = []
+        #for i in range(ndims):
+        #    index_var = self.variable(ir.IntType(32))
+        #    index_var.init(self,builder)
+        #    index_var.set(self,builder,ir.Constant(ir.IntType(32),0))
+        #    last_var = self.variable(ir.IntType(32))
+        #    last_var.init(self,builder)
+        #    last_var.set(self,builder,ir.Constant(ir.IntType(32),1))
+        #    indexes.append(index_var)
+        #    last.append(last_var)
+        dims_vec = builder.extract_value(arr,0)
+        dims = []
+        for i in range(ndims):
+            dims.append(builder.extract_element(dims_vec,ir.Constant(ir.IntType(32),i)))
+        dim_vars = []
+        for i in range(ndims):
+            var = self.variable(ir.IntType(32))
+            var.init(self,builder)
+            var.set(self,builder,dims[i])
+            dim_vars.append(var)
+            #dim_vars[0].set(self,builder,dims[0])
+        starts = []
+        loops = []
+        ends = []
+        for i in range(ndims):
+            starts.append(builder.append_basic_block())
+            loops.append(builder.append_basic_block())
+            ends.append(builder.append_basic_block())
+        index_vars = []
+        for i in range(ndims):
+            var = self.variable(ir.IntType(32))
+            var.init(self,builder)
+            var.set(self,builder,ir.Constant(ir.IntType(32),-1))
+            index_vars.append(var)
+        out_var = self.variable(ir.PointerType(ir.IntType(8)))
+        out_var.init(self,builder)
+        out = self.get_string(builder,"{")
+        out_var.set(self,builder,out)
+        builder.branch(starts[0])
+        for i in range(ndims):
+            with builder.goto_block(starts[i]):
+                if i < (ndims-1):
+                    dim_vars[i+1].set(self,builder,dims[i+1])
+                cmp_var = builder.icmp_signed(">",dim_vars[i].get(self,builder),ir.Constant(ir.IntType(32),0))
+                builder.cbranch(cmp_var,loops[i],ends[i])
+                with builder.goto_block(loops[i]):
+                    index_vars[i].set(self,builder,self.do_binop(builder,"PLUS",index_vars[i].get(self,builder),ir.Constant(ir.IntType(32),1)))
+                    dim_vars[i].set(self,builder,self.do_binop(builder,"MINUS",dim_vars[i].get(self,builder),ir.Constant(ir.IntType(32),1)))
+                    if i < (ndims-1):
+                        cmp_var_2 = builder.icmp_signed("==",index_vars[i].get(self,builder),ir.Constant(ir.IntType(32),0))
+                        with builder.if_then(cmp_var_2):
+                            tmp_out = self.do_binop(builder,"PLUS",out_var.get(self,builder),self.get_string(builder,"{"))
+                            out_var.set(self,builder,tmp_out)
+                        builder.branch(starts[i+1])
+                    else:
+                        indexes = [i.get(self,builder) for i in index_vars]
+                        my_index = self.arr_index_to_str(builder,arr,indexes)
+                        tmp_out = self.do_binop(builder,"PLUS",out_var.get(self,builder),my_index)
+                        out_var.set(self,builder,tmp_out)
+                        cmp_var_2 = builder.icmp_signed("!=",index_vars[i].get(self,builder),builder.sub(dims[i],ir.Constant(ir.IntType(32),1)))
+                        with builder.if_then(cmp_var_2):
+                            tmp_out = self.do_binop(builder,"PLUS",out_var.get(self,builder),self.get_string(builder,","))
+                            out_var.set(self,builder,tmp_out)
+                        builder.branch(starts[i])
+                with builder.goto_block(ends[i]):
+                    if i != 0:
+                        tmp_out = self.do_binop(builder,"PLUS",out_var.get(self,builder),self.get_string(builder,"}"))
+                        out_var.set(self,builder,tmp_out)
+                        cmp_var_2 = builder.icmp_signed("!=",dim_vars[i-1].get(self,builder),ir.Constant(ir.IntType(32),0))
+                        with builder.if_then(cmp_var_2):
+                            if i == 1:
+                                tmp_out = self.do_binop(builder,"PLUS",out_var.get(self,builder),self.get_string(builder,"\n {"))
+                                out_var.set(self,builder,tmp_out)
+                            else:
+                                tmp_out = self.do_binop(builder,"PLUS",out_var.get(self,builder),self.get_string(builder," {"))
+                                out_var.set(self,builder,tmp_out)
+                        index_vars[i].set(self,builder,ir.Constant(ir.IntType(32),-1))
+                        builder.branch(starts[i-1])
+        builder.position_at_start(ends[0])
+        return self.do_binop(builder,"PLUS",out_var.get(self,builder),self.get_string(builder,"}"))
+    
     def cast(self, builder : ir.IRBuilder,val,new_type):
         if val.type == new_type:
             return val
@@ -825,7 +918,7 @@ class Common:
     def get_idx_1d(self,builder,dims,idx):
         ndims = len(dims)
         nindex = len(idx)
-        idx = idx[::-1]
+        #idx = idx[::-1]
         for i in idx:
             if not self.is_int(i):
                 self.throw_error("Invalid type in index")
@@ -834,25 +927,29 @@ class Common:
         if ndims != nindex:
             raise Exception("Invalid number of dimensions to index")
         if isinstance(dims[0],int):
-            muls = [1]
+            muls = []
             for i in range(1,ndims):
-                dims = dims[i:]
+                dims = dims[1:]
                 mul = 1
                 for j in dims:
                     mul *= j
                 muls.append(mul)
+            muls.append(1)
             idx1d = builder.mul(self.cast(builder,idx[0],ir.IntType(32)),ir.Constant(ir.IntType(32),muls[0]))
             for i in range(1,ndims):
                 idx1d = builder.add(idx1d,builder.mul(self.cast(builder,idx[i],ir.IntType(32)),ir.Constant(ir.IntType(32),muls[i])))
         else:
-            muls = [ir.Constant(ir.IntType(32),1)]
+            #muls = [ir.Constant(ir.IntType(32),1)]
+            muls = []
             dims = [self.cast(builder,i,ir.IntType(32)) for i in dims]
             for i in range(1,ndims):
-                dims = dims[i:]
+                dims = dims[1:]
                 mul = dims[0]
                 for j in dims[1:]:
                     mul = builder.mul(mul,j)
                 muls.append(mul)
+            muls.append(ir.Constant(ir.IntType(32),1))
+            #muls = muls[::-1]
             idx1d = builder.mul(self.cast(builder,idx[0],ir.IntType(32)),muls[0])
             for i in range(1,ndims):
                 idx1d = builder.add(idx1d,builder.mul(self.cast(builder,idx[i],ir.IntType(32)),muls[i]))

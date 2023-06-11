@@ -63,8 +63,9 @@ class Print:
 
 
     def print_array(self,common,builder : ir.IRBuilder, val):
-        ndims = val.type.elements[0].count
-        self.throw_error("printing arrays not implemented")
+        out_val = common.array_to_str(builder,val)
+        out_fmt = "%s"
+        return out_fmt,[out_val]
     
     def eval(self,common,builder : ir.IRBuilder, local_vars, *args):
         out_fmt = ""
@@ -86,6 +87,10 @@ class Print:
             elif common.is_object(val):
                 name = val.type.pointee.name.split("OBJECT_")[1]
                 out_fmt += "object[" + name + "]"
+            elif common.is_array(val):
+                fmt,new_vals = self.print_array(common,builder,val)
+                out_fmt += fmt
+                out_vals += new_vals
             else:
                 try:
                     new_val = common.cast(builder,val,ir.PointerType(ir.IntType(8)))
