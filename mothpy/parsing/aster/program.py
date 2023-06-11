@@ -926,6 +926,20 @@ class Common:
         return None
         #self.throw_error("SINOP NOT IMPLEMENTED")
         #exit()
+    
+    def do_binop_array_scalar(self,builder : ir.IRBuilder,op,left,right):
+        f = builder.load(self.array_index(builder,left,[ir.Constant(ir.IntType(32),0)]))
+        l,right = self.promote(builder,f,right)
+        new_array_t = ir.LiteralStructType([left.type.elements[0],ir.PointerType(l.type)])
+        out = self.cast_array(builder,left,new_array_t)
+        size = ir.Constant(ir.IntType(32),1)
+        ndims = left.type.elements[0].count
+        dims_vec = builder.extract_value(left,0)
+        dims = [builder.extract_element(dims_vec,ir.Constant(ir.IntType(32),i)) for i in range(ndims)]
+        for i in dims:
+            size = builder.mul(size,i)
+        raise Exception("BINOP_ARRAY_SCALAR NOT IMPLEMENTED")
+        return right
         
     def do_binop(self,builder : ir.IRBuilder,op,left,right):
         if op == "STARSTAR":
@@ -946,6 +960,8 @@ class Common:
             return self.pointer_math(builder,op,left,right)
         if self.is_ptr(right) and self.is_int(left) and not (right.type == self.str_type()):
             return self.pointer_math(builder,op,right,left)
+        if self.is_array(left) and self.is_base(right):
+            return self.do_binop_array_scalar(builder,op,left,right)
         op_name = Token("FUNCTION_NAME","operator->" + op)
         mangled = self.mangle(op_name,[left.type,right.type])
         if mangled in self.functions:
