@@ -380,22 +380,12 @@ class Common:
         #ndims = dims.type.count
         #out_dims = [builder.extract_element(dims,ir.Constant(ir.IntType(32),i)) for i in range(ndims)]
         #idx_1d = self.get_idx_1d(builder,out_dims,indexes)
-        #return self.cast(builder,idx_1d,ir.PointerType(ir.IntType(8)))
+        
+        #return self.cast(builder,builder.load(builder.gep(pointer,[idx_1d])),ir.PointerType(ir.IntType(8)))
         return self.cast(builder,builder.load(self.array_index(builder,arr,indexes)),ir.PointerType(ir.IntType(8)))
     
     def array_to_str(self,builder : ir.IRBuilder,arr):
         ndims = arr.type.elements[0].count
-        #indexes = []
-        #last = []
-        #for i in range(ndims):
-        #    index_var = self.variable(ir.IntType(32))
-        #    index_var.init(self,builder)
-        #    index_var.set(self,builder,ir.Constant(ir.IntType(32),0))
-        #    last_var = self.variable(ir.IntType(32))
-        #    last_var.init(self,builder)
-        #    last_var.set(self,builder,ir.Constant(ir.IntType(32),1))
-        #    indexes.append(index_var)
-        #    last.append(last_var)
         dims_vec = builder.extract_value(arr,0)
         dims = []
         for i in range(ndims):
@@ -467,6 +457,51 @@ class Common:
         builder.position_at_start(ends[0])
         return self.do_binop(builder,"PLUS",out_var.get(self,builder),self.get_string(builder,"}"))
     
+    def cast_array(self,builder : ir.IRBuilder,val,new_type):
+        if val.type.elements[0].count != new_type.elements[0].count:
+            raise Exception("Array cast mismatch dims")
+        #print(val.type.elements[0])
+        #exit()
+        size = ir.Constant(ir.IntType(32),1)
+        ndims = val.type.elements[0].count
+        dims_vec = builder.extract_value(val,0)
+        dims = [builder.extract_element(dims_vec,ir.Constant(ir.IntType(32),i)) for i in range(ndims)]
+        size = ir.Constant(ir.IntType(32),1)
+        for i in dims:
+            size = builder.mul(size,i)
+        in_ptr = builder.extract_value(val,1)
+        out_ptr = self.alloc(builder,size,ir.PointerType(new_type.elements[1].pointee))
+        
+        start = builder.append_basic_block()
+        loop = builder.append_basic_block()
+        end = builder.append_basic_block()
+        count = self.variable(ir.IntType(32))
+        count.init(self,builder)
+        count.set(self,builder,ir.Constant(ir.IntType(32),0))
+        builder.branch(start)
+        with builder.goto_block(start):
+            cmp_val = builder.icmp_signed("<",count.get(self,builder),size)
+            builder.cbranch(cmp_val,loop,end)
+            with builder.goto_block(loop):
+                my_index = count.get(self,builder)
+                #cpy = builder.load(self.array_index(builder,val,[my_index]))
+                cpy = builder.load(builder.gep(in_ptr,[my_index]))
+                cpy = self.cast(builder,cpy,out_ptr.type.pointee)
+                out_cpy = builder.gep(out_ptr,[my_index])
+                builder.store(cpy,out_cpy)
+                count.set(self,builder,self.do_binop(builder,"PLUS",my_index,ir.Constant(ir.IntType(32),1)))
+                builder.branch(start)
+        builder.position_at_start(end)
+        out = ir.Constant(new_type,[ir.Constant(dims_vec.type,None),ir.Constant(out_ptr.type,None)])
+        out = builder.insert_value(out,dims_vec,0)
+        out = builder.insert_value(out,out_ptr,1)
+        return out
+        #vec_part = builder.gep(out,[ir.Constant(ir.IntType(32),0),ir.Constant(ir.IntType(32),0)])
+        #vec_part = builder.store(dims_vec,vec_part)
+        #ptr_part = builder.gep(out,[ir.Constant(ir.IntType(32),0),ir.Constant(ir.IntType(32),1)])
+        #ptr_part = builder.store(out_ptr,ptr_part)
+        #return builder.load(out)
+
     def cast(self, builder : ir.IRBuilder,val,new_type):
         if val.type == new_type:
             return val
@@ -495,6 +530,8 @@ class Common:
                 fmt = self.get_string(builder,fmt)
                 do_cast = builder.call(self.sprintf_func,[out,fmt] + out_vals)
                 return out
+            if self.is_array(val):
+                return self.array_to_str(builder,val)
         if isinstance(val,ir.Constant):
             if self.is_int(val) or self.is_float(val):
                 val = val.constant
@@ -537,6 +574,8 @@ class Common:
                 return builder.fptrunc(val,new_type)
         if self.is_array(val) and isinstance(new_type,ir.PointerType) and not new_type == self.str_type():
             return self.cast_ptr(builder,builder.extract_value(val,1),new_type)
+        if self.is_array(val) and self.type_is_array(new_type):
+            return self.cast_array(builder,val,new_type)
         if self.is_vector(val) and self.type_is_vector(new_type):
             size_val = 1
             for i in val.type.dims:

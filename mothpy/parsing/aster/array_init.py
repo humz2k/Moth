@@ -48,7 +48,6 @@ class ArrayLiteral:
         items = self.get_list(common,builder,local_vars)
         items = common.promote_many(builder,items)
         arr_type = items[0].type
-        print(arr_type)
         out_ptr = common.alloc(builder,builder.mul(ir.Constant(ir.IntType(32),len(items)),common.sizeof(builder,arr_type)),ir.PointerType(arr_type))
         for idx,i in enumerate(items):
             builder.store(i,builder.gep(out_ptr,[ir.Constant(ir.IntType(32),idx)]))
