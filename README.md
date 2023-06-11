@@ -7,7 +7,7 @@ This repository contains the latest (still WIP!!!) Moth compiler, tools and stdl
 More detailed documentation to come, but here is a brief overview of some of Moth's features. See `examples` for some basic examples.
 
 ### Compiling
-You need LLVM and a C compiler installed. By default, the compiler uses `gcc`, set this using the `-cc` flag. The C compiler is only used for linking, so any compiler should work:tm:.
+You need Python3, llvmlite, rply, LLVM and a C compiler installed. By default, the compiler uses `gcc`, set this using the `-cc` flag. The C compiler is only used for linking, so any compiler should work:tm:.
 
 Add `bin` to path
 
