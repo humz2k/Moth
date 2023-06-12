@@ -78,6 +78,7 @@ class Common:
         self.strcpy_func = self.get_strcpy_func()
         self.pow_func = self.get_pow_func()
         self.powf_func = self.get_powf_func()
+        self.exit_func = self.get_exit_func()
         if self.threaded:
             self.thread_func = self.get_thread_func()
         self.n_strings = -1
@@ -91,6 +92,9 @@ class Common:
                 ir.HalfType(),
                 ir.PointerType(ir.IntType(8))]
         self.float_types = [ir.HalfType(),ir.FloatType(),ir.DoubleType()]
+
+    def exit_prog(self,builder : ir.IRBuilder,code):
+        return builder.call(self.exit_func,[ir.Constant(ir.IntType(32),code)])
 
     def format_error_var(self,string : str):
         return "\x1b[1;33m" + string + "\x1b[1;35m"
@@ -253,6 +257,12 @@ class Common:
             return name.value
         return name.value + "_" + "_".join([str(i) for i in inputs])
     
+    def get_exit_func(self):
+        exit_ty = ir.FunctionType(ir.VoidType(),[ir.IntType(32)])
+        func = ir.Function(self.module,exit_ty,"exit")
+        self.functions[self.mangle(Token("FUNCTION_NAME","exit"),[ir.IntType(32)])] = func
+        return func
+
     def get_alloc_func(self):
         alloc_ty = ir.FunctionType(ir.PointerType(ir.IntType(16)),[ir.IntType(32)])
         func = ir.Function(self.module,alloc_ty,"bohem_malloc")
@@ -385,6 +395,7 @@ class Common:
         return self.cast(builder,builder.load(self.array_index(builder,arr,indexes)),ir.PointerType(ir.IntType(8)))
     
     def array_to_str(self,builder : ir.IRBuilder,arr):
+        arr = self.do_binop_array_scalar(builder,"PLUS",arr,ir.Constant(ir.IntType(32),0))
         ndims = arr.type.elements[0].count
         dims_vec = builder.extract_value(arr,0)
         dims = []
@@ -929,18 +940,400 @@ class Common:
     
     def do_binop_array_scalar(self,builder : ir.IRBuilder,op,left,right):
         f = builder.load(self.array_index(builder,left,[ir.Constant(ir.IntType(32),0)]))
-        l,right = self.promote(builder,f,right)
-        new_array_t = ir.LiteralStructType([left.type.elements[0],ir.PointerType(l.type)])
-        out = self.cast_array(builder,left,new_array_t)
+        out = self.do_binop(builder,op,f,right)
+        #out = self.do_binop(builder,op,f,right)
+        new_array_t = ir.LiteralStructType([left.type.elements[0],ir.PointerType(out.type)])
+        
+        #print(new_array_t)
+        #out = self.cast_array(builder,left,new_array_t)
         size = ir.Constant(ir.IntType(32),1)
         ndims = left.type.elements[0].count
         dims_vec = builder.extract_value(left,0)
         dims = [builder.extract_element(dims_vec,ir.Constant(ir.IntType(32),i)) for i in range(ndims)]
         for i in dims:
             size = builder.mul(size,i)
-        raise Exception("BINOP_ARRAY_SCALAR NOT IMPLEMENTED")
-        return right
         
+        out_ptr = self.alloc(builder,builder.mul(size,self.sizeof(builder,out.type)),ir.PointerType(out.type))
+        builder.store(out,builder.gep(out_ptr,[ir.Constant(ir.IntType(32),0)]))
+        count = self.variable(ir.IntType(32))
+        count.init(self,builder)
+        count.set(self,builder,ir.Constant(ir.IntType(32),1))
+        start = builder.append_basic_block()
+        loop = builder.append_basic_block()
+        end = builder.append_basic_block()
+        builder.branch(start)
+        with builder.goto_block(start):
+            val = builder.icmp_signed("<",count.get(self,builder),size)
+            builder.cbranch(val,loop,end)
+            with builder.goto_block(loop):
+                my_index = count.get(self,builder)
+                f = builder.load(self.array_index(builder,left,[my_index]))
+                out = self.do_binop(builder,op,f,right)
+                builder.store(out,builder.gep(out_ptr,[my_index]))
+                count.set(self,builder,builder.add(my_index,ir.Constant(ir.IntType(32),1)))
+                builder.branch(start)
+        builder.position_at_start(end)
+        out_arr = ir.Constant(new_array_t,[ir.Constant(dims_vec.type,None),ir.Constant(out_ptr.type,None)])
+        out_arr = builder.insert_value(out_arr,dims_vec,0)
+        out_arr = builder.insert_value(out_arr,out_ptr,1)
+        return out_arr
+        
+    def do_binop_scalar_array(self,builder : ir.IRBuilder,op,left,right):
+        f = builder.load(self.array_index(builder,right,[ir.Constant(ir.IntType(32),0)]))
+        out = self.do_binop(builder,op,left,f)
+        #out = self.do_binop(builder,op,f,right)
+        new_array_t = ir.LiteralStructType([right.type.elements[0],ir.PointerType(out.type)])
+        
+        #print(new_array_t)
+        #out = self.cast_array(builder,left,new_array_t)
+        size = ir.Constant(ir.IntType(32),1)
+        ndims = right.type.elements[0].count
+        dims_vec = builder.extract_value(right,0)
+        dims = [builder.extract_element(dims_vec,ir.Constant(ir.IntType(32),i)) for i in range(ndims)]
+        for i in dims:
+            size = builder.mul(size,i)
+        
+        out_ptr = self.alloc(builder,builder.mul(size,self.sizeof(builder,out.type)),ir.PointerType(out.type))
+        builder.store(out,builder.gep(out_ptr,[ir.Constant(ir.IntType(32),0)]))
+        count = self.variable(ir.IntType(32))
+        count.init(self,builder)
+        count.set(self,builder,ir.Constant(ir.IntType(32),1))
+        start = builder.append_basic_block()
+        loop = builder.append_basic_block()
+        end = builder.append_basic_block()
+        builder.branch(start)
+        with builder.goto_block(start):
+            val = builder.icmp_signed("<",count.get(self,builder),size)
+            builder.cbranch(val,loop,end)
+            with builder.goto_block(loop):
+                my_index = count.get(self,builder)
+                f = builder.load(self.array_index(builder,right,[my_index]))
+                out = self.do_binop(builder,op,left,f)
+                builder.store(out,builder.gep(out_ptr,[my_index]))
+                count.set(self,builder,builder.add(my_index,ir.Constant(ir.IntType(32),1)))
+                builder.branch(start)
+        builder.position_at_start(end)
+        out_arr = ir.Constant(new_array_t,[ir.Constant(dims_vec.type,None),ir.Constant(out_ptr.type,None)])
+        out_arr = builder.insert_value(out_arr,dims_vec,0)
+        out_arr = builder.insert_value(out_arr,out_ptr,1)
+        return out_arr
+    
+    def do_binop_array_array(self,builder : ir.IRBuilder,op,left,right):
+        
+        print("AHHH")
+
+        left = self.do_binop_array_scalar(builder,"PLUS",left,ir.Constant(ir.IntType(32),0))
+        right = self.do_binop_array_scalar(builder,"PLUS",right,ir.Constant(ir.IntType(32),0))
+
+        left_ndims = left.type.elements[0].count
+        left_dims = builder.extract_value(left,0)
+        right_ndims = right.type.elements[0].count
+        right_dims = builder.extract_value(right,0)
+        out_ndims = max(left_ndims,right_ndims)
+
+        arr1dims = self.variable(ir.VectorType(ir.IntType(32),out_ndims))
+        arr1dims.init(self,builder)
+        arr1dims.set(self,builder,ir.Constant(ir.VectorType(ir.IntType(32),out_ndims),[1]*out_ndims))
+        
+        count = self.variable(ir.IntType(32))
+        count.init(self,builder)
+        count.set(self,builder,ir.Constant(ir.IntType(32),out_ndims-1))
+        dim1 = self.variable(ir.IntType(32))
+        dim1.init(self,builder)
+        dim1.set(self,builder,ir.Constant(ir.IntType(32),left_ndims-1))
+        
+        start = builder.append_basic_block()
+        loop = builder.append_basic_block()
+        end = builder.append_basic_block()
+    
+        builder.branch(start)
+        
+        with builder.goto_block(start):
+            val = builder.icmp_signed(">=",dim1.get(self,builder),ir.Constant(ir.IntType(32),0))
+            builder.cbranch(val,loop,end)
+            with builder.goto_block(loop):
+                vec = arr1dims.get(self,builder)
+                this_dim = builder.extract_element(left_dims,dim1.get(self,builder))
+                vec = builder.insert_element(vec,this_dim,count.get(self,builder))
+                arr1dims.set(self,builder,vec)
+                dim1.set(self,builder,builder.sub(dim1.get(self,builder),ir.Constant(ir.IntType(32),1)))
+                count.set(self,builder,builder.sub(count.get(self,builder),ir.Constant(ir.IntType(32),1)))
+                builder.branch(start)
+        builder.position_at_start(end)
+        
+        #arr2dims = ir.Constant(ir.VectorType(ir.IntType(32),out_ndims),[1]*out_ndims)
+        arr2dims = self.variable(ir.VectorType(ir.IntType(32),out_ndims))
+        arr2dims.init(self,builder)
+        arr2dims.set(self,builder,ir.Constant(ir.VectorType(ir.IntType(32),out_ndims),[1]*out_ndims))
+        
+        count = self.variable(ir.IntType(32))
+        count.init(self,builder)
+        count.set(self,builder,ir.Constant(ir.IntType(32),out_ndims-1))
+        dim2 = self.variable(ir.IntType(32))
+        dim2.init(self,builder)
+        dim2.set(self,builder,ir.Constant(ir.IntType(32),right_ndims-1))
+        
+        start = builder.append_basic_block()
+        loop = builder.append_basic_block()
+        end = builder.append_basic_block()
+        builder.branch(start)
+        with builder.goto_block(start):
+            val = builder.icmp_signed(">=",dim2.get(self,builder),ir.Constant(ir.IntType(32),0))
+            builder.cbranch(val,loop,end)
+            with builder.goto_block(loop):
+                vec = arr2dims.get(self,builder)
+                this_dim = builder.extract_element(right_dims,dim2.get(self,builder))
+                vec = builder.insert_element(vec,this_dim,count.get(self,builder))
+                arr2dims.set(self,builder,vec)
+                dim2.set(self,builder,builder.sub(dim2.get(self,builder),ir.Constant(ir.IntType(32),1)))
+                count.set(self,builder,builder.sub(count.get(self,builder),ir.Constant(ir.IntType(32),1)))
+                builder.branch(start)
+        builder.position_at_start(end)
+        
+        count = self.variable(ir.IntType(32))
+        count.init(self,builder)
+        count.set(self,builder,ir.Constant(ir.IntType(32),out_ndims-1))
+
+        found = self.variable(ir.IntType(1))
+        found.init(self,builder)
+        found.set(self,builder,ir.Constant(ir.IntType(1),True))
+
+        start = builder.append_basic_block()
+        loop = builder.append_basic_block()
+        end = builder.append_basic_block()
+
+        out_dims = self.variable(ir.VectorType(ir.IntType(32),out_ndims))
+        out_dims.init(self,builder)
+        out_dims.set(self,builder,ir.Constant(ir.VectorType(ir.IntType(32),out_ndims),[1]*out_ndims))
+        
+        builder.branch(start)
+        with builder.goto_block(start):
+            val = builder.icmp_signed(">=",count.get(self,builder),ir.Constant(ir.IntType(32),0))
+            builder.cbranch(val,loop,end)
+            with builder.goto_block(loop):
+                this_index = count.get(self,builder)
+                this_arr1dim = builder.extract_element(arr1dims.get(self,builder),this_index)
+                this_arr2dim = builder.extract_element(arr2dims.get(self,builder),this_index)
+
+                cmp1 = builder.icmp_signed("==",this_arr1dim,this_arr2dim)
+                cmp2 = builder.icmp_signed("==",this_arr1dim,ir.Constant(ir.IntType(32),1))
+                cmp3 = builder.icmp_signed("==",this_arr2dim,ir.Constant(ir.IntType(32),1))
+                this_cmp = builder.or_(cmp1,cmp2)
+                this_cmp = builder.or_(this_cmp,cmp3)
+                this_cmp = builder.not_(this_cmp)
+
+                with builder.if_then(this_cmp):
+                    found.set(self,builder,ir.Constant(ir.IntType(1),False))
+                
+                cmp4 = builder.icmp_signed(">",this_arr1dim,this_arr2dim)
+                with builder.if_else(cmp4) as (then,otherwise):
+                    with then:
+                        out_dims.set(self,builder,builder.insert_element(out_dims.get(self,builder),this_arr1dim,this_index))
+                    with otherwise:
+                        out_dims.set(self,builder,builder.insert_element(out_dims.get(self,builder),this_arr2dim,this_index))
+
+                cmp5 = builder.icmp_signed("==",found.get(self,builder),ir.Constant(ir.IntType(1),False))
+                with builder.if_then(cmp5):
+                    builder.call(self.print_func,[self.get_string(builder,"Error in broadcast %d %d\n"),this_arr1dim,this_arr2dim])
+                    self.exit_prog(builder,1)
+
+                count.set(self,builder,builder.sub(count.get(self,builder),ir.Constant(ir.IntType(32),1)))
+                builder.branch(start)
+        builder.position_at_start(end)
+        
+        cmp5 = builder.icmp_signed("==",found.get(self,builder),ir.Constant(ir.IntType(1),False))
+        with builder.if_then(cmp5):
+            builder.call(self.print_func,[self.get_string(builder,"Error in broadcast\n")])
+            self.exit_prog(builder,1)
+        
+        size = ir.Constant(ir.IntType(32),1)
+        dims = [builder.extract_element(out_dims.get(self,builder),ir.Constant(ir.IntType(32),i)) for i in range(out_ndims)]
+        for i in dims:
+            size = builder.mul(size,i)
+        
+        l = builder.load(self.array_index(builder,left,[ir.Constant(ir.IntType(32),0)]))
+        r = builder.load(self.array_index(builder,left,[ir.Constant(ir.IntType(32),0)]))
+        l,r = self.promote(builder,l,r)
+        new_t = ir.LiteralStructType([ir.VectorType(ir.IntType(32),out_ndims),ir.PointerType(l.type)])
+        
+        out_ptr = self.alloc(builder,size,ir.PointerType(l.type))
+        
+        arr1offset = out_ndims - left_ndims
+        arr2offset = out_ndims - right_ndims
+        
+        tmp_out_muls = []
+        tmp_dims = [builder.extract_element(out_dims.get(self,builder),ir.Constant(ir.IntType(32),i)) for i in range(out_ndims)]
+        for i in range(1,out_ndims):
+            tmp_dims = tmp_dims[1:]
+            mul = tmp_dims[0]
+            for j in tmp_dims[1:]:
+                mul = builder.mul(mul,j)
+            tmp_out_muls.append(mul)
+        tmp_out_muls.append(ir.Constant(ir.IntType(32),1))
+        out_muls = ir.Constant(ir.VectorType(ir.IntType(32),out_ndims),[0]*out_ndims)
+        for idx,i in enumerate(tmp_out_muls):
+            out_muls = builder.insert_element(out_muls,i,ir.Constant(ir.IntType(32),idx))
+        
+        tmp_out_muls = []
+        tmp_dims = [builder.extract_element(arr1dims.get(self,builder),ir.Constant(ir.IntType(32),i)) for i in range(left_ndims)]
+        for i in range(1,left_ndims):
+            tmp_dims = tmp_dims[1:]
+            mul = tmp_dims[0]
+            for j in tmp_dims[1:]:
+                mul = builder.mul(mul,j)
+            tmp_out_muls.append(mul)
+        tmp_out_muls.append(ir.Constant(ir.IntType(32),1))
+        arr1_muls = ir.Constant(ir.VectorType(ir.IntType(32),left_ndims),[0]*left_ndims)
+        for idx,i in enumerate(tmp_out_muls):
+            arr1_muls = builder.insert_element(arr1_muls,i,ir.Constant(ir.IntType(32),idx))
+        
+        tmp_out_muls = []
+        tmp_dims = [builder.extract_element(arr2dims.get(self,builder),ir.Constant(ir.IntType(32),i)) for i in range(right_ndims)]
+        for i in range(1,right_ndims):
+            tmp_dims = tmp_dims[1:]
+            mul = tmp_dims[0]
+            for j in tmp_dims[1:]:
+                mul = builder.mul(mul,j)
+            tmp_out_muls.append(mul)
+        tmp_out_muls.append(ir.Constant(ir.IntType(32),1))
+        arr2_muls = ir.Constant(ir.VectorType(ir.IntType(32),right_ndims),[0]*right_ndims)
+        for idx,i in enumerate(tmp_out_muls):
+            arr2_muls = builder.insert_element(arr2_muls,i,ir.Constant(ir.IntType(32),idx))
+        
+        out_idx = self.variable(out_dims.type)
+        out_idx.init(self,builder)
+        out_idx.set(self,builder,builder.sub(out_dims.get(self,builder),ir.Constant(out_dims.get(self,builder).type,[1]*out_ndims)))
+
+        output_index = self.variable(ir.IntType(32))
+        output_index.init(self,builder)
+        arr1_index = self.variable(ir.IntType(32))
+        arr1_index.init(self,builder)
+        arr2_index = self.variable(ir.IntType(32))
+        arr2_index.init(self,builder)
+        
+        count = self.variable(ir.IntType(32))
+        count.init(self,builder)
+        count.set(self,builder,ir.Constant(ir.IntType(32),0))
+
+        j = self.variable(ir.IntType(32))
+        j.init(self,builder)
+        
+        start = builder.append_basic_block()
+        loop = builder.append_basic_block()
+        end = builder.append_basic_block()
+        
+        builder.branch(start)
+        with builder.goto_block(start):
+            val = builder.icmp_signed("<",count.get(self,builder),size)
+            builder.cbranch(val,loop,end)
+            with builder.goto_block(loop):
+                
+                output_index.set(self,builder,ir.Constant(ir.IntType(32),0))
+                arr1_index.set(self,builder,ir.Constant(ir.IntType(32),0))
+                arr2_index.set(self,builder,ir.Constant(ir.IntType(32),0))
+
+                start1 = builder.append_basic_block()
+                loop1 = builder.append_basic_block()
+                end1 = builder.append_basic_block()
+                j.set(self,builder,ir.Constant(ir.IntType(32),0))
+                builder.branch(start1)
+                with builder.goto_block(start1):
+                    val2 = builder.icmp_signed("<",j.get(self,builder),ir.Constant(ir.IntType(32),out_ndims))
+                    builder.cbranch(val2,loop1,end1)
+                    with builder.goto_block(loop1):
+                        tmp_muls = builder.extract_element(out_muls,j.get(self,builder))
+                        tmp_idx = builder.extract_element(out_idx.get(self,builder),j.get(self,builder))
+                        output_index.set(self,builder,builder.add(output_index.get(self,builder),builder.mul(tmp_muls,tmp_idx)))
+                        j.set(self,builder,builder.add(j.get(self,builder),ir.Constant(ir.IntType(32),1)))
+                        builder.branch(start1)
+                builder.position_at_start(end1)
+
+                start1 = builder.append_basic_block()
+                loop1 = builder.append_basic_block()
+                end1 = builder.append_basic_block()
+                j.set(self,builder,ir.Constant(ir.IntType(32),arr1offset))
+                builder.branch(start1)
+                with builder.goto_block(start1):
+                    val2 = builder.icmp_signed("<",j.get(self,builder),ir.Constant(ir.IntType(32),out_ndims))
+                    builder.cbranch(val2,loop1,end1)
+                    with builder.goto_block(loop1):
+                        tmp_arr1dimsj = builder.extract_element(arr1dims.get(self,builder),j.get(self,builder))
+                        tmp_cmp = builder.icmp_signed("!=",tmp_arr1dimsj,ir.Constant(ir.IntType(32),1))
+                        with builder.if_then(tmp_cmp):
+                            tmp_muls = builder.extract_element(arr1_muls,builder.sub(j.get(self,builder),ir.Constant(ir.IntType(32),arr1offset)))
+                            tmp_idx = builder.extract_element(out_idx.get(self,builder),j.get(self,builder))
+                            arr1_index.set(self,builder,builder.add(arr1_index.get(self,builder),builder.mul(tmp_muls,tmp_idx)))
+                        j.set(self,builder,builder.add(j.get(self,builder),ir.Constant(ir.IntType(32),1)))
+                        builder.branch(start1)
+                builder.position_at_start(end1)
+                
+                start1 = builder.append_basic_block()
+                loop1 = builder.append_basic_block()
+                end1 = builder.append_basic_block()
+                j.set(self,builder,ir.Constant(ir.IntType(32),arr2offset))
+                builder.branch(start1)
+                with builder.goto_block(start1):
+                    val2 = builder.icmp_signed("<",j.get(self,builder),ir.Constant(ir.IntType(32),out_ndims))
+                    builder.cbranch(val2,loop1,end1)
+                    with builder.goto_block(loop1):
+                        tmp_arr2dimsj = builder.extract_element(arr2dims.get(self,builder),j.get(self,builder))
+                        tmp_cmp = builder.icmp_signed("!=",tmp_arr2dimsj,ir.Constant(ir.IntType(32),1))
+                        with builder.if_then(tmp_cmp):
+                            tmp_muls = builder.extract_element(arr2_muls,builder.sub(j.get(self,builder),ir.Constant(ir.IntType(32),arr2offset)))
+                            tmp_idx = builder.extract_element(out_idx.get(self,builder),j.get(self,builder))
+                            arr2_index.set(self,builder,builder.add(arr2_index.get(self,builder),builder.mul(tmp_muls,tmp_idx)))
+                        j.set(self,builder,builder.add(j.get(self,builder),ir.Constant(ir.IntType(32),1)))
+                        builder.branch(start1)
+                builder.position_at_start(end1)
+
+                arr1load = builder.load(self.array_index(builder,left,[arr1_index.get(self,builder)]))
+                arr2load = builder.load(self.array_index(builder,right,[arr2_index.get(self,builder)]))
+                out_load = self.do_binop(builder,op,arr1load,arr2load)
+                out_addr = builder.gep(out_ptr,[output_index.get(self,builder)])
+                builder.call(self.print_func,[self.get_string(builder,"idx %d %d %d\n"),arr1_index.get(self,builder),arr2_index.get(self,builder),output_index.get(self,builder)])
+                builder.call(self.print_func,[self.get_string(builder,"ldd %d %d %d\n"),arr1load,arr2load,out_load])
+                builder.store(out_load,out_addr)
+
+                tmp_out_idx = out_idx.get(self,builder)
+                tmp_out_idx = builder.insert_element(tmp_out_idx,builder.sub(builder.extract_element(tmp_out_idx,ir.Constant(ir.IntType(32),out_ndims-1)),ir.Constant(ir.IntType(32),1)),ir.Constant(ir.IntType(32),out_ndims-1))
+                out_idx.set(self,builder,tmp_out_idx)
+
+                
+                start1 = builder.append_basic_block()
+                loop1 = builder.append_basic_block()
+                end1 = builder.append_basic_block()
+                j.set(self,builder,ir.Constant(ir.IntType(32),out_ndims-1))
+                
+                builder.branch(start1)
+                with builder.goto_block(start1):
+                    val2 = builder.icmp_signed(">",j.get(self,builder),ir.Constant(ir.IntType(32),0))
+                    builder.cbranch(val2,loop1,end1)
+                    with builder.goto_block(loop1):
+
+                        tmp_thing = builder.extract_element(out_idx.get(self,builder),j.get(self,builder))
+                        tmp_cmp_again = builder.icmp_signed("<",tmp_thing,ir.Constant(ir.IntType(32),0))
+                        with builder.if_then(tmp_cmp_again):
+                            tmp_out_idx_2 = out_idx.get(self,builder)
+                            tmp_out_idx_2 = builder.insert_element(tmp_out_idx_2,builder.sub(builder.extract_element(out_dims.get(self,builder),j.get(self,builder)),ir.Constant(ir.IntType(32),1)),j.get(self,builder))
+                            tmp_out_idx_2 = builder.insert_element(tmp_out_idx_2,builder.sub(builder.extract_element(tmp_out_idx_2,builder.sub(j.get(self,builder),ir.Constant(ir.IntType(32),1))),ir.Constant(ir.IntType(32),1)),builder.sub(j.get(self,builder),ir.Constant(ir.IntType(32),1)))
+                            out_idx.set(self,builder,tmp_out_idx_2)
+                        j.set(self,builder,builder.sub(j.get(self,builder),ir.Constant(ir.IntType(32),1)))
+                        builder.branch(start1)
+                builder.position_at_start(end1)
+                
+                tmp_out_idx = builder.extract_element(out_idx.get(self,builder),ir.Constant(ir.IntType(32),0))
+
+                with builder.if_then(builder.icmp_signed("<",tmp_out_idx,ir.Constant(ir.IntType(32),0))):
+                    builder.branch(end)
+                count.set(self,builder,builder.add(count.get(self,builder),ir.Constant(ir.IntType(32),1)))
+                builder.branch(start)
+        builder.position_at_start(end)
+        
+        out_arr = ir.Constant(new_t,[ir.Constant(out_dims.get(self,builder).type,None),ir.Constant(out_ptr.type,None)])
+        out_arr = builder.insert_value(out_arr,out_dims.get(self,builder),0)
+        out_arr = builder.insert_value(out_arr,out_ptr,1)
+        return out_arr
+
     def do_binop(self,builder : ir.IRBuilder,op,left,right):
         if op == "STARSTAR":
             return self.power(builder,left,right)
@@ -962,6 +1355,10 @@ class Common:
             return self.pointer_math(builder,op,right,left)
         if self.is_array(left) and self.is_base(right):
             return self.do_binop_array_scalar(builder,op,left,right)
+        if self.is_array(right) and self.is_base(left):
+            return self.do_binop_scalar_array(builder,op,left,right)
+        if self.is_array(left) and self.is_array(left):
+            return self.do_binop_array_array(builder,op,left,right)
         op_name = Token("FUNCTION_NAME","operator->" + op)
         mangled = self.mangle(op_name,[left.type,right.type])
         if mangled in self.functions:
