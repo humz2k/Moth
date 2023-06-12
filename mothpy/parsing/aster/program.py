@@ -395,7 +395,7 @@ class Common:
         return self.cast(builder,builder.load(self.array_index(builder,arr,indexes)),ir.PointerType(ir.IntType(8)))
     
     def array_to_str(self,builder : ir.IRBuilder,arr):
-        arr = self.do_binop_array_scalar(builder,"PLUS",arr,ir.Constant(ir.IntType(32),0))
+        #arr = self.do_binop_array_scalar(builder,"PLUS",arr,ir.Constant(ir.IntType(32),0))
         ndims = arr.type.elements[0].count
         dims_vec = builder.extract_value(arr,0)
         dims = []
@@ -481,7 +481,10 @@ class Common:
         for i in dims:
             size = builder.mul(size,i)
         in_ptr = builder.extract_value(val,1)
-        out_ptr = self.alloc(builder,size,ir.PointerType(new_type.elements[1].pointee))
+        out_ptr_var = self.variable(ir.PointerType(new_type.elements[1].pointee))
+        out_ptr_var.init(self,builder)
+        out_ptr_var.set(self,builder,self.alloc(builder,builder.mul(size,self.sizeof(builder,new_type.elements[1].pointee)),ir.PointerType(new_type.elements[1].pointee)))
+        out_ptr = out_ptr_var.get(self,builder)
         
         start = builder.append_basic_block()
         loop = builder.append_basic_block()
@@ -1020,10 +1023,10 @@ class Common:
     
     def do_binop_array_array(self,builder : ir.IRBuilder,op,left,right):
         
-        print("AHHH")
+        #print("AHHH")
 
-        left = self.do_binop_array_scalar(builder,"PLUS",left,ir.Constant(ir.IntType(32),0))
-        right = self.do_binop_array_scalar(builder,"PLUS",right,ir.Constant(ir.IntType(32),0))
+        #left = self.do_binop_array_scalar(builder,"PLUS",left,ir.Constant(ir.IntType(32),0))
+        #right = self.do_binop_array_scalar(builder,"PLUS",right,ir.Constant(ir.IntType(32),0))
 
         left_ndims = left.type.elements[0].count
         left_dims = builder.extract_value(left,0)
@@ -1156,7 +1159,11 @@ class Common:
         l,r = self.promote(builder,l,r)
         new_t = ir.LiteralStructType([ir.VectorType(ir.IntType(32),out_ndims),ir.PointerType(l.type)])
         
-        out_ptr = self.alloc(builder,size,ir.PointerType(l.type))
+        out_ptr_var = self.variable(ir.PointerType(l.type))
+        out_ptr_var.init(self,builder)
+        out_ptr_var.set(self,builder,self.alloc(builder,builder.mul(size,self.sizeof(builder,l.type)),ir.PointerType(l.type)))
+        out_ptr = out_ptr_var.get(self,builder)
+        
         
         arr1offset = out_ndims - left_ndims
         arr2offset = out_ndims - right_ndims
@@ -1290,8 +1297,8 @@ class Common:
                 arr2load = builder.load(self.array_index(builder,right,[arr2_index.get(self,builder)]))
                 out_load = self.do_binop(builder,op,arr1load,arr2load)
                 out_addr = builder.gep(out_ptr,[output_index.get(self,builder)])
-                builder.call(self.print_func,[self.get_string(builder,"idx %d %d %d\n"),arr1_index.get(self,builder),arr2_index.get(self,builder),output_index.get(self,builder)])
-                builder.call(self.print_func,[self.get_string(builder,"ldd %d %d %d\n"),arr1load,arr2load,out_load])
+                #builder.call(self.print_func,[self.get_string(builder,"idx %d %d %d\n"),arr1_index.get(self,builder),arr2_index.get(self,builder),output_index.get(self,builder)])
+                #builder.call(self.print_func,[self.get_string(builder,"ldd %d %d %d\n"),arr1load,arr2load,out_load])
                 builder.store(out_load,out_addr)
 
                 tmp_out_idx = out_idx.get(self,builder)

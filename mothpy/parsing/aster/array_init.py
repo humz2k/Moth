@@ -21,7 +21,10 @@ class ArrayInit:
         dims_vec = ir.Constant(ir.VectorType(ir.IntType(32),len(dims)),[0]*len(dims))
         for idx,i in enumerate(dims):
             dims_vec = builder.insert_element(dims_vec,i,ir.Constant(ir.IntType(32),idx))
-        out_ptr = common.alloc(builder,size,ir.PointerType(typ))
+        out_ptr_var = common.variable(ir.PointerType(typ))
+        out_ptr_var.init(common,builder)
+        out_ptr_var.set(common,builder,common.alloc(builder,size,ir.PointerType(typ)))
+        out_ptr = out_ptr_var.get(common,builder)
         out = builder.alloca(ir.LiteralStructType([ir.VectorType(ir.IntType(32),len(dims)),ir.PointerType(typ)]))
         vec_part = builder.gep(out,[ir.Constant(ir.IntType(32),0),ir.Constant(ir.IntType(32),0)])
         vec_part = builder.store(dims_vec,vec_part)
