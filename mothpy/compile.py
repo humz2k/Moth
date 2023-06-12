@@ -60,7 +60,7 @@ def compile_moth(filename, llvm_compiler="llc", optimization_level=3, threaded=F
     return tmp_obj_path, opt_ll_path, tmp_ll_path
 
 def link_files(filepaths, output_filepath, is_shared, compile_only=False, compiler="gcc-13",
-               garbage_collector_tools=None, c_tools=None, file_tools=None, threading_tools=None, 
+               garbage_collector_tools=None, c_tools=None, file_tools=None, threading_tools=None,regex_tools=None, 
                threaded=False, n_threads=5, echo_compile=False, mpi_tools=None):
     """
     Links several files together into a single output file.
@@ -117,6 +117,8 @@ def link_files(filepaths, output_filepath, is_shared, compile_only=False, compil
         file_tools = os.path.join(base_dir, "file_tools.c")
     if mpi_tools is None:
         mpi_tools = os.path.join(base_dir, "mpi_tools.c")
+    if regex_tools is None:
+        regex_tools = os.path.join(base_dir, "regex_tools.c")
 
     if threaded and threading_tools is None:
         threading_tools = os.path.join(base_dir, "threading_tools.c")
@@ -125,7 +127,7 @@ def link_files(filepaths, output_filepath, is_shared, compile_only=False, compil
 
     gc_lib_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..','bdwgc','libgc.a'))
 
-    filepaths += [garbage_collector_tools, c_tools, gc_lib_path, file_tools, threading_tools]
+    filepaths += [garbage_collector_tools, c_tools, gc_lib_path, file_tools, threading_tools, regex_tools]
     files_str = " ".join(filepaths)
 
     shared_flag = " -shared" if is_shared else ""

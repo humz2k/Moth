@@ -103,7 +103,7 @@ def find_functions(code_str):
 
     # Regular expression pattern to match Moth function definitions.
     # This pattern matches 'def' keyword, followed by type and then name 
-    function_matches = re.findall(r"def ([a-zA-Z_0-9\.\[\]\:\*]+) (\w+)", code_str)
+    function_matches = re.findall(r"def ([a-zA-Z_0-9\.\[\]\:\*\<\>]+) (\w+)", code_str)
 
     # Return all function names except ones with type 'cast' and name 'operator'
     function_names = [match[1] for match in function_matches if match[0] != 'cast' and match[1] != 'operator']

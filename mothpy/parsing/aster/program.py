@@ -56,6 +56,7 @@ class Common:
         self.threaded = threaded
         self.nthreads = nthreads
         self.nkernels = 0
+        self.templates = {}
 
         self.current_module = ""
 

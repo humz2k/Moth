@@ -25,6 +25,12 @@ class FunctionHeader:
         self.func = ir.Function(common.module,func_ty,name)
         return self.func
     
+    def generate_template(self,common,modifiers,parent = None,module_prefix = ""):
+        inputs = [i[0].eval(common) for i in self.inputs]
+        name = module_prefix + common.mangle(self.name,inputs,parent)
+        self.mangled = name
+        raise Exception("templates not implemented")
+    
     def get_inputs(self,common,builder):
         out = {}
         for idx,i in enumerate(self.inputs):
@@ -35,6 +41,13 @@ class FunctionHeader:
             out[i[1].value].set(common,builder,self.func.args[idx])
         return out
 
+class TemplateType:
+    def __init__(self,identifier):
+        self.identifier = identifier
+    
+    def eval(self,common,instantiated=None):
+        if type(instantiated) == type(None):
+            return ""
 
 class Function:
     def __init__(self,header,lines):
@@ -42,8 +55,14 @@ class Function:
         self.lines = lines
         self.locals = {}
         self.modifiers = {"inline": False, "extern": False}
+        self.is_template = False
+        self.template_vars = []
     
     def eval(self,common,parent = None,module_prefix = ""):
+        if self.is_template:
+            out_name = self.header.generate_template(common,self.modifiers,parent,module_prefix=module_prefix)
+            common.templates[out_name] = self
+            return
         func = self.header.generate(common,self.modifiers,parent,module_prefix=module_prefix)
         if self.modifiers["inline"]:
             func.attributes.add("alwaysinline")

@@ -105,6 +105,25 @@ def get_parser(filename="tokens.txt"):
         function.modifiers[modifier.value] = True
         return function
     
+    @pg.production('function : AT template SEMI_COLON function')
+    def modifier(state,p):
+        _,modifier,_,function = p
+        function.is_template = True
+        function.template_vars = p[1]
+        return function
+    
+    @pg.production('template_open : TEMPLATE OPEN_PAREN IDENTIFIER')
+    def pass_template(state,p):
+        return [p[2]]
+    
+    @pg.production('template_open : template_open COMMA IDENTIFIER')
+    def pass_template(state,p):
+        return p[1] + [p[2]]
+    
+    @pg.production('template : template_open CLOSE_PAREN')
+    def pass_template(state,p):
+        return p[0]
+    
     @pg.production('kernel : AT MODIFIER SEMI_COLON kernel')
     def modifier(state,p):
         _,modifier,_,function = p
@@ -767,6 +786,10 @@ def get_parser(filename="tokens.txt"):
     def pass_type(state,p):
         return aster.PointerType(aster.PointerType(p[0]))
     
+    @pg.production('type : LESS IDENTIFIER GREATER')
+    def pass_template_type(state,p):
+        return aster.TemplateType(p[1])
+    
     @pg.production('open_printf : PRINTF OPEN_PAREN expression')
     def open_printf(state,p):
         return [p[2]]
@@ -789,7 +812,7 @@ def get_parser(filename="tokens.txt"):
             token.source_pos = TMP()
             token.source_pos.lineno = "???"
             
-        print("\x1b[1;31mLexing Error\x1b[0;0m \x1b[1;29m(" + "\x1b[1;30m" + token.fileoforigin + "\x1b[0;0m\x1b[0;31m @\x1b[1;30m line " + str(token.source_pos.lineno) + "\x1b[0;0m\x1b[1;29m):\x1b[0;0m")
+        print("\x1b[1;31mParsing Error\x1b[0;0m \x1b[1;29m(" + "\x1b[1;30m" + token.fileoforigin + "\x1b[0;0m\x1b[0;31m @\x1b[1;30m line " + str(token.source_pos.lineno) + "\x1b[0;0m\x1b[1;29m):\x1b[0;0m")
         if token.value != ";":
             print("   \x1b[1;35mToken \x1b[1;33m" + token.value + "\x1b[0;0m \x1b[1;35mwas unexpected...\x1b[0;0m")
         else:
