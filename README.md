@@ -86,6 +86,7 @@ Structs are passed by value
             TestStruct out
             out.attr1 = a
             out.attr2 = 0
+            return out
     
     def int main():
         TestStruct a = new TestStruct(1,1.0f)
