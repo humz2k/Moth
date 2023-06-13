@@ -3,3 +3,60 @@ def float sqrtf(float a)
 
 @extern
 def double sqrt(double a)
+
+@extern
+def double acos(double x)
+
+@extern
+def double asin(double x)
+
+@extern
+def double atan(double x)
+
+@extern
+def double atan2(double y, double x)
+
+@extern
+def double cos(double x)
+
+@extern
+def double cosh(double x)
+
+@extern
+def double sin(double x)
+
+@extern
+def double sinh(double x)
+
+@extern
+def double tanh(double x)
+
+@extern
+def double exp(double x)
+
+@extern
+def double frexp(double x, int* exponent)
+
+@extern
+def double ldexp(double x, int exponent)
+
+@extern
+def double log(double x)
+
+@extern
+def double log10(double x)
+
+@extern
+def double modf(double x, double* integer)
+
+@extern
+def double ceil(double x)
+
+@extern
+def double fabs(double x)
+
+@extern
+def double floor(double x)
+
+@extern
+def double fmod(double x, double y)
