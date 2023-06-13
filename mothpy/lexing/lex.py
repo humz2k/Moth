@@ -286,13 +286,16 @@ def preprocess_file(filename, path, function_names=[], object_names=[], struct_n
 
     # Handle aliases
     found_aliases = re.findall(r"alias\b.*\;", code)
+    #print(found_aliases)
     for alias in found_aliases:
         code = code.replace(alias, "")
     for alias in found_aliases:
-        label, *value = alias.strip().split(" ")
+        _,label, *value = alias.strip().split(" ")
         value = " ".join(value)[:-1]
         aliases[label] = value
+    #print(aliases)
     for label, value in aliases.items():
+        #print(label,value)
         code = re.sub(r"\b" + re.escape(label.strip()) + r"\b", value, code)
 
     # Identify functions, objects, structs, and namespaces

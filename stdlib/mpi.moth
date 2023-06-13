@@ -94,3 +94,9 @@ def int MPI_Comm_size(MPI_Comm comm, int* world_size)
 
 @extern
 def int MPI_Dims_create(int world_size, int ndims, int* dims)
+
+@extern
+def int MPI_Type_contiguous(int count, MPI_Datatype base_type, MPI_Datatype* newtype)
+
+@extern
+def int MPI_Type_commit(MPI_Datatype* newtype)
