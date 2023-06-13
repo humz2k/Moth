@@ -591,6 +591,8 @@ class Common:
             return self.cast_ptr(builder,builder.extract_value(val,1),new_type)
         if self.is_array(val) and self.type_is_array(new_type):
             return self.cast_array(builder,val,new_type)
+        if isinstance(val.type,ir.PointerType) and isinstance(new_type,ir.PointerType):
+            return self.cast_ptr(builder,val,new_type)
         if self.is_vector(val) and self.type_is_vector(new_type):
             size_val = 1
             for i in val.type.dims:

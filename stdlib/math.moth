@@ -1,62 +1,135 @@
-@extern
-def float sqrtf(float a)
+alias M_E 2.71828182845904523536
+alias M_LOG2E 1.44269504088896340736
+alias M_LOG10E 0.434294481903251827651
+alias M_LN2 0.693147180559945309417
+alias M_LN10 2.30258509299404568402
+alias M_PI 3.14159265358979323846
+alias M_PI_2 1.57079632679489661923
+alias M_PI_4 0.785398163397448309616
+alias M_1_PI 0.318309886183790671538
+alias M_2_PI 0.636619772367581343076
+alias M_2_SQRTPI 1.12837916709551257390
+alias M_SQRT2 1.12837916709551257390
+alias M_SQRT1_2 0.707106781186547524401
 
-@extern
-def double sqrt(double a)
+module math:
+    def double sqrt(double x)
+    
+    def float sqrt(float x)
 
-@extern
-def double acos(double x)
+    def half sqrt(half x)
 
-@extern
-def double asin(double x)
+    def double acos(double x)
+    
+    def float acos(float x)
+    
+    def half acos(half x)
 
-@extern
-def double atan(double x)
+    def double asin(double x)
+    
+    def float asin(float x)
+    
+    def half asin(half x)
 
-@extern
-def double atan2(double y, double x)
+    def double atan(double x)
+    
+    def float atan(float x)
+    
+    def half atan(half x)
 
-@extern
-def double cos(double x)
+    def double atan2(double y, double x)
+    
+    def float atan2(float y, float x)
+    
+    def half atan2(half y, half x)
+    
+    def double cos(double x)
+    
+    def float cos(float x)
+    
+    def half cos(half x)
+    
+    def double cosh(double x)
+    
+    def float cosh(float x)
+    
+    def half cosh(half x)
 
-@extern
-def double cosh(double x)
+    def double sin(double x)
+    
+    def float sin(float x)
+    
+    def half sin(half x)
 
-@extern
-def double sin(double x)
+    def double sinh(double x)
+    
+    def float sinh(float x)
+    
+    def half sinh(half x)
+    
+    def double tanh(double x)
+    
+    def float tanh(float x)
+    
+    def half tanh(half x)
+    
+    def double exp(double x)
+    
+    def float exp(float x)
+    
+    def half exp(half x)
 
-@extern
-def double sinh(double x)
+    def double frexp(double x, int* exponent)
+    
+    def float frexp(float x, int* exponent)
+    
+    def half frexp(half x, int* exponent)
+    
+    def double ldexp(double x, int exponent)
+    
+    def float ldexp(float x, int exponent)
+    
+    def half ldexp(half x, int exponent)
+    
+    def double log(double x)
+    
+    def float log(float x)
+    
+    def half log(half x)
+    
+    def double log10(double x)
 
-@extern
-def double tanh(double x)
+    def float log10(float x)
+    
+    def half log10(half x)
+    
+    def double modf(double x, double* integer)
+    
+    def float modf(float x, float* integer)
+    
+    def half modf(half x, half* integer)
+    
+    def double ceil(double x)
+    
+    def float ceil(float x)
+    
+    def half ceil(half x)
+    
+    def double abs(double x)
+    
+    def float abs(float x)
+    
+    def half abs(half x)
 
-@extern
-def double exp(double x)
-
-@extern
-def double frexp(double x, int* exponent)
-
-@extern
-def double ldexp(double x, int exponent)
-
-@extern
-def double log(double x)
-
-@extern
-def double log10(double x)
-
-@extern
-def double modf(double x, double* integer)
-
-@extern
-def double ceil(double x)
-
-@extern
-def double fabs(double x)
-
-@extern
-def double floor(double x)
-
-@extern
-def double fmod(double x, double y)
+    def double floor(double x)
+    
+    def float floor(float x)
+    
+    def half floor(half x)
+    
+    def double fmod(double x, double y)
+    
+    def float fmod(float x, float y)
+    
+    def half fmod(half x, half y)
+    

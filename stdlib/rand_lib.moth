@@ -1,0 +1,18 @@
+@extern
+def int rand()
+
+def int crand():
+    return rand()
+
+@extern
+def void srand(int seed)
+
+@extern
+def int rand_max()
+
+module random:
+    def float rand():
+        return float(crand())/float(rand_max())
+    
+    def void srand(int seed):
+        srand(seed)

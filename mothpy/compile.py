@@ -60,7 +60,8 @@ def compile_moth(filename, llvm_compiler="llc", optimization_level=3, threaded=F
     return tmp_obj_path, opt_ll_path, tmp_ll_path
 
 def link_files(filepaths, output_filepath, is_shared, compile_only=False, compiler="gcc-13",
-               garbage_collector_tools=None, c_tools=None, file_tools=None, threading_tools=None,regex_tools=None, 
+               garbage_collector_tools=None, c_tools=None, file_tools=None, threading_tools=None,regex_tools=None,
+               math_tools = None, io_tools = None, rand_tools = None, stdlib_tools = None,
                threaded=False, n_threads=5, echo_compile=False, mpi_tools=None):
     """
     Links several files together into a single output file.
@@ -108,6 +109,7 @@ def link_files(filepaths, output_filepath, is_shared, compile_only=False, compil
     """
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
+    stdlib_dir = os.path.join(base_dir,'..',"stdlib")
     
     if garbage_collector_tools is None:
         garbage_collector_tools = os.path.join(base_dir, "gc_tools.c")
@@ -119,6 +121,14 @@ def link_files(filepaths, output_filepath, is_shared, compile_only=False, compil
         mpi_tools = os.path.join(base_dir, "mpi_tools.c")
     if regex_tools is None:
         regex_tools = os.path.join(base_dir, "regex_tools.c")
+    if math_tools is None:
+        math_tools = os.path.join(stdlib_dir,"math_lib.o")
+    if io_tools is None:
+        io_tools = os.path.join(stdlib_dir,"io_lib.o")
+    if rand_tools is None:
+        rand_tools = os.path.join(stdlib_dir,"rand_lib.o")
+    if stdlib_tools is None:
+        stdlib_tools = os.path.join(stdlib_dir,"stdlib_lib.o")
 
     if threaded and threading_tools is None:
         threading_tools = os.path.join(base_dir, "threading_tools.c")
@@ -126,8 +136,7 @@ def link_files(filepaths, output_filepath, is_shared, compile_only=False, compil
         threading_tools = ""
 
     gc_lib_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..','bdwgc','libgc.a'))
-
-    filepaths += [garbage_collector_tools, c_tools, gc_lib_path, file_tools, threading_tools, regex_tools]
+    filepaths += [garbage_collector_tools, c_tools, gc_lib_path, file_tools, threading_tools, regex_tools,math_tools,io_tools,rand_tools,stdlib_tools]
     files_str = " ".join(filepaths)
 
     shared_flag = " -shared" if is_shared else ""
@@ -136,6 +145,9 @@ def link_files(filepaths, output_filepath, is_shared, compile_only=False, compil
     mpi_flag = " " + mpi_tools if "mpi" in compiler else ""
 
     command = f'{compiler} {files_str} {mpi_flag} -o {output_filepath} {shared_flag} {compile_flag} {thread_flag}'
-    if echo_compile:
-        print(command)
-    os.system(command)
+    if not compile_only:
+        if echo_compile:
+            print(command)
+        os.system(command)
+    else:
+        os.system("cp " + filepaths[0] + " " + output_filepath)

@@ -1,6 +1,7 @@
 alias MPI_Comm void*
 alias MPI_Datatype void*
 alias MPI_Op void*
+alias MPI_Status void*
 
 alias MPI_COMM_WORLD mpi_comm_world
 alias MPI_INT mpi_int
@@ -101,6 +102,15 @@ def int MPI_Type_contiguous(int count, MPI_Datatype base_type, MPI_Datatype* new
 @extern
 def int MPI_Type_commit(MPI_Datatype* newtype)
 
+@extern
+def int MPI_Type_free(MPI_Datatype* newtype)
+
+@extern
+def int MPI_Sendrecv(void* sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void* recvbuff, int recvcount, MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status* status)
+
+@extern
+def int MPI_Barrier(MPI_Comm comm)
+
 module mpi:
     MPI_Comm comm_world
     int world_size
@@ -120,3 +130,32 @@ module mpi:
     
     def int finalize():
         return MPI_Finalize()
+    
+    def int[:] dims_create(int size, int ndims):
+        int[:] out = new int[ndims]
+        MPI_Dims_create(size,ndims,int*(out))
+        return out
+
+    def int[:] dims_create(int ndims):
+        int[:] out = new int[ndims]
+        MPI_Dims_create(mpi.world_size,ndims,int*(out))
+        return out
+    
+    def MPI_Datatype type_contiguous(int size):
+        MPI_Datatype new_t
+        MPI_Type_contiguous(size,MPI_BYTE,&new_t)
+        MPI_Type_commit(&new_t)
+        return new_t
+
+    def int type_free(MPI_Datatype new_t):
+        MPI_Datatype tmp = new_t
+        return MPI_Type_free(&tmp)
+    
+    def int barrier(MPI_Comm comm):
+        return MPI_Barrier(comm)
+    
+    def int sendrecv(int[:] sendbuf, int sendcount, int dest, int sendtag, int[:] recvbuf, int recvcount, int source, int recvtag, MPI_Comm comm):
+        void* sendbufptr = void*(sendbuf)
+        void* recvbufptr = void*(recvbuf)
+        MPI_Status* tmp = NULL
+        return MPI_Sendrecv(sendbufptr,sendcount,MPI_INT,dest,sendtag,recvbufptr,recvcount,MPI_INT,source,recvtag,comm,tmp)

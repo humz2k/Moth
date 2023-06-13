@@ -1,0 +1,29 @@
+@extern
+def int strcmp(str left, str right)
+
+@extern
+def int exit(int code)
+
+def bool operator==(str left, str right):
+    int cmp = strcmp(left,right)
+    if cmp == 0:
+        return True
+    return False
+
+def bool operator!=(str left, str right):
+    int cmp = strcmp(left,right)
+    if cmp == 0:
+        return False
+    return True
+
+def str operator*(str left, int right):
+    str out = ""
+    for int i in range(right):
+        out = out + left
+    return out
+
+def str operator*(int left, str right):
+    str out = ""
+    for int i in range(left):
+        out = out + right
+    return out

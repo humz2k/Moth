@@ -20,7 +20,7 @@ def kernel calc_force[i: pos.dims[0]](float3[:] pos, float3[:] acc, float[:] mas
         if j != i:
             delta = pos[j] - my_particle
             dist2 = delta[0]**2 + delta[1]**2 + delta[2]**2
-            float force = mass[j]/sqrtf(dist2*dist2*dist2)
+            float force = mass[j]/math.sqrt(dist2*dist2*dist2)
             total += delta * force
     acc[i] = total
 
