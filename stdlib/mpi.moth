@@ -100,3 +100,23 @@ def int MPI_Type_contiguous(int count, MPI_Datatype base_type, MPI_Datatype* new
 
 @extern
 def int MPI_Type_commit(MPI_Datatype* newtype)
+
+module mpi:
+    MPI_Comm comm_world
+    int world_size
+    int world_rank
+
+    def int init(void* a, void* b):
+        out = MPI_Init(a,b)
+        if out != 0:
+            return out
+        mpi.comm_world = MPI_COMM_WORLD
+        MPI_Comm_rank(mpi.comm_world,&mpi.world_rank)
+        MPI_Comm_size(mpi.comm_world,&mpi.world_size)
+        return out
+        
+    def int init():
+        return mpi.init(NULL,NULL)
+    
+    def int finalize():
+        return MPI_Finalize()
