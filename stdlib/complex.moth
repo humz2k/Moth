@@ -1,0 +1,31 @@
+struct Complexf:
+    float real
+    float imag
+
+def Complexf operator+(Complexf left, Complexf right):
+    return new Complexf(left.real + right.real, left.imag + right.imag)
+
+def Complexf operator-(Complexf left, Complexf right):
+    return new Complexf(left.real - right.real, left.imag - right.imag)
+
+def Complexf operator*(Complexf left, Complexf right):
+    return new Complexf((left.real*right.real) - (left.imag*right.imag), (left.real*right.imag) + (left.imag*right.real))
+
+def Complexf operator/(Complexf left, Complexf right):
+    a = left.real
+    b = left.imag
+    c = right.real
+    d = right.imag
+    c2 = c*c
+    d2 = d*d
+    c2d2 = c2 + d2
+    return new Complexf(((a*c) + (b*d))/c2d2, ((a*b) - (a*d))/c2d2)
+
+def Complexf operator**(Complexf left, int right):
+    out = left
+    for i in range(right-1):
+        out = out * left
+    return out
+
+def Complexf complex(float r,float i):
+    return new Complexf(r,i)
