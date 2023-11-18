@@ -1,4 +1,0 @@
-module random:
-    def float rand()
-    
-    def void srand(int seed)
