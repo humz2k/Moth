@@ -32,5 +32,9 @@ struct moth_type make_string_type(void);
 
 struct moth_type make_array_type(struct moth_type, int ndims);
 
+struct moth_type make_struct_type(struct moth_type* types, int ntypes);
+
+struct moth_type make_object_type(struct moth_type* types, int ntypes);
+
 #endif
 

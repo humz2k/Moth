@@ -166,3 +166,29 @@ struct moth_type make_array_type(struct moth_type type, int ndims){
     out.params.array.type[0] = type;
     return out;
 }
+
+static struct moth_type make_struct_object_type(struct moth_type* types, int ntypes, int is_struct){
+    struct moth_type out = make_empty_type();
+    out.id = MOTH_OBJECT;
+    if (is_struct)out.id = MOTH_STRUCT;
+    CHECK_PTR(types);
+
+    struct moth_type* out_types = (struct moth_type*)malloc(sizeof(struct moth_type) * ntypes);
+    for (int i = 0; i < ntypes; i++){
+        out_types[i] = types[i];
+    }
+
+    out.params.struct_object.types = out_types;
+    out.params.struct_object.nitems = ntypes;
+
+    return out;
+
+}
+
+struct moth_type make_struct_type(struct moth_type* types, int ntypes){
+    return make_struct_object_type(types,ntypes,1);
+}
+
+struct moth_type make_object_type(struct moth_type* types, int ntypes){
+    return make_struct_object_type(types,ntypes,0);
+}
