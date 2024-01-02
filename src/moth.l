@@ -19,8 +19,10 @@ int check_type(void);
 
 #ifdef LOG
 #define log(...) printf(__VA_ARGS__); printf(" ")
+#define log_no_end(...) printf(__VA_ARGS__)
 #else
 #define log(...)
+#define log_no_end(...)
 #endif
 
 int indent_level = 0;
@@ -40,6 +42,7 @@ void set_indent_level(int nspaces) {
 }
 
 #define RETURN_TOKEN(t) log(#t);return(t)
+#define RETURN_TOKEN_ARGS(t,...) log_no_end(#t);log(__VA_ARGS__);return(t)
 
 #define emit_indent_tokens() if ((delta != 0) && (brackets == 0) && (curls == 0) && (squares == 0)) {\
                                 if (delta > 0) {\
@@ -62,12 +65,24 @@ void set_indent_level(int nspaces) {
     //printf("yytext = %s\n",yytext);
     emit_indent_tokens();
 
-{S} {   RETURN_TOKEN(STRING);   }
+{S} {  
+        int len = strlen(yytext);
+        yylval.s = GC_MALLOC(sizeof(char) * ((len - 2) + 1));
+        char* tmp = malloc(sizeof(char) * (len + 1));
+        strcpy(tmp,yytext);
+        tmp[len-1] = '\0';
+        if (strlen(tmp) == 1){
+            strcpy(yylval.s,"");
+        } else {
+            strcpy(yylval.s,&tmp[1]);
+        }
+        free(tmp);
+        RETURN_TOKEN_ARGS(STRING,"<%s>",yylval.s);   }
 
 "#"[^\n]*              { }
 
-{I}             { yylval.i = atoi(yytext); RETURN_TOKEN(INTEGER); }
-{F}             { yylval.r = atof(yytext); RETURN_TOKEN(REAL); }
+{I}             { yylval.i = atoi(yytext); RETURN_TOKEN_ARGS(INTEGER,"<%d>",yylval.i); }
+{F}             { yylval.r = atof(yytext); RETURN_TOKEN_ARGS(REAL,"<%f>",yylval.r); }
 
 ^[ ]*          { int nspaces = strlen(yytext); 
                  set_indent_level(nspaces);
@@ -125,8 +140,8 @@ void set_indent_level(int nspaces) {
 "."             { RETURN_TOKEN('.'); }
 "$"             { RETURN_TOKEN('$'); }
 
-"True"          { yylval.i = 1;  RETURN_TOKEN(BOOL); }
-"False"         { yylval.i = 0;  RETURN_TOKEN(BOOL); }
+"True"          { yylval.i = 1;  RETURN_TOKEN_ARGS(BOOL,"<True>"); }
+"False"         { yylval.i = 0;  RETURN_TOKEN_ARGS(BOOL,"<False>"); }
 
 "if"            { RETURN_TOKEN(IF); }
 "else"          { RETURN_TOKEN(ELSE); }
@@ -162,7 +177,7 @@ void set_indent_level(int nspaces) {
 
 "void"          { RETURN_TOKEN(VOID); }
 
-{L}*            { yylval.id = GC_MALLOC(sizeof(char) * (strlen(yytext) + 1)); strcpy(yylval.id, yytext); RETURN_TOKEN(ID); }
+{L}*            { yylval.id = GC_MALLOC(sizeof(char) * (strlen(yytext) + 1)); strcpy(yylval.id, yytext); RETURN_TOKEN_ARGS(ID,"<%s>",yylval.id); }
 
 [\t\v\f]        { }
 .               { }

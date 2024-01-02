@@ -49,6 +49,7 @@ void yyerror(char const *s);
 
 %union {
     char* id;
+    char* s;
     double r;
     int i;
 }
