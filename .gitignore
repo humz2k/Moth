@@ -152,6 +152,7 @@ old
 
 *.o
 *.ll
+**.o
 tmp
 misc
 test.moth
