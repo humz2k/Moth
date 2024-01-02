@@ -25,7 +25,7 @@ void yyerror(char const *s);
 
 %token DEF STRUCT OBJECT INTERFACE
 
-%left '=' PLUS_EQ MINUS_EQ POW_EQ MUL_EQ FLOOR_EQ DIV_EQ MOD_EQ LSHIFT_EQ RSHIFT_EQ BITNOT_EQ
+%left '=' PLUS_EQ MINUS_EQ POW_EQ MUL_EQ FLOOR_EQ DIV_EQ MOD_EQ LSHIFT_EQ RSHIFT_EQ BITNOT_EQ MOD
 
 %nonassoc ELSE
 
@@ -52,6 +52,42 @@ void yyerror(char const *s);
 
 %%
 
+statement_list
+    : statement
+    | statement_list statement
+
+statement
+    : expression NEWLN //{printf("match statement\n");}
+    | NEWLN //{printf("match empty statement\n");}
+    | function
+    | object_def
+    | struct_def
+
+function
+    : DEF type ID '(' ')' ':' NEWLN block
+
+object_def
+    : OBJECT ID ':' NEWLN attrs
+
+struct_def
+    : STRUCT ID ':' NEWLN attrs
+
+attrs
+    : INDENT attr_list DEINDENT
+    | INDENT attr_list function_list DEINDENT
+    | INDENT function_list DEINDENT
+
+function_list
+    : function
+    | function_list function
+
+attr_list
+    : declaration NEWLN
+    | attr_list declaration NEWLN
+
+block
+    : INDENT statement_list DEINDENT //{printf("match block\n");}
+
 constant
     : REAL
     | BOOL
@@ -63,7 +99,7 @@ binop
     | expression '*' expression
     | expression '/' expression
     | expression FLOORDIV expression
-    | expression '%' expression
+    | expression MOD expression
     | expression LSHIFT expression
     | expression RSHIFT expression
     | expression LE expression
@@ -105,22 +141,6 @@ expression
     | reference
     | binop
     | '(' expression ')' //{printf("match expr\n");}
-
-block
-    : INDENT statement_list DEINDENT //{printf("match block\n");}
-
-function
-    : DEF type ID '(' ')' ':' NEWLN block
-
-statement
-    : expression NEWLN //{printf("match statement\n");}
-    | NEWLN //{printf("match empty statement\n");}
-    | function
-    | block
-
-statement_list
-    : statement
-    | statement_list statement
 
 %%
 

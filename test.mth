@@ -1,4 +1,9 @@
 #comment
 
+object my_object:
+    int a
+    float b
+    my_object c
+
 def int main():
     asd a
