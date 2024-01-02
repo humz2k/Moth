@@ -10,6 +10,7 @@ S           \"(\\.|[^"\\])*\"
 #include <string.h>
 #include <assert.h>
 #include "moth.tab.h"
+#include "gc.h"
 
 int yylex(void);
 int check_type(void);
@@ -161,7 +162,7 @@ void set_indent_level(int nspaces) {
 
 "void"          { RETURN_TOKEN(VOID); }
 
-{L}*            { strcpy(yylval.id, yytext); RETURN_TOKEN(ID); }
+{L}*            { yylval.id = GC_MALLOC(sizeof(char) * (strlen(yytext) + 1)); strcpy(yylval.id, yytext); RETURN_TOKEN(ID); }
 
 [\t\v\f]        { }
 .               { }

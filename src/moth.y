@@ -48,7 +48,7 @@ void yyerror(char const *s);
 %left '('
 
 %union {
-    char id[31];
+    char* id;
     double r;
     int i;
 }
