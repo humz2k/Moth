@@ -1,4 +1,1 @@
-def void print(str inp):
-    pass
-
 print("Hello World!")

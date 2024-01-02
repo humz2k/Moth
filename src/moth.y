@@ -103,6 +103,30 @@ statement
 line
     : expression NEWLN
     | ret NEWLN
+    | while_loop
+    | for_loop
+    | if_statement
+
+if_statement
+    : IF expression ':' NEWLN block
+    | IF expression ':' NEWLN block else_statement
+
+elif_list
+    : elif_statement
+    | elif_list elif_statement
+
+elif_statement
+    : ELIF expression ':' NEWLN block
+
+else_statement
+    : ELSE ':' NEWLN block
+    | elif_list ELSE ':' NEWLN block
+
+while_loop
+    : WHILE expression ':' NEWLN block
+
+for_loop
+    : FOR expression IN expression ':' NEWLN block
 
 ret
     : RETURN expression

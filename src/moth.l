@@ -140,8 +140,8 @@ void set_indent_level(int nspaces) {
 "."             { RETURN_TOKEN('.'); }
 "$"             { RETURN_TOKEN('$'); }
 
-"True"          { yylval.i = 1;  RETURN_TOKEN_ARGS(BOOL,"<True>"); }
-"False"         { yylval.i = 0;  RETURN_TOKEN_ARGS(BOOL,"<False>"); }
+"True"          { yylval.i = 1;  RETURN_TOKEN_ARGS(BOOL,"<%d>",yylval.i); }
+"False"         { yylval.i = 0;  RETURN_TOKEN_ARGS(BOOL,"<%d>",yylval.i); }
 
 "if"            { RETURN_TOKEN(IF); }
 "else"          { RETURN_TOKEN(ELSE); }
