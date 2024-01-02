@@ -2,6 +2,7 @@ L           [a-zA-Z_]
 I           [0-9]*
 F           [0-9]+\.[0-9]*?
 U           [\+\.\-\*\&\^\%\$\#\@\!\/\,\:\;\']
+S           \"(\\.|[^"\\])*\"
 
 %{
 
@@ -59,6 +60,8 @@ void set_indent_level(int nspaces) {
 %%
     //printf("yytext = %s\n",yytext);
     emit_indent_tokens();
+
+{S} {   RETURN_TOKEN(STRING);   }
 
 "#"[^\n]*              { }
 
@@ -139,6 +142,7 @@ void set_indent_level(int nspaces) {
 "generic"      { RETURN_TOKEN(GENERIC); }
 
 "def"           { RETURN_TOKEN(DEF); }
+"pass"           { RETURN_TOKEN(PASS); }
 
 "object"        { RETURN_TOKEN(OBJECT); }
 "struct"        { RETURN_TOKEN(STRUCT); }

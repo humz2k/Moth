@@ -1,10 +1,4 @@
-#comment
+def void print(str inp):
+    pass
 
-with generic T in (int, long):
-    object test$T:
-        T a
-
-    def test$T make_test(T a):
-        test$T out
-        out.a = a
-        return out
+print("Hello World!")

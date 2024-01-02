@@ -14,8 +14,9 @@ void yyerror(char const *s);
 %token <i> BOOL
 %token <i> INTEGER
 %token <id> ID
+%token STRING
 
-%token I1 I8 I16 I32 I64 F16 F32 F64 STR VOID NEWLN
+%token I1 I8 I16 I32 I64 F16 F32 F64 STR VOID NEWLN PASS
 
 %token WITH GENERIC
 
@@ -58,6 +59,7 @@ void yyerror(char const *s);
 
 pass
     : NEWLN
+    | PASS
 
 comp_unit_list
     : comp_unit
@@ -132,6 +134,7 @@ constant
     : REAL
     | BOOL
     | INTEGER
+    | STRING
 
 binop
     : expression '+' expression
@@ -183,7 +186,19 @@ expression
     | reference
     | binop
     | '(' expression ')'
-    | expression '=' expression
+    | assign
+    | func_call
+
+assign
+    : expression '=' expression
+
+func_call
+    : expression '(' expression_list ')'
+    | expression '(' ')'
+
+expression_list
+    : expression
+    | expression_list ',' expression
 
 %%
 
