@@ -1,9 +1,8 @@
 #comment
 
-object my_object:
-    int a
-    float b
-    my_object c
+with generic T in (int, long):
+    object test$T:
+        T a
 
-def int main():
-    asd a
+    def test$T make_test():
+        0

@@ -57,6 +57,7 @@ void set_indent_level(int nspaces) {
 %}
 
 %%
+    //printf("yytext = %s\n",yytext);
     emit_indent_tokens();
 
 "#"[^\n]*              { }
@@ -68,6 +69,8 @@ void set_indent_level(int nspaces) {
                  set_indent_level(nspaces);
                  emit_indent_tokens();
                }
+
+[\n][ ]*$       {}//{emit_newln();}
 
 [\n][ ]*            { int nspaces = strlen(yytext) - 1;
                       set_indent_level(nspaces);
@@ -114,6 +117,8 @@ void set_indent_level(int nspaces) {
 "{"             { curls++; RETURN_TOKEN('{'); }
 ":"             { RETURN_TOKEN(':'); }
 ";"             { RETURN_TOKEN(';'); }
+","             { RETURN_TOKEN(','); }
+"$"             { RETURN_TOKEN('$'); }
 
 "True"          { yylval.i = 1;  RETURN_TOKEN(BOOL); }
 "False"         { yylval.i = 0;  RETURN_TOKEN(BOOL); }
@@ -127,6 +132,10 @@ void set_indent_level(int nspaces) {
 "return"        { RETURN_TOKEN(RETURN); }
 "break"         { RETURN_TOKEN(BREAK); }
 "continue"      { RETURN_TOKEN(CONTINUE); }
+
+"with"      { RETURN_TOKEN(WITH); }
+
+"generic"      { RETURN_TOKEN(GENERIC); }
 
 "def"           { RETURN_TOKEN(DEF); }
 
@@ -144,6 +153,8 @@ void set_indent_level(int nspaces) {
 "half"          { RETURN_TOKEN(F16); }
 "float"         { RETURN_TOKEN(F32); }
 "double"        { RETURN_TOKEN(F64); }
+
+"void"          { RETURN_TOKEN(VOID); }
 
 {L}*            { strcpy(yylval.id, yytext); RETURN_TOKEN(ID); }
 

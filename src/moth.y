@@ -15,7 +15,9 @@ void yyerror(char const *s);
 %token <i> INTEGER
 %token <id> ID
 
-%token I1 I8 I16 I32 I64 F16 F32 F64 STR NEWLN
+%token I1 I8 I16 I32 I64 F16 F32 F64 STR VOID NEWLN
+
+%token WITH GENERIC
 
 %token LE GE EQ NEQ LAND LOR
 %token IF ELSE ELIF FOR IN WHILE RETURN BREAK CONTINUE
@@ -37,6 +39,8 @@ void yyerror(char const *s);
 %left '+' '-'
 %left '*' '/' FLOORDIV '%'
 
+%left '$'
+
 %right '!' '~'
 %right ')'
 
@@ -48,29 +52,56 @@ void yyerror(char const *s);
     int i;
 }
 
-%start statement_list
+%start comp_unit_list
 
 %%
+
+pass
+    : NEWLN
+
+comp_unit_list
+    : comp_unit
+    | comp_unit_list comp_unit
+
+comp_unit
+    : line
+    | pass
+    | function
+    | object_def
+    | struct_def
+    | template_def
+
+template_def
+    : WITH GENERIC ID IN '(' type_list ')' ':' NEWLN INDENT comp_unit_list DEINDENT
+
+type_list
+    : type
+    | type_list ',' type
+
+function
+    : DEF type ID '(' ')' ':' NEWLN block
+
+block
+    : INDENT statement_list DEINDENT
 
 statement_list
     : statement
     | statement_list statement
 
 statement
-    : expression NEWLN //{printf("match statement\n");}
-    | NEWLN //{printf("match empty statement\n");}
-    | function
-    | object_def
-    | struct_def
+    : line
+    | pass
 
-function
-    : DEF type ID '(' ')' ':' NEWLN block
+line
+    : expression NEWLN
 
 object_def
     : OBJECT ID ':' NEWLN attrs
+    | OBJECT ID '$' type ':' NEWLN attrs
 
 struct_def
     : STRUCT ID ':' NEWLN attrs
+    | STRUCT ID '$' type ':' NEWLN attrs
 
 attrs
     : INDENT attr_list DEINDENT
@@ -84,9 +115,8 @@ function_list
 attr_list
     : declaration NEWLN
     | attr_list declaration NEWLN
-
-block
-    : INDENT statement_list DEINDENT //{printf("match block\n");}
+    | NEWLN
+    | attr_list NEWLN
 
 constant
     : REAL
@@ -129,7 +159,9 @@ type
     | F64
     | STR
     | ID
+    | VOID
     | reference
+    | type '$' type
 
 declaration
     : type variable
@@ -140,7 +172,8 @@ expression
     | variable
     | reference
     | binop
-    | '(' expression ')' //{printf("match expr\n");}
+    | '(' expression ')'
+    | expression '=' expression
 
 %%
 
