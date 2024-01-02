@@ -118,6 +118,7 @@ void set_indent_level(int nspaces) {
 ":"             { RETURN_TOKEN(':'); }
 ";"             { RETURN_TOKEN(';'); }
 ","             { RETURN_TOKEN(','); }
+"."             { RETURN_TOKEN('.'); }
 "$"             { RETURN_TOKEN('$'); }
 
 "True"          { yylval.i = 1;  RETURN_TOKEN(BOOL); }

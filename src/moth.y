@@ -80,6 +80,11 @@ type_list
 
 function
     : DEF type ID '(' ')' ':' NEWLN block
+    | DEF type ID '(' declaration_list ')' ':' NEWLN block
+
+declaration_list
+    : declaration
+    | declaration_list ',' declaration
 
 block
     : INDENT statement_list DEINDENT
@@ -94,6 +99,11 @@ statement
 
 line
     : expression NEWLN
+    | ret NEWLN
+
+ret
+    : RETURN expression
+    | RETURN
 
 object_def
     : OBJECT ID ':' NEWLN attrs

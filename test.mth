@@ -4,5 +4,7 @@ with generic T in (int, long):
     object test$T:
         T a
 
-    def test$T make_test():
-        0
+    def test$T make_test(T a):
+        test$T out
+        out.a = a
+        return out
