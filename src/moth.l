@@ -9,8 +9,9 @@ S           \"(\\.|[^"\\])*\"
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include "moth.tab.h"
 #include "gc.h"
+#include "ast.h"
+#include "moth.tab.h"
 
 int yylex(void);
 int check_type(void);

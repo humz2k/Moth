@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "ast.h"
 
 int yylex(void);
 
@@ -14,7 +15,7 @@ void yyerror(char const *s);
 %token <i> BOOL
 %token <i> INTEGER
 %token <id> ID
-%token STRING
+%token <s> STRING
 
 %token I1 I8 I16 I32 I64 F16 F32 F64 STR VOID NEWLN PASS
 
@@ -40,18 +41,23 @@ void yyerror(char const *s);
 %left '+' '-'
 %left '*' '/' FLOORDIV '%'
 
-%left '$'
+%left '$' '['
 
 %right '!' '~'
 %right ')'
 
 %left '('
 
+%type <n> constant
+%type <n> expression
+%type <n> binop
+
 %union {
     char* id;
     char* s;
     double r;
     int i;
+    NODE n;
 }
 
 %start comp_unit_list
@@ -156,28 +162,28 @@ attr_list
     | attr_list NEWLN
 
 constant
-    : REAL
-    | BOOL
-    | INTEGER
-    | STRING
+    : REAL {$$ = make_real_const($1);}
+    | BOOL {$$ = make_bool_const($1);}
+    | INTEGER {$$ = make_int_const($1);}
+    | STRING {$$ = make_string_const($1);}
 
 binop
-    : expression '+' expression
-    | expression '-' expression
-    | expression '*' expression
-    | expression '/' expression
-    | expression FLOORDIV expression
-    | expression MOD expression
-    | expression LSHIFT expression
-    | expression RSHIFT expression
-    | expression LE expression
-    | expression GE expression
-    | expression EQ expression
-    | expression NEQ expression
-    | expression LAND expression
-    | expression LOR expression
-    | expression '<' expression
-    | expression '>' expression
+    : expression '+' expression {$$ = make_binop($1,$3,OP_ADD);}
+    | expression '-' expression {$$ = make_binop($1,$3,OP_SUB);}
+    | expression '*' expression {$$ = make_binop($1,$3,OP_MUL);}
+    | expression '/' expression {$$ = make_binop($1,$3,OP_DIV);}
+    | expression FLOORDIV expression {$$ = make_binop($1,$3,OP_FLOORDIV);}
+    | expression MOD expression {$$ = make_binop($1,$3,OP_MOD);}
+    | expression LSHIFT expression {$$ = make_binop($1,$3,OP_LSHIFT);}
+    | expression RSHIFT expression {$$ = make_binop($1,$3,OP_RSHIFT);}
+    | expression LE expression {$$ = make_binop($1,$3,OP_LE);}
+    | expression GE expression {$$ = make_binop($1,$3,OP_GE);}
+    | expression EQ expression {$$ = make_binop($1,$3,OP_EQ);}
+    | expression NEQ expression {$$ = make_binop($1,$3,OP_NEQ);}
+    | expression LAND expression {$$ = make_binop($1,$3,OP_LAND);}
+    | expression LOR expression {$$ = make_binop($1,$3,OP_LOR);}
+    | expression '<' expression {$$ = make_binop($1,$3,OP_LT);}
+    | expression '>' expression {$$ = make_binop($1,$3,OP_GT);}
 
 reference
     : ID '.' ID
@@ -205,14 +211,15 @@ declaration
     : type variable
 
 expression
-    : constant
+    : constant {$$ = $1;}
     | declaration
     | variable
     | reference
-    | binop
-    | '(' expression ')'
+    | binop {$$ = $1;}
+    | '(' expression ')' {$$ = $2;}
     | assign
     | func_call
+    | index
 
 assign
     : expression '=' expression
@@ -220,6 +227,9 @@ assign
 func_call
     : expression '(' expression_list ')'
     | expression '(' ')'
+
+index
+    : expression '[' expression_list ']'
 
 expression_list
     : expression
