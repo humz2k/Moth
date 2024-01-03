@@ -34,7 +34,8 @@ enum node_type{
     FUNCTION_NODE,
     TEMPLATE_NODE,
     PROGRAM_NODE,
-    ARRAY_INITIALIZER_NODE
+    ARRAY_INITIALIZER_NODE,
+    PRINT_NODE
 };
 
 NODE make_ast_node(void);

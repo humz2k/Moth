@@ -55,6 +55,7 @@ union node_data{
     struct template_node template_data;
     struct program_node program_data;
     struct array_initializer_node array_initializer_data;
+    struct print_node print_data;
 };
 
 struct ast_node{

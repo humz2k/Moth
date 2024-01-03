@@ -17,7 +17,7 @@ void yyerror(char const *s);
 %token <id> ID
 %token <s> STRING
 
-%token I1 I8 I16 I32 I64 F16 F32 F64 STR VOID NEWLN PASS
+%token I1 I8 I16 I32 I64 F16 F32 F64 STR VOID NEWLN PASS PRINT
 
 %token WITH GENERIC
 
@@ -81,6 +81,7 @@ void yyerror(char const *s);
 %type <n> comp_unit
 %type <n> program
 %type <n> array_initializer
+%type <n> print
 %type <v> expression_list
 %type <v> attr_list
 %type <v> function_list
@@ -159,6 +160,10 @@ line
     | if_statement {$$ = $1;}
     | brk NEWLN {$$ = $1;}
     | cont NEWLN {$$ = $1;}
+    | print NEWLN {$$ = $1;}
+
+print
+    : PRINT '(' expression_list ')' {$$ = make_print($3);}
 
 if_statement
     : IF expression ':' NEWLN block {$$ = make_if_statement($2,$5,NULL);}

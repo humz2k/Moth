@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include "llvm_backend/moth_llvm.h"
 
 int yyparse(void);
 int yylex(void);
@@ -14,5 +15,5 @@ int main(int argc, char** argv){
     yyparse();
     fclose(fp);
 
-    return 0;
+    return compile();
 }

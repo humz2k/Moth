@@ -22,3 +22,10 @@ NODE make_assign(NODE left, NODE right){
     out->data.assign_data.right = right;
     return out;
 }
+
+NODE make_print(NODE_VEC exprs){
+    NODE out = make_ast_node();
+    out->t = PRINT_NODE;
+    out->data.print_data.exprs = exprs;
+    return out;
+}

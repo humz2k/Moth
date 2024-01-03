@@ -24,4 +24,10 @@ struct assign_node{
 
 NODE make_assign(NODE left, NODE right);
 
+struct print_node{
+    NODE_VEC exprs;
+};
+
+NODE make_print(NODE_VEC exprs);
+
 #endif

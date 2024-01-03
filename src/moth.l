@@ -158,6 +158,8 @@ void set_indent_level(int nspaces) {
 
 "generic"      { RETURN_TOKEN(GENERIC); }
 
+"print"      { RETURN_TOKEN(PRINT); }
+
 "def"           { RETURN_TOKEN(DEF); }
 "pass"           { RETURN_TOKEN(PASS); }
 
