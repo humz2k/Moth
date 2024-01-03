@@ -14,4 +14,11 @@ struct reference_node{
 NODE make_ref_base(char* left, char* right);
 NODE make_ref_ref(NODE ref, char* right);
 
+struct index_node{
+    NODE expr;
+    NODE_VEC idxs;
+};
+
+NODE make_index(NODE expr, NODE_VEC idxs);
+
 #endif

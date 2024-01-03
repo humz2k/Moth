@@ -15,16 +15,25 @@ enum node_type{
     VAR_NODE,
     DECLARATION_NODE,
     REFERENCE_NODE,
-    ASSIGN_NODE
+    ASSIGN_NODE,
+    FUNCTION_CALL_NODE,
+    INDEX_NODE,
+    RETURN_NODE
 };
 
 NODE make_ast_node(void);
 
-struct ast_node_vector;
+struct ast_node_vector_block;
+
+struct ast_node_vector{
+    int len;
+    struct ast_node_vector_block* first;
+};
 
 typedef struct ast_node_vector NODE_VEC;
 
-NODE_VEC make_node_vec(void);
+NODE_VEC make_empty_node_vec(void);
+NODE_VEC make_node_vec(NODE elem);
 NODE_VEC append_node_vec(NODE_VEC lst, NODE elem);
 int len_node_vec(NODE_VEC lst);
 NODE get_node_vec_elem(NODE_VEC lst, int idx);

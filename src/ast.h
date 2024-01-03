@@ -13,6 +13,8 @@
 
 #include "refs.h"
 
+#include "functions.h"
+
 union node_data{
     float r;
     int i;
@@ -24,6 +26,9 @@ union node_data{
     struct declaration_node declaration_data;
     struct reference_node reference_data;
     struct assign_node assign_data;
+    struct function_call_node function_call_data;
+    struct index_node index_data;
+    struct return_node return_data;
 };
 
 struct ast_node{

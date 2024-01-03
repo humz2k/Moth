@@ -11,11 +11,6 @@ struct ast_node_vector_block{
     struct ast_node_vector_block* next;
 };
 
-//pointer to first block, and len
-struct ast_node_vector{
-    int len;
-    struct ast_node_vector_block* first;
-};
 
 //makes empty block
 static struct ast_node_vector_block* make_ast_node_vector_block(void){
@@ -26,10 +21,17 @@ static struct ast_node_vector_block* make_ast_node_vector_block(void){
 }
 
 //makes an empty vector (i.e. just makes an empty block and a poitner to it)
-NODE_VEC make_node_vec(void){
+NODE_VEC make_empty_node_vec(void){
     NODE_VEC out;
     out.len = 0;
     out.first = make_ast_node_vector_block();
+    return out;
+}
+
+NODE_VEC make_node_vec(NODE elem){
+    NODE_VEC out = make_empty_node_vec();
+    append_node_vec(out,elem);
+    assert(out.len == 1);
     return out;
 }
 

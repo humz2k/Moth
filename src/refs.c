@@ -17,3 +17,11 @@ NODE make_ref_ref(NODE ref, char* right){
     out->data.reference_data.ref_base = 0;
     return out;
 }
+
+NODE make_index(NODE expr, NODE_VEC idxs){
+    NODE out = make_ast_node();
+    out->t = INDEX_NODE;
+    out->data.index_data.expr = expr;
+    out->data.index_data.idxs = idxs;
+    return out;
+}

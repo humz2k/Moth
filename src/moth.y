@@ -56,6 +56,11 @@ void yyerror(char const *s);
 %type <n> reference
 %type <n> declaration
 %type <n> assign
+%type <n> func_call
+%type <n> index
+%type <v> expression_list
+%type <v> attr_list
+%type <v> function_list
 
 %union {
     char* id;
@@ -63,6 +68,7 @@ void yyerror(char const *s);
     double r;
     int i;
     NODE n;
+    NODE_VEC v;
 }
 
 %start comp_unit_list
@@ -143,6 +149,12 @@ ret
     : RETURN expression
     | RETURN
 
+brk
+    : BREAK
+
+cont
+    : CONTINUE
+
 object_def
     : OBJECT ID ':' NEWLN attrs
     | OBJECT ID '$' type ':' NEWLN attrs
@@ -157,14 +169,14 @@ attrs
     | INDENT function_list DEINDENT
 
 function_list
-    : function
-    | function_list function
+    : function {$$ = make_node_vec($1);}
+    | function_list function {$$ = append_node_vec($1,$2);}
 
 attr_list
-    : declaration NEWLN
-    | attr_list declaration NEWLN
-    | NEWLN
-    | attr_list NEWLN
+    : declaration NEWLN {$$ = make_node_vec($1);}
+    | attr_list declaration NEWLN {$$ = append_node_vec($1,$2);}
+    | NEWLN {$$ = make_empty_node_vec();}
+    | attr_list NEWLN {$$ = $1;}
 
 constant
     : REAL {$$ = make_real_const($1);}
@@ -223,22 +235,22 @@ expression
     | binop {$$ = $1;}
     | '(' expression ')' {$$ = $2;}
     | assign {$$ = $1;}
-    | func_call
-    | index
+    | func_call {$$ = $1;}
+    | index {$$ = $1;}
 
 assign
     : expression '=' expression {$$ = make_assign($1,$3);}
 
 func_call
-    : expression '(' expression_list ')'
-    | expression '(' ')'
+    : expression '(' expression_list ')' {$$ = make_function_call($1,$3);}
+    | expression '(' ')' {$$ = make_function_call_no_args($1);}
 
 index
-    : expression '[' expression_list ']'
+    : expression '[' expression_list ']' {$$ = make_index($1,$3);}
 
 expression_list
-    : expression
-    | expression_list ',' expression
+    : expression {$$ = make_node_vec($1);}
+    | expression_list ',' expression {$$ = append_node_vec($1,$3);}
 
 %%
 
