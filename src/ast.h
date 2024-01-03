@@ -5,77 +5,13 @@
 
 #include "constants.h"
 
-enum binop_type{
-    OP_ADD,OP_SUB,OP_MUL,OP_DIV,
-    OP_FLOORDIV,OP_MOD,OP_LSHIFT,
-    OP_RSHIFT,OP_LE,OP_GE,OP_EQ,
-    OP_NEQ,OP_LAND,OP_LOR,OP_LT,OP_GT
-};
+#include "binop.h"
 
-struct binop_node{
-    NODE left;
-    NODE right;
-    enum binop_type t;
-};
+#include "type.h"
 
-NODE make_binop(NODE left, NODE right, enum binop_type t);
+#include "vars.h"
 
-enum type_type{
-    TY_I1,
-    TY_I8,
-    TY_I16,
-    TY_I32,
-    TY_I64,
-    TY_F16,
-    TY_F32,
-    TY_F64,
-    TY_STR,
-    TY_VOID,
-    TY_TEMPLATE,
-    TY_ID,
-    TY_REF
-};
-
-struct type_node{
-    enum type_type t;
-    NODE ref;
-    char* id;
-    NODE base;
-    NODE specialize;
-};
-
-NODE make_base_type(enum type_type t);
-
-NODE make_template_type(NODE base, NODE specialize);
-
-NODE make_user_type(char* id);
-
-NODE make_ref_type(NODE ref);
-
-struct var_node{
-    char* id;
-};
-
-NODE make_var(char* id);
-
-struct declaration_node{
-    NODE type;
-    NODE var;
-};
-
-NODE make_decl(NODE type, NODE var);
-
-
-struct reference_node{
-    int ref_base;
-    char* left;
-    char* right;
-    NODE ref;
-};
-
-NODE make_ref_base(char* left, char* right);
-NODE make_ref_ref(NODE ref, char* right);
-
+#include "refs.h"
 
 union node_data{
     float r;
