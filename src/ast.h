@@ -3,6 +3,8 @@
 
 #include "ast_node.h"
 
+extern NODE program_start;
+
 #include "constants.h"
 
 #include "binop.h"
@@ -16,6 +18,14 @@
 #include "functions.h"
 
 #include "struct_object.h"
+
+#include "block.h"
+
+#include "control_flow.h"
+
+#include "templates.h"
+
+#include "program.h"
 
 union node_data{
     float r;
@@ -33,6 +43,15 @@ union node_data{
     struct return_node return_data;
     struct attrs_node attrs_data;
     struct struct_or_object_node struct_or_object_data;
+    struct block_node block_data;
+    struct if_statement_node if_statement_data;
+    struct elif_statement_node elif_statement_data;
+    struct else_statement_node else_statement_data;
+    struct while_loop_node while_loop_data;
+    struct for_loop_node for_loop_data;
+    struct function_node function_data;
+    struct template_node template_data;
+    struct program_node program_data;
 };
 
 struct ast_node{

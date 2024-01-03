@@ -64,9 +64,27 @@ void yyerror(char const *s);
 %type <n> attrs
 %type <n> object_def
 %type <n> struct_def
+%type <n> statement
+%type <n> pass
+%type <n> line
+%type <n> block
+%type <n> if_statement
+%type <n> elif_statement
+%type <n> else_statement
+%type <n> while_loop
+%type <n> for_loop
+%type <n> function
+%type <n> template_def
+%type <n> comp_unit
+%type <n> program
 %type <v> expression_list
 %type <v> attr_list
 %type <v> function_list
+%type <v> statement_list
+%type <v> elif_list
+%type <v> declaration_list
+%type <v> type_list
+%type <v> comp_unit_list
 
 %union {
     char* id;
@@ -77,79 +95,87 @@ void yyerror(char const *s);
     NODE_VEC v;
 }
 
-%start comp_unit_list
+%start program
 
 %%
 
+program
+    : comp_unit_list {$$ = make_program($1);}
+
 pass
-    : NEWLN
-    | PASS
+    : NEWLN {$$ = make_pass();}
+    | PASS {$$ = make_pass();}
 
 comp_unit_list
-    : comp_unit
-    | comp_unit_list comp_unit
+    : comp_unit {$$ = make_node_vec($1);}
+    | comp_unit_list comp_unit {$$ = append_node_vec($1,$2);}
 
 comp_unit
-    : line
-    | pass
-    | function
-    | object_def
-    | struct_def
-    | template_def
+    : line {$$ = $1;}
+    | pass {$$ = $1;}
+    | function {$$ = $1;}
+    | object_def {$$ = $1;}
+    | struct_def {$$ = $1;}
+    | template_def {$$ = $1;}
 
 template_def
-    : WITH GENERIC ID IN '(' type_list ')' ':' NEWLN INDENT comp_unit_list DEINDENT
+    : WITH GENERIC ID IN '(' type_list ')' ':' NEWLN INDENT comp_unit_list DEINDENT { $$ = make_template($3,$6,$11); }
 
 type_list
-    : type
-    | type_list ',' type
+    : type {$$ = make_node_vec($1);}
+    | type_list ',' type {$$ = append_node_vec($1,$3);}
 
 function
-    : DEF type ID '(' ')' ':' NEWLN block
-    | DEF type ID '(' declaration_list ')' ':' NEWLN block
+    : DEF type ID '(' ')' ':' NEWLN block {$$ = make_function($3,make_empty_node_vec(),$8,$2);}
+    | DEF type ID '(' declaration_list ')' ':' NEWLN block {$$ = make_function($3,$5,$9,$2);}
+    | DEF type ID '$' type '(' ')' ':' NEWLN block {$$ = make_function_template($3,make_empty_node_vec(),$10,$2,$5);}
+    | DEF type ID '$' type '(' declaration_list ')' ':' NEWLN block {$$ = make_function_template($3,$7,$11,$2,$5);}
 
 declaration_list
-    : declaration
-    | declaration_list ',' declaration
+    : declaration {$$ = make_node_vec($1);}
+    | declaration_list ',' declaration {$$ = append_node_vec($1,$3);}
 
 block
-    : INDENT statement_list DEINDENT
+    : INDENT statement_list DEINDENT {$$ = make_block($2);}
 
 statement_list
-    : statement
-    | statement_list statement
+    : statement {$$ = make_node_vec($1);}
+    | statement_list statement {$$ = append_node_vec($1,$2);}
 
 statement
-    : line
-    | pass
+    : line {$$ = $1;}
+    | pass {$$ = $1;}
 
 line
-    : expression NEWLN
-    | ret NEWLN
-    | while_loop
-    | for_loop
-    | if_statement
+    : expression NEWLN {$$ = $1;}
+    | ret NEWLN {$$ = $1;}
+    | while_loop {$$ = $1;}
+    | for_loop {$$ = $1;}
+    | if_statement {$$ = $1;}
+    | brk NEWLN {$$ = $1;}
+    | cont NEWLN {$$ = $1;}
 
 if_statement
-    : IF expression ':' NEWLN block
-    | IF expression ':' NEWLN block else_statement
+    : IF expression ':' NEWLN block {$$ = make_if_statement($2,$5,NULL);}
+    | IF expression ':' NEWLN block else_statement {$$ = make_if_statement($2,$5,$6);}
 
 elif_list
-    : elif_statement
-    | elif_list elif_statement
+    : elif_statement {$$ = make_node_vec($1);}
+    | elif_list elif_statement {$$ = append_node_vec($1,$2);}
 
 elif_statement
-    : ELIF expression ':' NEWLN block
+    : ELIF expression ':' NEWLN block {$$ = make_elif_statement($2,$5);}
 
 else_statement
-    : ELSE ':' NEWLN block
-    | elif_list ELSE ':' NEWLN block
+    : ELSE ':' NEWLN block {$$ = make_else_statement(make_empty_node_vec(),$4);}
+    | elif_list ELSE ':' NEWLN block {$$ = make_else_statement($1,$5);}
+    | elif_list {$$ = make_else_statement($1,NULL);}
 
 while_loop
-    : WHILE expression ':' NEWLN block
+    : WHILE expression ':' NEWLN block {$$ = make_while_loop($2,$5);}
 
 for_loop
-    : FOR expression IN expression ':' NEWLN block
+    : FOR expression IN expression ':' NEWLN block {$$ = make_for_loop($2,$4,$7);}
 
 ret
     : RETURN expression {$$ = make_return($2);}

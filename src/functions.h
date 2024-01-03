@@ -19,4 +19,17 @@ struct return_node{
 NODE make_return(NODE expr);
 NODE make_empty_return(void);
 
+struct function_node{
+    int is_template;
+    char* id;
+    NODE_VEC inputs;
+    NODE block;
+    NODE ret_type;
+    NODE specialize;
+};
+
+NODE make_function(char* id, NODE_VEC inputs, NODE block, NODE ret_type);
+
+NODE make_function_template(char* id, NODE_VEC inputs, NODE block, NODE ret_type, NODE specialize);
+
 #endif

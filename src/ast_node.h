@@ -23,7 +23,17 @@ enum node_type{
     CONTINUE_NODE,
     ATTRS_NODE,
     STRUCT_NODE,
-    OBJECT_NODE
+    OBJECT_NODE,
+    PASS_NODE,
+    BLOCK_NODE,
+    IF_NODE,
+    ELSE_NODE,
+    ELIF_NODE,
+    WHILE_LOOP_NODE,
+    FOR_LOOP_NODE,
+    FUNCTION_NODE,
+    TEMPLATE_NODE,
+    PROGRAM_NODE
 };
 
 NODE make_ast_node(void);

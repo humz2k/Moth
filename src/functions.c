@@ -30,3 +30,24 @@ NODE make_empty_return(void){
     out->data.return_data.expr = NULL;
     return out;
 }
+
+NODE make_function(char* id, NODE_VEC inputs, NODE block, NODE ret_type){
+    NODE out = make_ast_node();
+    out->t = FUNCTION_NODE;
+    out->data.function_data.is_template = 0;
+    out->data.function_data.ret_type = ret_type;
+    out->data.function_data.inputs = inputs;
+    out->data.function_data.block = block;
+    return out;
+}
+
+NODE make_function_template(char* id, NODE_VEC inputs, NODE block, NODE ret_type, NODE specialize){
+    NODE out = make_ast_node();
+    out->t = FUNCTION_NODE;
+    out->data.function_data.is_template = 1;
+    out->data.function_data.ret_type = ret_type;
+    out->data.function_data.inputs = inputs;
+    out->data.function_data.block = block;
+    out->data.function_data.specialize = specialize;
+    return out;
+}
