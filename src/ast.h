@@ -23,13 +23,12 @@ union node_data{
     struct var_node var_data;
     struct declaration_node declaration_data;
     struct reference_node reference_data;
+    struct assign_node assign_data;
 };
 
 struct ast_node{
     enum node_type t;
     union node_data data;
 };
-
-NODE make_ast_node(void);
 
 #endif

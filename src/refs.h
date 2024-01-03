@@ -15,4 +15,3 @@ NODE make_ref_base(char* left, char* right);
 NODE make_ref_ref(NODE ref, char* right);
 
 #endif
-

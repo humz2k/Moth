@@ -17,4 +17,11 @@ struct declaration_node{
 
 NODE make_decl(NODE type, NODE var);
 
+struct assign_node{
+    NODE left;
+    NODE right;
+};
+
+NODE make_assign(NODE left, NODE right);
+
 #endif

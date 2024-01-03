@@ -13,3 +13,11 @@ NODE make_decl(NODE type, NODE var){
     out->data.declaration_data.var = var;
     return out;
 }
+
+NODE make_assign(NODE left, NODE right){
+    NODE out = make_ast_node();
+    out->t = ASSIGN_NODE;
+    out->data.assign_data.left = left;
+    out->data.assign_data.right = right;
+    return out;
+}

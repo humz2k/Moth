@@ -55,6 +55,7 @@ void yyerror(char const *s);
 %type <n> variable
 %type <n> reference
 %type <n> declaration
+%type <n> assign
 
 %union {
     char* id;
@@ -221,12 +222,12 @@ expression
     | reference {$$ = $1;}
     | binop {$$ = $1;}
     | '(' expression ')' {$$ = $2;}
-    | assign
+    | assign {$$ = $1;}
     | func_call
     | index
 
 assign
-    : expression '=' expression
+    : expression '=' expression {$$ = make_assign($1,$3);}
 
 func_call
     : expression '(' expression_list ')'
