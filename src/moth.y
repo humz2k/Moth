@@ -51,6 +51,10 @@ void yyerror(char const *s);
 %type <n> constant
 %type <n> expression
 %type <n> binop
+%type <n> type
+%type <n> variable
+%type <n> reference
+%type <n> declaration
 
 %union {
     char* id;
@@ -186,35 +190,35 @@ binop
     | expression '>' expression {$$ = make_binop($1,$3,OP_GT);}
 
 reference
-    : ID '.' ID
-    | reference '.' ID
+    : ID '.' ID {$$ = make_ref_base($1,$3);}
+    | reference '.' ID {$$ = make_ref_ref($1,$3);}
 
 variable
-    : ID
+    : ID {$$ = make_var($1);}
 
 type
-    : I1
-    | I8
-    | I16
-    | I32
-    | I64
-    | F16
-    | F32
-    | F64
-    | STR
-    | ID
-    | VOID
-    | reference
-    | type '$' type
+    : I1 {$$ = make_base_type(TY_I1);}
+    | I8 {$$ = make_base_type(TY_I8);}
+    | I16 {$$ = make_base_type(TY_I16);}
+    | I32 {$$ = make_base_type(TY_I32);}
+    | I64 {$$ = make_base_type(TY_I64);}
+    | F16 {$$ = make_base_type(TY_F16);}
+    | F32 {$$ = make_base_type(TY_F32);}
+    | F64 {$$ = make_base_type(TY_F64);}
+    | STR {$$ = make_base_type(TY_STR);}
+    | ID {$$ = make_user_type($1);}
+    | VOID {$$ = make_base_type(TY_VOID);}
+    | reference {$$ = make_ref_type($1);}
+    | type '$' type {$$ = make_template_type($1,$3);}
 
 declaration
-    : type variable
+    : type variable {$$ = make_decl($1,$2);}
 
 expression
     : constant {$$ = $1;}
-    | declaration
-    | variable
-    | reference
+    | declaration {$$ = $1;}
+    | variable {$$ = $1;}
+    | reference {$$ = $1;}
     | binop {$$ = $1;}
     | '(' expression ')' {$$ = $2;}
     | assign

@@ -1,26 +1,9 @@
 #ifndef _AST_H_
 #define _AST_H_
 
-struct ast_node;
+#include "ast_node.h"
 
-typedef struct ast_node* NODE;
-
-enum node_type{
-    REAL_CONSTANT,
-    BOOL_CONSTANT,
-    INTEGER_CONSTANT,
-    STRING_CONSTANT,
-    BINOP_NODE,
-    TYPE_NODE,
-    DECLARATION_NODE
-};
-
-
-NODE make_real_const(float r);
-NODE make_bool_const(int i);
-NODE make_int_const(int i);
-NODE make_string_const(char* s);
-
+#include "constants.h"
 
 enum binop_type{
     OP_ADD,OP_SUB,OP_MUL,OP_DIV,
@@ -57,6 +40,8 @@ struct type_node{
     enum type_type t;
     NODE ref;
     char* id;
+    NODE base;
+    NODE specialize;
 };
 
 NODE make_base_type(enum type_type t);
@@ -67,10 +52,29 @@ NODE make_user_type(char* id);
 
 NODE make_ref_type(NODE ref);
 
-struct declaration_node{
-    NODE type;
+struct var_node{
     char* id;
 };
+
+NODE make_var(char* id);
+
+struct declaration_node{
+    NODE type;
+    NODE var;
+};
+
+NODE make_decl(NODE type, NODE var);
+
+
+struct reference_node{
+    int ref_base;
+    char* left;
+    char* right;
+    NODE ref;
+};
+
+NODE make_ref_base(char* left, char* right);
+NODE make_ref_ref(NODE ref, char* right);
 
 
 union node_data{
@@ -80,7 +84,9 @@ union node_data{
     char* s;
     struct binop_node binop_data;
     struct type_node type_data;
+    struct var_node var_data;
     struct declaration_node declaration_data;
+    struct reference_node reference_data;
 };
 
 struct ast_node{
