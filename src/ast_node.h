@@ -33,7 +33,8 @@ enum node_type{
     FOR_LOOP_NODE,
     FUNCTION_NODE,
     TEMPLATE_NODE,
-    PROGRAM_NODE
+    PROGRAM_NODE,
+    ARRAY_INITIALIZER_NODE
 };
 
 NODE make_ast_node(void);

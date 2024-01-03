@@ -15,8 +15,9 @@ enum type_type{
     TY_STR,
     TY_VOID,
     TY_TEMPLATE,
-    TY_ID,
-    TY_REF
+    TY_USER,
+    TY_REF,
+    TY_ARRAY
 };
 
 struct type_node{
@@ -25,6 +26,7 @@ struct type_node{
     char* id;
     NODE base;
     NODE specialize;
+    int ndims;
 };
 
 NODE make_base_type(enum type_type t);
@@ -34,5 +36,7 @@ NODE make_template_type(NODE base, NODE specialize);
 NODE make_user_type(char* id);
 
 NODE make_ref_type(NODE ref);
+
+NODE make_array_type(NODE base, int ndims);
 
 #endif

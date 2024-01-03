@@ -41,7 +41,10 @@ void yyerror(char const *s);
 %left '+' '-'
 %left '*' '/' FLOORDIV '%'
 
-%left '$' '['
+%left '$'
+%right '['
+
+%right '{'
 
 %right '!' '~'
 %right ')'
@@ -77,6 +80,7 @@ void yyerror(char const *s);
 %type <n> template_def
 %type <n> comp_unit
 %type <n> program
+%type <n> array_initializer
 %type <v> expression_list
 %type <v> attr_list
 %type <v> function_list
@@ -85,6 +89,7 @@ void yyerror(char const *s);
 %type <v> declaration_list
 %type <v> type_list
 %type <v> comp_unit_list
+%type <i> array_dims
 
 %union {
     char* id;
@@ -255,6 +260,14 @@ type
     | VOID {$$ = make_base_type(TY_VOID);}
     | reference {$$ = make_ref_type($1);}
     | type '$' type {$$ = make_template_type($1,$3);}
+    | type '{' array_dims '}' {$$ = make_array_type($1,$3);}
+
+array_dims
+    : ':' {$$ = 1;}
+    | array_dims ',' ':' {$$ = $1 + 1;}
+
+array_initializer
+    : type '{' expression_list '}' {$$ = make_array_initializer($1,$3);}
 
 declaration
     : type variable {$$ = make_decl($1,$2);}
@@ -269,6 +282,7 @@ expression
     | assign {$$ = $1;}
     | func_call {$$ = $1;}
     | index {$$ = $1;}
+    | array_initializer {$$ = $1;}
 
 assign
     : expression '=' expression {$$ = make_assign($1,$3);}

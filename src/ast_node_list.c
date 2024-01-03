@@ -30,7 +30,7 @@ NODE_VEC make_empty_node_vec(void){
 
 NODE_VEC make_node_vec(NODE elem){
     NODE_VEC out = make_empty_node_vec();
-    append_node_vec(out,elem);
+    out = append_node_vec(out,elem);
     assert(out.len == 1);
     return out;
 }

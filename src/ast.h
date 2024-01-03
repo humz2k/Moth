@@ -27,6 +27,8 @@ extern NODE program_start;
 
 #include "program.h"
 
+#include "array.h"
+
 union node_data{
     float r;
     int i;
@@ -52,6 +54,7 @@ union node_data{
     struct function_node function_data;
     struct template_node template_data;
     struct program_node program_data;
+    struct array_initializer_node array_initializer_data;
 };
 
 struct ast_node{
