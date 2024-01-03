@@ -16,7 +16,7 @@ struct return_node{
     NODE expr;
 };
 
-NODE make_return_node(NODE expr);
+NODE make_return(NODE expr);
 NODE make_empty_return(void);
 
 #endif

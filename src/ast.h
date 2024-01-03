@@ -15,6 +15,8 @@
 
 #include "functions.h"
 
+#include "struct_object.h"
+
 union node_data{
     float r;
     int i;
@@ -29,6 +31,8 @@ union node_data{
     struct function_call_node function_call_data;
     struct index_node index_data;
     struct return_node return_data;
+    struct attrs_node attrs_data;
+    struct struct_or_object_node struct_or_object_data;
 };
 
 struct ast_node{

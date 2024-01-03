@@ -58,6 +58,12 @@ void yyerror(char const *s);
 %type <n> assign
 %type <n> func_call
 %type <n> index
+%type <n> ret
+%type <n> brk
+%type <n> cont
+%type <n> attrs
+%type <n> object_def
+%type <n> struct_def
 %type <v> expression_list
 %type <v> attr_list
 %type <v> function_list
@@ -146,27 +152,27 @@ for_loop
     : FOR expression IN expression ':' NEWLN block
 
 ret
-    : RETURN expression
-    | RETURN
+    : RETURN expression {$$ = make_return($2);}
+    | RETURN {$$ = make_empty_return();}
 
 brk
-    : BREAK
+    : BREAK {$$ = make_break();}
 
 cont
-    : CONTINUE
+    : CONTINUE {$$ = make_continue();}
 
 object_def
-    : OBJECT ID ':' NEWLN attrs
-    | OBJECT ID '$' type ':' NEWLN attrs
+    : OBJECT ID ':' NEWLN attrs {$$ = make_object($2,$5);}
+    | OBJECT ID '$' type ':' NEWLN attrs {$$ = make_object_template($2,$7,$4);}
 
 struct_def
-    : STRUCT ID ':' NEWLN attrs
-    | STRUCT ID '$' type ':' NEWLN attrs
+    : STRUCT ID ':' NEWLN attrs {$$ = make_struct($2,$5);}
+    | STRUCT ID '$' type ':' NEWLN attrs {$$ = make_struct_template($2,$7,$4);}
 
 attrs
-    : INDENT attr_list DEINDENT
-    | INDENT attr_list function_list DEINDENT
-    | INDENT function_list DEINDENT
+    : INDENT attr_list DEINDENT {$$ = make_attrs($2,make_empty_node_vec());}
+    | INDENT attr_list function_list DEINDENT {$$ = make_attrs($2,$3);}
+    | INDENT function_list DEINDENT {$$ = make_attrs(make_empty_node_vec(),$2);}
 
 function_list
     : function {$$ = make_node_vec($1);}

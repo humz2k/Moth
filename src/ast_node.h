@@ -18,7 +18,12 @@ enum node_type{
     ASSIGN_NODE,
     FUNCTION_CALL_NODE,
     INDEX_NODE,
-    RETURN_NODE
+    RETURN_NODE,
+    BREAK_NODE,
+    CONTINUE_NODE,
+    ATTRS_NODE,
+    STRUCT_NODE,
+    OBJECT_NODE
 };
 
 NODE make_ast_node(void);
