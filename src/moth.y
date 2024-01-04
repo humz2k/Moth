@@ -266,6 +266,7 @@ type
     | reference {$$ = make_ref_type($1);}
     | type '$' type {$$ = make_template_type($1,$3);}
     | type '{' array_dims '}' {$$ = make_array_type($1,$3);}
+    | type '{' '}' {$$ = make_array_type($1,0);}
 
 array_dims
     : ':' {$$ = 1;}

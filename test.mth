@@ -1,1 +1,2 @@
-int a = 5 + 5
+def int main():
+    return 0

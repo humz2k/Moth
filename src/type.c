@@ -40,3 +40,27 @@ NODE make_array_type(NODE base, int ndims){
     out->data.type_data.ndims = ndims;
     return out;
 }
+
+/*char* type_to_string(NODE type){
+    assert(type->t == TYPE_NODE);
+
+    switch(type->data.type_data.t){
+        case TY_I1:
+            return "i1";
+        case TY_I8:
+            return "i8";
+        case TY_I16:
+            return "i16";
+        case TY_I32:
+            return "i32";
+        case TY_I64:
+            return "i64";
+        case TY_F16:
+            return "f16";
+        case TY_F32:
+            return "f32";
+        case TY_F64:
+            return "f64";
+    }
+
+}*/

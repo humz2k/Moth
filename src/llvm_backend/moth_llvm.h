@@ -3,6 +3,8 @@
 
 #include "ast.h"
 
+#include "functions_llvm.h"
+
 int compile(void);
 
 #endif
