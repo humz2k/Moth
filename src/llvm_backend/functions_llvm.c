@@ -5,6 +5,8 @@
 #include <string.h>
 #include "gc.h"
 
+LLVMBuilderRef builder;
+
 const char* mangle_function_name(const char* name, NODE_VEC inputs){
 
     int n_inputs = len_node_vec(inputs);
@@ -65,6 +67,12 @@ int generate_function(NODE func){
     struct function_node data = func->data.function_data;
 
     LLVMValueRef func_ref = make_llvm_function(data.id,data.ret_type,data.inputs);
+
+    LLVMBasicBlockRef entry = LLVMAppendBasicBlock(func_ref,"entry");
+
+    builder = LLVMCreateBuilder();
+
+    LLVMPositionBuilderAtEnd(builder,entry);
 
     
 
