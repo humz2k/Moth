@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "parser/ast.h"
 
 NODE make_block(NODE_VEC statements){
     NODE out = make_ast_node();

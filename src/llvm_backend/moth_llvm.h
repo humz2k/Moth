@@ -7,7 +7,7 @@
 #include <llvm-c/Analysis.h>
 #include <llvm-c/BitWriter.h>
 
-#include "ast.h"
+#include "parser/ast.h"
 
 #include "functions_llvm.h"
 

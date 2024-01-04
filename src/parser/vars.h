@@ -2,7 +2,7 @@
 #ifndef _VARS_H_
 #define _VARS_H_
 
-#include "ast_node.h"
+#include "parser/ast_node.h"
 
 struct var_node{
     char* id;

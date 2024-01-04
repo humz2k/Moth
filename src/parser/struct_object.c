@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "parser/ast.h"
 #include <stdlib.h>
 
 NODE make_attrs(NODE_VEC attr_list, NODE_VEC func_list){

@@ -1,7 +1,7 @@
 #ifndef _TEMPLATES_H_
 #define _TEMPLATES_H_
 
-#include "ast_node.h"
+#include "parser/ast_node.h"
 
 struct template_node{
     char* id;

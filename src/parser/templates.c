@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "parser/ast.h"
 
 NODE make_template(char* id, NODE_VEC type_list, NODE_VEC comp_unit_list){
     NODE out = make_ast_node();

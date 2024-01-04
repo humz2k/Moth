@@ -1,7 +1,7 @@
 #ifndef _TYPE_H_
 #define _TYPE_H_
 
-#include "ast_node.h"
+#include "parser/ast_node.h"
 
 enum type_type{
     TY_I1,

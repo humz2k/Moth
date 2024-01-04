@@ -1,7 +1,7 @@
 #ifndef _STRUCT_OBJECT_H_
 #define _STRUCT_OBJECT_H_
 
-#include "ast_node.h"
+#include "parser/ast_node.h"
 
 struct attrs_node{
     NODE_VEC attr_list;

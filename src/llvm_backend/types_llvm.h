@@ -1,7 +1,7 @@
 #ifndef _TYPES_LLVM_H_
 #define _TYPES_LLVM_H_
 
-#include "ast.h"
+#include "parser/ast.h"
 
 #include <llvm-c/Core.h>
 #include <llvm-c/ExecutionEngine.h>

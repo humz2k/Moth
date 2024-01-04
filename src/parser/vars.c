@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "parser/ast.h"
 
 NODE make_var(char* id){
     NODE out = make_ast_node();

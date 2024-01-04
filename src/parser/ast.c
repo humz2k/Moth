@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "parser/ast.h"
 #include "gc.h"
 
 struct ast_node* make_ast_node(void){

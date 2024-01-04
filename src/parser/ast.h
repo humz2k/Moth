@@ -1,33 +1,33 @@
 #ifndef _AST_H_
 #define _AST_H_
 
-#include "ast_node.h"
+#include "parser/ast_node.h"
 
 extern NODE program_start;
 
-#include "constants.h"
+#include "parser/constants.h"
 
-#include "binop.h"
+#include "parser/binop.h"
 
-#include "type.h"
+#include "parser/type.h"
 
-#include "vars.h"
+#include "parser/vars.h"
 
-#include "refs.h"
+#include "parser/refs.h"
 
-#include "functions.h"
+#include "parser/functions.h"
 
-#include "struct_object.h"
+#include "parser/struct_object.h"
 
-#include "block.h"
+#include "parser/block.h"
 
-#include "control_flow.h"
+#include "parser/control_flow.h"
 
-#include "templates.h"
+#include "parser/templates.h"
 
-#include "program.h"
+#include "parser/program.h"
 
-#include "array.h"
+#include "parser/array.h"
 
 union node_data{
     float r;

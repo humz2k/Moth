@@ -1,7 +1,7 @@
 #ifndef _BINOP_H_
 #define _BINOP_H_
 
-#include "ast_node.h"
+#include "parser/ast_node.h"
 
 enum binop_type{
     OP_ADD,OP_SUB,OP_MUL,OP_DIV,

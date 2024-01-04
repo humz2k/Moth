@@ -2,7 +2,7 @@
 #ifndef _REFS_H_
 #define _REFS_H_
 
-#include "ast_node.h"
+#include "parser/ast_node.h"
 
 struct reference_node{
     int ref_base;

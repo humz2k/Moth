@@ -1,7 +1,7 @@
 #ifndef _ARRAY_H_
 #define _ARRAY_H_
 
-#include "ast_node.h"
+#include "parser/ast_node.h"
 
 struct array_initializer_node{
     NODE type;

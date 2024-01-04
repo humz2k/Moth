@@ -1,4 +1,4 @@
-#include "ast_node.h"
+#include "parser/ast_node.h"
 #include "gc.h"
 #include <assert.h>
 

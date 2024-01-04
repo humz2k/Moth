@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "parser/ast.h"
 
 NODE make_ref_base(char* left, char* right){
     NODE out = make_ast_node();

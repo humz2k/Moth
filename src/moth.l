@@ -10,7 +10,7 @@ S           \"(\\.|[^"\\])*\"
 #include <string.h>
 #include <assert.h>
 #include "gc.h"
-#include "ast.h"
+#include "parser/ast.h"
 #include "moth.tab.h"
 
 int yylex(void);

@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "parser/ast.h"
 
 NODE make_base_type(enum type_type t){
     NODE out = make_ast_node();

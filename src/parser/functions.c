@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "parser/ast.h"
 #include <stdlib.h>
 
 NODE make_function_call(NODE func, NODE_VEC args){

@@ -1,7 +1,7 @@
 #ifndef _FUNCTIONS_H_
 #define _FUNCTIONS_H_
 
-#include "ast_node.h"
+#include "parser/ast_node.h"
 
 struct function_call_node{
     NODE func;

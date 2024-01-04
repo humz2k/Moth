@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "parser/ast.h"
 
 NODE make_array_initializer(NODE type, NODE_VEC dims){
     NODE out = make_ast_node();

@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "parser/ast.h"
 
 NODE make_binop(NODE left, NODE right, enum binop_type t){
     NODE out = make_ast_node();

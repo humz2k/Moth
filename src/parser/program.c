@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "parser/ast.h"
 #include <stdlib.h>
 #include <assert.h>
 
