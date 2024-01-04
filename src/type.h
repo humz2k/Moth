@@ -39,6 +39,4 @@ NODE make_ref_type(NODE ref);
 
 NODE make_array_type(NODE base, int ndims);
 
-//char* type_to_string(NODE type);
-
 #endif

@@ -1,2 +1,2 @@
-def int main():
+def int test(float a, double b):
     return 0

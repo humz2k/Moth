@@ -5,4 +5,6 @@
 
 int generate_function(NODE func);
 
+LLVMTypeRef get_function_type(NODE ret_type, NODE_VEC inputs);
+
 #endif
