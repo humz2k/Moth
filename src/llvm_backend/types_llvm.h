@@ -15,4 +15,8 @@ NODE type_of_declaration(NODE decl);
 
 LLVMTypeRef type_to_llvm(NODE type);
 
+int types_equal(NODE left, NODE right);
+
+NODE type_of_expr(NODE expr);
+
 #endif

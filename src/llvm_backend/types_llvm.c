@@ -2,6 +2,53 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+int types_equal(NODE left, NODE right){
+    assert(left->t == TYPE_NODE);
+    assert(right->t == TYPE_NODE);
+
+    struct type_node left_data = left->data.type_data;
+    struct type_node right_data = right->data.type_data;
+
+    if ((left_data.t == TY_I1) ||
+        (left_data.t == TY_I8) ||
+        (left_data.t == TY_I16) ||
+        (left_data.t == TY_I32) ||
+        (left_data.t == TY_I64) ||
+        (left_data.t == TY_F16) ||
+        (left_data.t == TY_F32) ||
+        (left_data.t == TY_F64) ||
+        (left_data.t == TY_STR) ||
+        (left_data.t == TY_VOID)){
+            return left_data.t == right_data.t;
+        }
+    
+    if (left_data.t == TY_ARRAY){
+        if (right_data.t != TY_ARRAY)return 0;
+        if (!types_equal(left_data.base,right_data.base))return 0;
+        if (left_data.ndims == 0)return 1;
+        if (right_data.ndims == 0)return 1;
+        if (left_data.ndims == right_data.ndims)return 1;
+        return 0;
+    }
+
+    if (left_data.t == TY_USER){
+        if (right_data.t != TY_USER)return 0;
+        if (strcmp(left_data.id,right_data.id) == 0)return 1;
+        return 0;
+    }
+
+    if (left_data.t == TY_TEMPLATE){
+        if (right_data.t != TY_TEMPLATE)return 0;
+        return types_equal(right_data.base,left_data.base)
+                && types_equal(left_data.specialize,right_data.specialize);
+    }
+    
+    //MISSING REFERNCE TYPES
+
+    return 0;
+}
 
 NODE type_of_declaration(NODE decl){
     assert(decl->t == DECLARATION_NODE);

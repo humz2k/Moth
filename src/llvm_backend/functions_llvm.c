@@ -62,7 +62,14 @@ LLVMValueRef generate_return(NODE ret){
     struct return_node data = ret->data.return_data;
 
     if(data.expr == NULL){
+        if (!types_equal(current_function_return_type,make_base_type(TY_VOID))){
+            throw_error("Invalid return type\n");
+        }
         return LLVMBuildRetVoid(builder);
+    }
+
+    if (!types_equal(current_function_return_type,type_of_expr(data.expr))){
+        throw_error("Invalid return type\n");
     }
 
     LLVMValueRef out = generate_expr(data.expr);
