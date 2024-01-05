@@ -64,7 +64,7 @@ static inline struct table_entry_t* make_table_entry(void){
 }
 
 table copy_table(table in){
-    table out = (table) GC_MALLOC(sizeof(table));
+    table out = (table) GC_MALLOC(sizeof(struct table_struct));
     for (int i = 0; i < TABLE_SIZE; i++){
         out->entries[i] = copy_table_entry(in->entries[i]);
     }

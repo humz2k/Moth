@@ -3,36 +3,50 @@
 #include "llvm_backend/moth_llvm.h"
 
 #include "llvm_backend/tables/int_table.h"
+
+void print_entry(int_table table, const char* key){
+    int test;
+    if (!get_int_table(table,key,&test)){
+        printf("Couldn't find %s\n",key);
+    } else{
+        printf("%s = %d\n",key,test);
+    }
+}
+
 int test_int_table(void){
 
     int_table table = make_int_table();
 
     insert_int_table(table,"HI!",1023);
-    insert_int_table(table,"a",2);
+    update_int_table(table,"a",2);
 
-    int test;
-    if (!get_int_table(table,"HI!",&test)){
-        printf("Couldn't find HI!\n");
-    }
-    printf("HI! = %d\n",test);
-
-    if (!get_int_table(table,"a",&test)){
-        printf("Couldn't find a\n");
-    }
-    printf("a = %d\n",test);
+    print_entry(table,"HI!");
+    print_entry(table,"a");
 
     if(!delete_int_table(table,"HI!")){
         printf("couldn't delete HI!\n");
     }
 
-    if (!get_int_table(table,"HI!",&test)){
-        printf("Couldn't find HI!\n");
-    }
+    print_entry(table,"HI!");
+    print_entry(table,"a");
+    
+    update_int_table(table,"a",10);
 
-    if (!get_int_table(table,"a",&test)){
-        printf("Couldn't find a\n");
-    }
-    printf("a = %d\n",test);
+    print_entry(table,"HI!");
+    print_entry(table,"a");
+
+    int_table new_table = copy_int_table(table);
+
+    print_entry(new_table,"HI!");
+    print_entry(new_table,"a");
+
+    update_int_table(table,"a",5);
+
+    print_entry(table,"HI!");
+    print_entry(table,"a");
+
+    print_entry(new_table,"HI!");
+    print_entry(new_table,"a");
 
     return 1;
 
