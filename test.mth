@@ -1,2 +1,2 @@
-def int test(float a, double b):
+def long test(float a, double b):
     return 0
