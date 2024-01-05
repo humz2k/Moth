@@ -81,4 +81,6 @@ int test_list(void){
     }
 
     TEST_TRUE(correct_get);
+
+    return 1;
 }

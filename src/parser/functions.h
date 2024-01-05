@@ -26,10 +26,13 @@ struct function_node{
     NODE block;
     NODE ret_type;
     NODE specialize;
+    NODE_VEC modifiers;
 };
 
-NODE make_function(char* id, NODE_VEC inputs, NODE block, NODE ret_type);
+NODE make_function(char* id, NODE_VEC inputs, NODE block, NODE ret_type, NODE_VEC modifiers);
 
-NODE make_function_template(char* id, NODE_VEC inputs, NODE block, NODE ret_type, NODE specialize);
+NODE make_function_template(char* id, NODE_VEC inputs, NODE block, NODE ret_type, NODE_VEC modifiers, NODE specialize);
+
+NODE make_modifier(char* id);
 
 #endif

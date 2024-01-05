@@ -14,4 +14,11 @@ struct sinop_node{
 
 NODE make_sinop(NODE expr, enum sinop_type t);
 
+struct cast_node{
+    NODE expr;
+    NODE type;
+};
+
+NODE make_cast(NODE type, NODE expr);
+
 #endif

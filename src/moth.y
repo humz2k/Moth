@@ -22,7 +22,7 @@ void yyerror(char const *s);
 %token WITH GENERIC
 
 %token LE GE EQ NEQ LAND LOR
-%token IF ELSE ELIF FOR IN WHILE RETURN BREAK CONTINUE
+%token IF ELSE ELIF FOR IN WHILE RETURN BREAK CONTINUE AS
 %token PLUS_EQ MINUS_EQ POW_EQ MUL_EQ FLOOR_EQ DIV_EQ MOD_EQ LSHIFT_EQ RSHIFT_EQ BITNOT_EQ LSHIFT RSHIFT
 
 %token INDENT DEINDENT
@@ -50,6 +50,8 @@ void yyerror(char const *s);
 %right ')'
 
 %left '('
+
+%left '.'
 
 %type <n> constant
 %type <n> expression
@@ -83,6 +85,9 @@ void yyerror(char const *s);
 %type <n> array_initializer
 %type <n> print
 %type <n> sinop
+%type <n> modifier
+%type <n> cast
+%type <n> type_ref
 %type <v> expression_list
 %type <v> attr_list
 %type <v> function_list
@@ -91,6 +96,7 @@ void yyerror(char const *s);
 %type <v> declaration_list
 %type <v> type_list
 %type <v> comp_unit_list
+%type <v> modifier_list
 %type <i> array_dims
 
 %union {
@@ -133,10 +139,19 @@ type_list
     | type_list ',' type {$$ = append_node_vec($1,$3);}
 
 function
-    : DEF type ID '(' ')' ':' NEWLN block {$$ = make_function($3,make_empty_node_vec(),$8,$2);}
-    | DEF type ID '(' declaration_list ')' ':' NEWLN block {$$ = make_function($3,$5,$9,$2);}
-    | DEF type ID '$' type '(' ')' ':' NEWLN block {$$ = make_function_template($3,make_empty_node_vec(),$10,$2,$5);}
-    | DEF type ID '$' type '(' declaration_list ')' ':' NEWLN block {$$ = make_function_template($3,$7,$11,$2,$5);}
+    : DEF type ID '(' ')' ':' NEWLN block {$$ = make_function($3,make_empty_node_vec(),$8,$2,make_empty_node_vec());}
+    | DEF type ID '(' declaration_list ')' ':' NEWLN block {$$ = make_function($3,$5,$9,$2,make_empty_node_vec());}
+    | modifier_list DEF type ID '(' ')' ':' NEWLN block {$$ = make_function($4,make_empty_node_vec(),$9,$3,$1);}
+    | modifier_list DEF type ID '(' declaration_list ')' ':' NEWLN block {$$ = make_function($4,$6,$10,$3,$1);}
+    //| DEF type ID '$' type '(' ')' ':' NEWLN block {$$ = make_function_template($3,make_empty_node_vec(),$10,$2,$5);}
+    //| DEF type ID '$' type '(' declaration_list ')' ':' NEWLN block {$$ = make_function_template($3,$7,$11,$2,$5);}
+
+modifier
+    : '@' ID NEWLN {$$ = make_modifier($2);}
+
+modifier_list
+    : modifier {$$ = make_node_vec($1);}
+    | modifier_list modifier {$$ = append_node_vec($1,$2);}
 
 declaration_list
     : declaration {$$ = make_node_vec($1);}
@@ -246,8 +261,13 @@ binop
     | expression '>' expression {$$ = make_binop($1,$3,OP_GT);}
 
 reference
-    : ID '.' ID {$$ = make_ref_base($1,$3);}
-    | reference '.' ID {$$ = make_ref_ref($1,$3);}
+    : expression '.' ID {$$ = make_ref_ref($1,$3);}
+    //: expression '.' ID {$$ = make_ast_node();}//{$$ = make_ref_base($1,$3);}
+    //| reference '.' ID {$$ = make_ref_ref($1,$3);}
+
+type_ref
+    : ID '.' ID {$$ = make_ref_base($1,$3);} 
+    | type_ref '.' ID {$$ = make_ref_ref($1,$3);}
 
 variable
     : ID {$$ = make_var($1);}
@@ -264,7 +284,8 @@ type
     | STR {$$ = make_base_type(TY_STR);}
     | ID {$$ = make_user_type($1);}
     | VOID {$$ = make_base_type(TY_VOID);}
-    | reference {$$ = make_ref_type($1);}
+    | type_ref {$$ = make_ref_type($1);}
+    //| reference {$$ = make_ref_type($1);}
     | type '$' type {$$ = make_template_type($1,$3);}
     | type '{' array_dims '}' {$$ = make_array_type($1,$3);}
     | type '{' '}' {$$ = make_array_type($1,0);}
@@ -291,6 +312,10 @@ expression
     | index {$$ = $1;}
     | array_initializer {$$ = $1;}
     | sinop {$$ = $1;}
+    | cast {$$ = $1;}
+
+cast
+    : expression '.' AS '(' type ')' {$$ = make_cast($5,$1);}
 
 sinop
     : '-' expression {$$ = make_sinop($2,OP_NEG);}

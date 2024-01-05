@@ -36,7 +36,9 @@ enum node_type{
     PROGRAM_NODE,
     ARRAY_INITIALIZER_NODE,
     PRINT_NODE,
-    SINOP_NODE
+    SINOP_NODE,
+    MODIFIER_NODE,
+    CAST_NODE
 };
 
 NODE make_ast_node(void);

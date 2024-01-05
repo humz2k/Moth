@@ -60,6 +60,7 @@ union node_data{
     struct array_initializer_node array_initializer_data;
     struct print_node print_data;
     struct sinop_node sinop_data;
+    struct cast_node cast_data;
 };
 
 struct ast_node{
@@ -68,6 +69,6 @@ struct ast_node{
     union node_data data;
 };
 
-NODE get_type_of_expr(NODE expr);
+//NODE get_type_of_expr(NODE expr);
 
 #endif

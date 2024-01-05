@@ -140,6 +140,7 @@ void set_indent_level(int nspaces) {
 ","             { RETURN_TOKEN(','); }
 "."             { RETURN_TOKEN('.'); }
 "$"             { RETURN_TOKEN('$'); }
+"@"             { RETURN_TOKEN('@'); }
 
 "True"          { yylval.i = 1;  RETURN_TOKEN_ARGS(BOOL,"<%d>",yylval.i); }
 "False"         { yylval.i = 0;  RETURN_TOKEN_ARGS(BOOL,"<%d>",yylval.i); }
@@ -149,6 +150,7 @@ void set_indent_level(int nspaces) {
 "elif"          { RETURN_TOKEN(ELIF); }
 "for"           { RETURN_TOKEN(FOR); }
 "in"            { RETURN_TOKEN(IN); }
+"as"            { RETURN_TOKEN(AS); }
 "while"         { RETURN_TOKEN(WHILE); }
 "return"        { RETURN_TOKEN(RETURN); }
 "break"         { RETURN_TOKEN(BREAK); }

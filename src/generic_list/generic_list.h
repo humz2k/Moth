@@ -36,7 +36,7 @@ list make_list(void){
     out->first = NULL;
 
     return out;
-};
+}
 
 static inline struct list_entry_t* make_list_entry(void){
     struct list_entry_t* out;
