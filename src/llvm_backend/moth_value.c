@@ -5,20 +5,23 @@
 #include <string.h>
 #include "error.h"
 #include <assert.h>
+#include "tables_llvm.h"
 
 struct moth_llvm_value{
+    VALUE_TYPE t;
     MOTH_TYPE type;
     LLVMValueRef value;
     enum scope_t scope;
     int modifiable;
     char* moth_file;
+    MOTH_VALUE_table table;
 };
 
-#define check_val(val) { assert(val != NULL); assert(val->type != NULL); assert(val->moth_file != NULL); assert((val->modifiable == 0) || (val->modifiable == 1)); }
+#define check_val(val) { assert(val != NULL); assert(val->moth_file != NULL); assert((val->modifiable == 0) || (val->modifiable == 1)); }
 
-MOTH_TYPE get_type_of_value(MOTH_VALUE val){
+VALUE_TYPE get_type_of_value(MOTH_VALUE val){
     check_val(val);
-    return val->type;
+    return val->t;
 }
 
 LLVMValueRef get_llvm_value_of_value(MOTH_VALUE val){

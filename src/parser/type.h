@@ -17,7 +17,8 @@ enum type_type{
     TY_TEMPLATE,
     TY_USER,
     TY_REF,
-    TY_ARRAY
+    TY_ARRAY,
+    TY_FUNC
 };
 
 struct type_node{

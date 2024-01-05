@@ -15,4 +15,8 @@
 #include "generic_list/generic_list_header.h"
 #undef list_t
 
+#define list_t MOTH_TYPE
+#include "generic_list/generic_list_header.h"
+#undef list_t
+
 #endif
