@@ -23,3 +23,5 @@
 #define delete combine(table,delete)
 
 #define update combine(table,update)
+
+#define exists combine(table,exists)

@@ -3,6 +3,8 @@
 
 #include "parser/ast_node.h"
 
+NODE get_program(void);
+
 struct program_node{
     NODE_VEC comp_unit_list;
 };

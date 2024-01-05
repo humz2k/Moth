@@ -231,6 +231,11 @@ int update(table my_table, const char* key, table_t val){
     return 1;
 }
 
+int exists(table my_table, const char* key){
+    table_t tmp;
+    return get(my_table,key,&tmp);
+}
+
 #undef make_table
 #undef table_struct
 #undef table_entry_t
@@ -242,3 +247,4 @@ int update(table my_table, const char* key, table_t val){
 #undef delete
 #undef update
 #undef TABLE_SIZE
+#undef exists

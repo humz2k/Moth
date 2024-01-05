@@ -24,6 +24,9 @@ int delete(table my_table, const char* key);
 //returns true on success. Either rewrites or creates new
 int update(table my_table, const char* key, table_t val);
 
+//returns true if key exists
+int exists(table my_table, const char* key);
+
 #undef make_table
 #undef table_struct
 #undef table_entry_t
@@ -34,3 +37,4 @@ int update(table my_table, const char* key, table_t val);
 #undef get
 #undef delete
 #undef update
+#undef exists

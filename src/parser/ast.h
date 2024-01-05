@@ -3,7 +3,7 @@
 
 #include "parser/ast_node.h"
 
-extern NODE program_start;
+//extern NODE program_start;
 extern char* current_moth_file;
 
 #include "parser/constants.h"

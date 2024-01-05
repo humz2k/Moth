@@ -18,7 +18,8 @@ enum type_type{
     TY_USER,
     TY_REF,
     TY_ARRAY,
-    TY_FUNC
+    TY_FUNC,
+    TY_MOTH_FILE
 };
 
 struct type_node{

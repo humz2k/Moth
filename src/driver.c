@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-//#include "llvm_backend/moth_llvm.h"
+#include "llvm_backend/moth_llvm.h"
 #include "gc.h"
 #include <string.h>
 #include "error.h"
@@ -36,5 +36,5 @@ int main(int argc, char** argv){
     yyparse();
     fclose(fp);
 
-    return 0;//compile();
+    return compile();
 }
