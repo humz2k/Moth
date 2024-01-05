@@ -1,6 +1,8 @@
 #include "parser/ast_node.h"
 #include "gc.h"
 #include <assert.h>
+#include "simple_alloc.h"
+#include "error.h"
 
 #define NODES_PER_BLOCK 20
 
@@ -14,7 +16,8 @@ struct ast_node_vector_block{
 
 //makes empty block
 static struct ast_node_vector_block* make_ast_node_vector_block(void){
-    struct ast_node_vector_block* out = GC_MALLOC(sizeof(struct ast_node_vector_block));
+    struct ast_node_vector_block* out;
+    VERIFY_ALLOC(out = alloc_struct_ptr(struct ast_node_vector_block));
     out->next = NULL;
     out->used = 0;
     return out;

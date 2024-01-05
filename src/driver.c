@@ -1,8 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "llvm_backend/moth_llvm.h"
+//#include "llvm_backend/moth_llvm.h"
 #include "gc.h"
 #include <string.h>
+#include "error.h"
 
 int yyparse(void);
 int yylex(void);
@@ -18,7 +19,9 @@ char* split_filename(const char* name){
 
 int main(int argc, char** argv){
 
-    if (argc == 1)return -1;
+    if (argc == 1){
+        return -1;
+    }
 
     FILE* fp = fopen(argv[1], "r");
     
@@ -28,5 +31,5 @@ int main(int argc, char** argv){
     yyparse();
     fclose(fp);
 
-    return compile();
+    return 0;//compile();
 }

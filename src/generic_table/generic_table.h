@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include "simple_alloc.h"
+#include "error.h"
 
 #ifndef table_t
 #define table_t int
@@ -41,7 +43,8 @@ struct table_struct{
 typedef struct table_struct* table;
 
 table make_table(void){
-    table out = (struct table_struct*) GC_MALLOC(sizeof(struct table_struct));
+    table out;
+    VERIFY_ALLOC(out = alloc_struct_ptr(struct table_struct));
     for (int i = 0; i < TABLE_SIZE; i++){
         out->entries[i] = NULL;
     }
@@ -52,7 +55,8 @@ static inline struct table_entry_t* copy_table_entry(struct table_entry_t* in){
     
     if (in == NULL)return NULL;
 
-    struct table_entry_t* out = (struct table_entry_t*)GC_MALLOC(sizeof(struct table_entry_t));
+    struct table_entry_t* out;
+    VERIFY_ALLOC(out = alloc_struct_ptr(struct table_entry_t));
     out->key = in->key;
     out->used = in->used;
     out->value = in->value;
@@ -63,14 +67,17 @@ static inline struct table_entry_t* copy_table_entry(struct table_entry_t* in){
 }
 
 static inline struct table_entry_t* make_table_entry(void){
-    struct table_entry_t* out = (struct table_entry_t*)GC_MALLOC(sizeof(struct table_entry_t));
+    struct table_entry_t* out;
+    VERIFY_ALLOC(out = alloc_struct_ptr(struct table_entry_t));
     out->used = 0;
     out->next = NULL;
     return out;
 }
 
 table copy_table(table in){
-    table out = (table) GC_MALLOC(sizeof(struct table_struct));
+    assert(in != NULL);
+    table out;
+    VERIFY_ALLOC(out = alloc_struct_ptr(struct table_struct));
     for (int i = 0; i < TABLE_SIZE; i++){
         out->entries[i] = copy_table_entry(in->entries[i]);
     }
@@ -79,6 +86,9 @@ table copy_table(table in){
 
 //return true on success
 int insert(table my_table, const char* key, table_t val){
+
+    assert(my_table != NULL);
+
     int idx = hash_function(key);
     
     if (my_table->entries[idx] == NULL){
@@ -123,6 +133,9 @@ int insert(table my_table, const char* key, table_t val){
 
 //returns true on success
 int get(table my_table, const char* key, table_t* out){
+
+    assert(my_table != NULL);
+    
     int idx = hash_function(key);
 
     struct table_entry_t* cur = my_table->entries[idx];
@@ -141,6 +154,9 @@ int get(table my_table, const char* key, table_t* out){
 
 //return true on success
 int delete(table my_table, const char* key){
+
+    assert(my_table != NULL);
+
     int idx = hash_function(key);
 
     struct table_entry_t* cur = my_table->entries[idx];
@@ -160,6 +176,9 @@ int delete(table my_table, const char* key){
 
 //return true on success
 int update(table my_table, const char* key, table_t val){
+
+    assert(my_table != NULL);
+
     int idx = hash_function(key);
 
     //if entry is NULL, we know it cannot exist so we make new entry
