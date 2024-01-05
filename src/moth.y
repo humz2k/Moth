@@ -82,6 +82,7 @@ void yyerror(char const *s);
 %type <n> program
 %type <n> array_initializer
 %type <n> print
+%type <n> sinop
 %type <v> expression_list
 %type <v> attr_list
 %type <v> function_list
@@ -289,6 +290,12 @@ expression
     | func_call {$$ = $1;}
     | index {$$ = $1;}
     | array_initializer {$$ = $1;}
+    | sinop {$$ = $1;}
+
+sinop
+    : '-' expression {$$ = make_sinop($2,OP_NEG);}
+    | '!' expression {$$ = make_sinop($2,OP_LOGICAL_NOT);}
+    | '~' expression {$$ = make_sinop($2,OP_BIT_NOT);}
 
 assign
     : expression '=' expression {$$ = make_assign($1,$3);}

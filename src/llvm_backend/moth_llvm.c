@@ -38,9 +38,35 @@ int compile(void){
 
     char *moduleStr = LLVMPrintModuleToString(mod);
     printf("%s\n", moduleStr);
-
     LLVMDisposeMessage(moduleStr);
-    LLVMDisposeModule(mod);
+
+    char *error = NULL;
+    LLVMVerifyModule(mod, LLVMAbortProcessAction, &error);
+    LLVMDisposeMessage(error);
+
+
+    //JIT STUFF
+
+    LLVMExecutionEngineRef engine;
+    error = NULL;
+    LLVMLinkInMCJIT();
+    LLVMInitializeNativeTarget();
+    LLVMInitializeNativeAsmPrinter();
+    if (LLVMCreateExecutionEngineForModule(&engine, mod, &error) != 0) {
+        fprintf(stderr, "failed to create execution engine\n");
+        abort();
+    }
+    if (error) {
+        fprintf(stderr, "error: %s\n", error);
+        LLVMDisposeMessage(error);
+        exit(EXIT_FAILURE);
+    }
+
+    double (*sum_func)(int, int) = (double (*)(int, int))LLVMGetFunctionAddress(engine, "test_i32_i32_");
+    printf("%g\n", sum_func(0,0));
+
+    LLVMDisposeExecutionEngine(engine);
+    //LLVMDisposeModule(mod);
 
     return 0;
 }

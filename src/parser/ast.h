@@ -29,6 +29,8 @@ extern NODE program_start;
 
 #include "parser/array.h"
 
+#include "parser/sinop.h"
+
 union node_data{
     float r;
     int i;
@@ -56,6 +58,7 @@ union node_data{
     struct program_node program_data;
     struct array_initializer_node array_initializer_data;
     struct print_node print_data;
+    struct sinop_node sinop_data;
 };
 
 struct ast_node{

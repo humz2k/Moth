@@ -140,5 +140,7 @@ int generate_function(NODE func){
 
     local_variables = NULL;
 
+    //LLVMDisposeBuilder(builder);
+
     return 0;
 }
