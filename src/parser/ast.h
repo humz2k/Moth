@@ -4,6 +4,7 @@
 #include "parser/ast_node.h"
 
 extern NODE program_start;
+extern char* current_moth_file;
 
 #include "parser/constants.h"
 
@@ -63,6 +64,7 @@ union node_data{
 
 struct ast_node{
     enum node_type t;
+    char* moth_file;
     union node_data data;
 };
 
