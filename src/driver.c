@@ -4,6 +4,7 @@
 #include "gc.h"
 #include <string.h>
 #include "error.h"
+#include "generic_list/test_list.h"
 
 int yyparse(void);
 int yylex(void);
@@ -15,6 +16,10 @@ char* split_filename(const char* name){
     char* out = GC_MALLOC(sizeof(char) * (strlen(name) + 1));
     strcpy(out,name);
     return strtok(out,".");
+}
+
+void run_tests(void){
+    test_list();
 }
 
 int main(int argc, char** argv){

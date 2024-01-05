@@ -19,6 +19,8 @@
 #define INFO_COL KBLU
 #define STR_COL KGRN
 
+#define TEST_TRUE(line) ({printf(" -- %sTesting%s <%s%s%s>: ",KBLU,KNRM,KYEL,#line,KNRM); int _TEST_VAR_ = (line) == 1; if (_TEST_VAR_){printf("%spass%s\n",KGRN,KNRM);}else{printf("%sfail%s\n",KRED,KNRM);} _TEST_VAR_;})
+
 #define PANIC(...) printf(" -- %sPANIC%s :: <%s",PANIC_COL,KNRM,ERR_COL);printf(__VA_ARGS__);printf("%s> in %sfunc%s: %s%s%s, %sfile%s: %s%s%s, %sline%s: %s%d%s)",KNRM,INFO_COL,KNRM,STR_COL,__func__,KNRM,INFO_COL,KNRM,STR_COL, __FILE__,KNRM,INFO_COL,KNRM,STR_COL, __LINE__,KNRM);printf("\n");exit(1);
 
 #define PANIC_GC() PANIC("GC_MALLOC FAILED!");

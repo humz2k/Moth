@@ -34,4 +34,3 @@ int update(table my_table, const char* key, table_t val);
 #undef get
 #undef delete
 #undef update
-

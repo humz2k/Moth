@@ -18,6 +18,16 @@
 
 #define make_list_entry combine(list_entry_t,make)
 
+#define append_to_list_entry combine(list_entry_t,append_to)
+
+#define get_from_list_entry combine(list_entry_t,get_from)
+
+#define pop_from_list_entry combine(list_entry_t,pop_from)
+
+#define pop_and_shift_list_entry combine(list_entry_t,pop_and_shift)
+
+#define shift_list_entry combine(list_entry_t,shift)
+
 #define get combine(list,get)
 
 #define pop combine(list,pop)

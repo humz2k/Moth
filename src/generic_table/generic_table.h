@@ -242,4 +242,3 @@ int update(table my_table, const char* key, table_t val){
 #undef delete
 #undef update
 #undef TABLE_SIZE
-

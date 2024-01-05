@@ -40,6 +40,10 @@ NODE_VEC make_node_vec(NODE elem){
 
 //adds a node to a block
 static void add_node_to_block(struct ast_node_vector_block* blk, NODE elem){
+
+    assert(blk != NULL);
+    assert(elem != NULL);
+    
     //if we have space in this block
     if (blk->used < NODES_PER_BLOCK){
         blk->nodes[blk->used] = elem;
@@ -77,6 +81,9 @@ int len_node_vec(NODE_VEC lst){
 
 //recrusively find the index
 static NODE get_node_vec_block_elem(struct ast_node_vector_block* blk, int idx){
+    
+    assert(blk != NULL);
+
     assert(idx >= 0);
 
     if (idx < blk->used){
