@@ -7,4 +7,8 @@
 #include <llvm-c/Analysis.h>
 #include <llvm-c/BitWriter.h>
 
+#define table_t LLVMValueRef
+#include "generic_table/generic_table_header.h"
+#undef table_t
+
 #endif

@@ -1,4 +1,3 @@
-#include "tables.h"
 #include "gc.h"
 #include <assert.h>
 #include <stdlib.h>
@@ -8,7 +7,9 @@
 #define table_t int
 #endif
 
+#ifndef TABLE_SIZE
 #define TABLE_SIZE 50000
+#endif
 
 #include "table_defs.h"
 
@@ -216,4 +217,5 @@ int update(table my_table, const char* key, table_t val){
 #undef get
 #undef delete
 #undef update
+#undef TABLE_SIZE
 
