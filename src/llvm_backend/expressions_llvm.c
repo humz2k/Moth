@@ -17,6 +17,8 @@ LLVMValueRef generate_f_const(NODE f_const){
     return out;
 }
 
+//This should probably return a moth_value instead of LLVMValueRef
+
 LLVMValueRef generate_expr(NODE expr){
     switch(expr->t){
         case RETURN_NODE:
