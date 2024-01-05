@@ -53,7 +53,9 @@ int find_in_moth_file(MOTH_VALUE moth_file, const char* name, MOTH_VALUE* out){
     return get_MOTH_VALUE_table(get_table(moth_file),name,out);
 }
 
-VALUE_TYPE get_type_of_value(MOTH_VALUE val){
+
+
+/*VALUE_TYPE get_type_of_value(MOTH_VALUE val){
     check_val(val);
     return val->t;
 }
@@ -79,4 +81,4 @@ int value_is_file_scope(MOTH_VALUE val){
 int value_is_modifiable(MOTH_VALUE val){
     check_val(val);
     return val->modifiable;
-}
+}*/

@@ -7,6 +7,8 @@
 
 #include "state_llvm.h"
 
+#include "moth_ops.h"
+
 int compile(void);
 
 #endif

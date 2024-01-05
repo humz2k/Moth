@@ -35,6 +35,4 @@ int update_moth_file(MOTH_VALUE moth_file, const char* name, MOTH_VALUE value);
 
 int find_in_moth_file(MOTH_VALUE moth_file, const char* name, MOTH_VALUE* out);
 
-MOTH_VALUE eval(NODE expr);
-
 #endif

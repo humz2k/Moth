@@ -15,6 +15,15 @@ int initialize_llvm_state(void){
     return 1;
 }
 
+MOTH_VALUE get_active_moth_file(void){
+    return active_moth_file;
+}
+
+int set_active_moth_file(MOTH_VALUE moth_file){
+    active_moth_file = moth_file;
+    return 1;
+}
+
 int create_new_moth_file(const char* name){
     assert(moth_file_table != NULL);
     if (exists_MOTH_VALUE_table(moth_file_table,name)){
