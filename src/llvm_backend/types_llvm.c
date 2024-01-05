@@ -1,9 +1,27 @@
 #include "types_llvm.h"
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 NODE type_of_declaration(NODE decl){
     assert(decl->t == DECLARATION_NODE);
     return decl->data.declaration_data.type;
+}
+
+NODE type_of_expr(NODE expr){
+    switch(expr->t){
+        case TYPE_NODE:
+            assert(1 == 0);
+            return NULL;
+        case REAL_CONSTANT:
+            return make_base_type(TY_F64);
+        case BOOL_CONSTANT:
+            return make_base_type(TY_I1);
+        case INTEGER_CONSTANT:
+            return make_base_type(TY_I64);
+        case STRING_CONSTANT:
+            return make_base_type(TY_STR);
+    }
 }
 
 LLVMTypeRef type_to_llvm(NODE type){

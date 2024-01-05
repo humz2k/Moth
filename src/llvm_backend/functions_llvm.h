@@ -15,12 +15,6 @@ int generate_function(NODE func);
 
 LLVMTypeRef get_function_type(NODE ret_type, NODE_VEC inputs);
 
-const char* get_unused_var_name(void);
-
-extern LLVMBuilderRef builder;
-
-extern LLVMValueRef_table local_variables;
-
 const char* mangle_function_name(const char* name, NODE_VEC inputs);
 
 LLVMTypeRef get_function_type(NODE type, NODE_VEC inputs);

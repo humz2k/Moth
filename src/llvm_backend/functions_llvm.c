@@ -6,23 +6,6 @@
 #include "gc.h"
 #include "tables/tables_llvm.h"
 
-int n_vars;
-
-void reset_var_count(void){
-    n_vars = 0;
-}
-
-const char* get_unused_var_name(void){
-    int len = (n_vars/10) + 3;
-    char* out = GC_MALLOC(sizeof(char) * len);
-    sprintf(out,"%d",len);
-    return out;
-}
-
-LLVMBuilderRef builder;
-
-LLVMValueRef_table local_variables;
-
 const char* mangle_function_name(const char* name, NODE_VEC inputs){
 
     int n_inputs = len_node_vec(inputs);
@@ -107,15 +90,20 @@ int generate_block(NODE block){
 
 int generate_function(NODE func){
 
+    //allows us to get unique variable names
     reset_var_count();
 
-    printf("GENERATING FUNCTION!\n");
-
+    //sanity check
     assert(func->t == FUNCTION_NODE);
 
+    //The data from this function
     struct function_node data = func->data.function_data;
 
+    //making our function
     LLVMValueRef func_ref = make_llvm_function(data.id,data.ret_type,data.inputs);
+
+    //storing the return type for later
+    current_function_return_type = data.ret_type;
 
     LLVMBasicBlockRef entry = LLVMAppendBasicBlock(func_ref,"entry");
 
@@ -139,8 +127,7 @@ int generate_function(NODE func){
     generate_block(data.block);
 
     local_variables = NULL;
-
-    //LLVMDisposeBuilder(builder);
+    current_function_return_type = NULL;
 
     return 0;
 }

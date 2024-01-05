@@ -66,4 +66,6 @@ struct ast_node{
     union node_data data;
 };
 
+NODE get_type_of_expr(NODE expr);
+
 #endif

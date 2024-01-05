@@ -17,6 +17,8 @@
 
 #include "expressions_llvm.h"
 
+#include "state_llvm.h"
+
 extern LLVMModuleRef mod;
 
 int compile(void);
