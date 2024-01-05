@@ -7,18 +7,11 @@
 #include <llvm-c/Analysis.h>
 #include <llvm-c/BitWriter.h>
 #include "parser/ast.h"
+#include "llvm_backend/moth_llvm.h"
 
 //#include "../values_llvm.h"
 
-#define list_t LLVMValueRef
-#include "generic_list/generic_list_header.h"
-#undef list_t
-
-#define list_t LLVMTypeRef
-#include "generic_list/generic_list_header.h"
-#undef list_t
-
-#define list_t NODE
+#define list_t MOTH_FIELD
 #include "generic_list/generic_list_header.h"
 #undef list_t
 
