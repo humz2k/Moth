@@ -4,8 +4,11 @@
 #include <assert.h>
 #include <string.h>
 #include "gc.h"
+#include "tables/tables_llvm.h"
 
 LLVMBuilderRef builder;
+
+LLVMValueRef_table local_variables;
 
 const char* mangle_function_name(const char* name, NODE_VEC inputs){
 
@@ -74,7 +77,18 @@ int generate_function(NODE func){
 
     LLVMPositionBuilderAtEnd(builder,entry);
 
-    
+    local_variables = make_LLVMValueRef_table();
+
+    int n_inputs = len_node_vec(data.inputs);
+
+    for (int i = 0; i < n_inputs; i++){
+        NODE inp = get_node_vec_elem(data.inputs,i);
+        assert(inp->t == DECLARATION_NODE);
+        const char* var_name = var_to_string(inp->data.declaration_data.var);
+        insert_LLVMValueRef_table(local_variables,var_name,LLVMGetParam(func_ref,i));
+    }
+
+    local_variables = NULL;
 
     return 0;
 }

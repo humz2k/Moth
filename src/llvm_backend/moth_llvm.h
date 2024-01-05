@@ -13,6 +13,8 @@
 
 #include "types_llvm.h"
 
+#include "variables_llvm.h"
+
 extern LLVMModuleRef mod;
 
 int compile(void);
