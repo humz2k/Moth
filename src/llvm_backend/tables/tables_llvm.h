@@ -11,4 +11,8 @@
 #include "generic_table/generic_table_header.h"
 #undef table_t
 
+#define table_t LLVMTypeRef
+#include "generic_table/generic_table_header.h"
+#undef table_t
+
 #endif

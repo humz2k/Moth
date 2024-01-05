@@ -13,6 +13,9 @@
 
 #include "table_defs.h"
 
+#ifndef EMITTED_HASH_FUNCTION
+#define EMITTED_HASH_FUNCTION
+
 static int hash_function(const char* str){
     unsigned long i = 0;
 
@@ -21,6 +24,8 @@ static int hash_function(const char* str){
 
     return i % TABLE_SIZE;
 }
+
+#endif
 
 struct table_entry_t{
     int used;
