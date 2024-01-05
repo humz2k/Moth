@@ -8,7 +8,13 @@
 #include <llvm-c/BitWriter.h>
 #include "parser/ast.h"
 
+#include "../values_llvm.h"
+
 #define table_t LLVMValueRef
+#include "generic_table/generic_table_header.h"
+#undef table_t
+
+#define table_t moth_value
 #include "generic_table/generic_table_header.h"
 #undef table_t
 

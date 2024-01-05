@@ -13,12 +13,18 @@
 
 extern LLVMBuilderRef builder;
 
-extern LLVMValueRef_table local_variables;
+extern moth_value_table local_variables;
+
+extern moth_value_table global_variables;
 
 extern NODE current_function_return_type;
 
 const char* get_unused_var_name(void);
 
 void reset_var_count(void);
+
+moth_value find_variable(NODE var);
+
+moth_value find_variable_from_str(const char* var);
 
 #endif

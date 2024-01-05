@@ -1,4 +1,4 @@
-#include "types_llvm.h"
+#include "moth_llvm.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,6 +6,12 @@
 NODE type_of_declaration(NODE decl){
     assert(decl->t == DECLARATION_NODE);
     return decl->data.declaration_data.type;
+}
+
+NODE type_of_variable(NODE var){
+    assert(var->t == VAR_NODE);
+    moth_value val = find_variable(var);
+    return val.moth_type;
 }
 
 NODE type_of_expr(NODE expr){
@@ -21,6 +27,13 @@ NODE type_of_expr(NODE expr){
             return make_base_type(TY_I64);
         case STRING_CONSTANT:
             return make_base_type(TY_STR);
+        case VAR_NODE:
+            return type_of_variable(expr);
+        case DECLARATION_NODE:
+            return type_of_declaration(expr);
+        
+        default:
+            assert(1 == 0);
     }
 }
 

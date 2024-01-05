@@ -9,6 +9,8 @@
 
 #include "parser/ast.h"
 
+#include "error_llvm.h"
+
 #include "functions_llvm.h"
 
 #include "types_llvm.h"
@@ -18,6 +20,8 @@
 #include "expressions_llvm.h"
 
 #include "state_llvm.h"
+
+#include "values_llvm.h"
 
 extern LLVMModuleRef mod;
 

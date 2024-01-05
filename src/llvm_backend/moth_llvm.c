@@ -26,6 +26,8 @@ int compile(void){
 
     mod = LLVMModuleCreateWithName("my_module");
 
+    global_variables = make_moth_value_table();
+
     NODE_VEC comp_unit_list = program_start->data.program_data.comp_unit_list;
 
     int n_units = len_node_vec(comp_unit_list);

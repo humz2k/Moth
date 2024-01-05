@@ -111,7 +111,7 @@ int generate_function(NODE func){
 
     LLVMPositionBuilderAtEnd(builder,entry);
 
-    local_variables = make_LLVMValueRef_table();
+    local_variables = make_moth_value_table();
 
     int n_inputs = len_node_vec(data.inputs);
 
@@ -121,7 +121,7 @@ int generate_function(NODE func){
         const char* var_name = var_to_string(inp->data.declaration_data.var);
         LLVMValueRef var_ptr = LLVMBuildAlloca(builder,type_to_llvm(type_of_declaration(inp)),get_unused_var_name());
         LLVMBuildStore(builder,LLVMGetParam(func_ref,i),var_ptr);
-        insert_LLVMValueRef_table(local_variables,var_name,var_ptr);
+        insert_moth_value_table(local_variables,var_name,make_moth_value(var_ptr,type_of_declaration(inp)));
     }
 
     generate_block(data.block);

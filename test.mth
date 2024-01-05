@@ -1,2 +1,2 @@
 def double test(int a, int b):
-    return -1.0
+    return 1.0
