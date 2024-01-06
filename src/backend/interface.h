@@ -45,6 +45,7 @@ MOTH_VALUE make_function_type(const char* name, MOTH_VALUE ret_type, MOTH_VALUE_
 
 int in_function(void);
 
+int return_value(MOTH_VALUE val);
 MOTH_VALUE get_current_function(void);
 int finalize_builder_in_function(void);
 MOTH_VALUE init_function(MOTH_VALUE func_ty);
@@ -53,7 +54,15 @@ int init_builder_in_function(MOTH_VALUE func);
 MOTH_VALUE get_argument(MOTH_VALUE func, int idx);
 
 MOTH_VALUE declare_local_variable(const char* name, MOTH_VALUE type);
-int set_local_variable(MOTH_VALUE var, MOTH_VALUE value);
-MOTH_VALUE get_local_variable(MOTH_VALUE var);
+MOTH_VALUE get_value(MOTH_VALUE val);
+int set_variable(MOTH_VALUE var, MOTH_VALUE value);
+
+
+MOTH_VALUE make_long(long int val);
+MOTH_VALUE make_double(double val);
+MOTH_VALUE make_bool(int val);
+
+void set_anon(int val);
+int get_anon(void);
 
 #endif

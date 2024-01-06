@@ -20,6 +20,11 @@ int is_variable(MOTH_VALUE val){
     return out;
 }
 
+int is_local_variable(MOTH_VALUE val){
+    assert(is_variable(val));
+    return val->scope == LOCAL_SCOPE;
+}
+
 MOTH_VALUE declare_local_variable(const char* name, MOTH_VALUE type){
     LLVMBuilderRef builder = get_builder();
 
@@ -43,7 +48,7 @@ MOTH_VALUE declare_local_variable(const char* name, MOTH_VALUE type){
 }
 
 int set_local_variable(MOTH_VALUE var, MOTH_VALUE value){
-    assert(is_variable(var));
+    assert(is_local_variable(var));
     assert(is_constant(value));
     if (types_equal(var->type,value->type)){
         LLVMValueRef var_ptr = var->value;
@@ -56,10 +61,33 @@ int set_local_variable(MOTH_VALUE var, MOTH_VALUE value){
 }
 
 MOTH_VALUE get_local_variable(MOTH_VALUE var){
-    assert(is_variable(var));
+    assert(is_local_variable(var));
     LLVMBuilderRef builder = get_builder();
     MOTH_TYPE type_of_var = var->type;
     LLVMTypeRef llvm_type = moth_type_to_llvm_type(type_of_var);
     LLVMValueRef llvm_value = LLVMBuildLoad2(builder,llvm_type,var->value,get_unused_var_name());
     return wrap_local_constant(llvm_value,type_to_val(type_of_var));
+}
+
+MOTH_VALUE get_value(MOTH_VALUE val){
+    if (is_constant(val)){
+        return val;
+    }
+    if (is_variable(val)){
+        if (is_local_variable(val)){
+            return get_local_variable(val);
+        }
+        NOT_IMPLEMENTED;
+    }
+    PANIC("Tried to get_value of something that isn't a const or variable");
+}
+
+int set_variable(MOTH_VALUE var, MOTH_VALUE value){
+    assert(is_variable(var));
+    assert(is_constant(value));
+    if (is_local_variable(var)){
+        return set_local_variable(var,value);
+    }
+    NOT_IMPLEMENTED;
+    return 1;
 }

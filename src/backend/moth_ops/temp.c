@@ -1,13 +1,9 @@
 #include "backend/backend.h"
 #include "error.h"
 
-MOTH_VALUE eval_constant(NODE constant) NOT_IMPLEMENTED
-
 MOTH_VALUE eval_binop(NODE binop) NOT_IMPLEMENTED
 
 MOTH_VALUE eval_var(NODE var) NOT_IMPLEMENTED
-
-MOTH_VALUE eval_declaration(NODE declaration) NOT_IMPLEMENTED
 
 MOTH_VALUE eval_reference(NODE reference) NOT_IMPLEMENTED
 
@@ -16,8 +12,6 @@ MOTH_VALUE eval_assign(NODE assign) NOT_IMPLEMENTED
 MOTH_VALUE eval_function_call(NODE func_call) NOT_IMPLEMENTED
 
 MOTH_VALUE eval_index(NODE index) NOT_IMPLEMENTED
-
-MOTH_VALUE eval_return(NODE ret) NOT_IMPLEMENTED
 
 MOTH_VALUE eval_break(NODE brk) NOT_IMPLEMENTED
 

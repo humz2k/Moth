@@ -7,5 +7,6 @@
 const char* get_unused_var_name(void);
 
 int is_variable(MOTH_VALUE val);
+int is_local_variable(MOTH_VALUE val);
 
 #endif

@@ -6,7 +6,18 @@
 #include <stdio.h>
 #include "simple_alloc.h"
 
+MOTH_VALUE eval_return(NODE ret){
+    assert(ret != NULL);
+    assert(ret->t == RETURN_NODE);
+    struct return_node data = ret->data.return_data;
+    if (data.expr == NULL)NOT_IMPLEMENTED;
+
+    return_value(eval(data.expr));
+    return NULL;
+}
+
 MOTH_VALUE eval_function(NODE func) {
+    assert(func != NULL);
     assert(func->t == FUNCTION_NODE);
     struct function_node data = func->data.function_data;
     MOTH_VALUE ret_type = type_node_to_type(data.ret_type);
@@ -56,7 +67,7 @@ MOTH_VALUE eval_function(NODE func) {
         assert(decl->t = DECLARATION_NODE);
         const char* input_name = decl->data.declaration_data.var->data.var_data.id;
         MOTH_VALUE var = declare_local_variable(input_name,type_node_to_type(decl->data.declaration_data.type));
-        assert(set_local_variable(var,get_argument(out,i)));
+        assert(set_variable(var,get_argument(out,i)));
     }
     
     eval(func->data.function_data.block);

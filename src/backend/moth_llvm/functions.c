@@ -9,6 +9,17 @@
 #include "backend/file_table.h"
 
 static MOTH_VALUE current_function = NULL;
+static int is_anon = 0;
+
+void set_anon(int val){
+    assert((val == 0) || (val == 1));
+    is_anon = val;
+    return;
+}
+int get_anon(void){
+    assert((is_anon == 0) || (is_anon == 1));
+    return is_anon;
+}
 
 MOTH_VALUE get_current_function(void){
     assert(current_function != NULL);
@@ -154,4 +165,24 @@ MOTH_VALUE get_argument(MOTH_VALUE func, int idx){
 
     return wrap_local_constant(argument,arg_type);
 
+}
+
+int return_value(MOTH_VALUE val){
+    assert(is_constant(val));
+    MOTH_VALUE func = get_current_function();
+
+    MOTH_TYPE func_ty = func->type;
+
+    MOTH_TYPE expected_ret_type = val_to_type(func_ty->func_ty->ret_type);
+
+    MOTH_TYPE actual_ret_type = val->type;
+
+    if (types_equal(expected_ret_type,actual_ret_type)){
+        LLVMBuilderRef builder = get_builder();
+        LLVMBuildRet(builder,val->value);
+        return 1;
+    }
+
+    NOT_IMPLEMENTED;
+    return 1;
 }
