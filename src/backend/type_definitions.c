@@ -1,7 +1,8 @@
+#include "type_definitions.h"
 
-#include "lists_llvm.h"
-#include "parser/ast.h"
-//#include "../values_llvm.h"
+#define table_t MOTH_VALUE
+#include "generic_table/generic_table.h"
+#undef table_t
 
 #define list_t MOTH_FIELD
 #include "generic_list/generic_list.h"
@@ -14,4 +15,3 @@
 #define list_t MOTH_VALUE
 #include "generic_list/generic_list.h"
 #undef list_t
-

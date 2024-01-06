@@ -3,6 +3,8 @@
 
 #include "parser/ast.h"
 
+#include "type_definitions.h"
+
 #include "moth_value.h"
 
 #include "state_llvm.h"

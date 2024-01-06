@@ -2,9 +2,9 @@
 #define _MOTH_VALUE_H_
 
 #include "parser/ast.h"
-//#include "state_llvm.h"
+#include "state_llvm.h"
 
-#include "lists_llvm.h"
+//#include "lists_llvm.h"
 #include "type_definitions.h"
 
 enum scope_t{

@@ -5,7 +5,7 @@
 #include <llvm-c/BitWriter.h>
 
 #include "moth_llvm.h"
-#include "tables_llvm.h"
+//#include "tables_llvm.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

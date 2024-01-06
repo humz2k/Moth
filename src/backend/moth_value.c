@@ -9,8 +9,8 @@
 #include <string.h>
 #include "error.h"
 #include <assert.h>
-#include "tables_llvm.h"
-#include "lists_llvm.h"
+//#include "tables_llvm.h"
+//#include "lists_llvm.h"
 #include "simple_alloc.h"
 #include "moth_llvm.h"
 
