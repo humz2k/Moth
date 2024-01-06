@@ -12,7 +12,7 @@ MOTH_VALUE eval_return(NODE ret){
     struct return_node data = ret->data.return_data;
     if (data.expr == NULL)NOT_IMPLEMENTED;
 
-    return_value(eval(data.expr));
+    return_value(get_value(eval(data.expr)));
     return NULL;
 }
 

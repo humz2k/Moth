@@ -3,11 +3,7 @@
 
 MOTH_VALUE eval_binop(NODE binop) NOT_IMPLEMENTED
 
-MOTH_VALUE eval_var(NODE var) NOT_IMPLEMENTED
-
 MOTH_VALUE eval_reference(NODE reference) NOT_IMPLEMENTED
-
-MOTH_VALUE eval_assign(NODE assign) NOT_IMPLEMENTED
 
 MOTH_VALUE eval_function_call(NODE func_call) NOT_IMPLEMENTED
 

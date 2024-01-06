@@ -1,2 +1,5 @@
 def double test(long a, int b):
-    return 1.0
+    double c = 2.0
+    double d = c
+    c = d
+    return d
