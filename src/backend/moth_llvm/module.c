@@ -6,10 +6,24 @@
 #include <string.h>
 #include "simple_alloc.h"
 #include "backend/file_table.h"
+#include <assert.h>
 
 LLVMModuleRef mod = NULL;
 
 int clear_module(void){
+
+    string_t_list moth_files = get_moth_file_list();
+    MOTH_VALUE_table moth_file_table = get_moth_file_table();
+
+    int n_moth_files = len_string_t_list(moth_files);
+
+    for (int i = 0; i < n_moth_files; i++){
+        const char* moth_file_name = get_string_t_list(moth_files,i);
+        MOTH_VALUE moth_file;
+        assert(get_MOTH_VALUE_table(moth_file_table,moth_file_name,&moth_file));
+        assert(clear_moth_file(moth_file));
+    }
+
     LLVMDisposeModule(mod);
     mod = NULL;
     return 1;

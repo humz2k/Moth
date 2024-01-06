@@ -8,6 +8,8 @@ MOTH_VALUE eval(NODE expr);
 
 MOTH_VALUE eval_top_level(NODE expr);
 
+int module_initialized(void);
+
 static inline MODIFIERS make_modifiers(int is_inline, int is_extern){
     MODIFIERS out;
     out.is_inline = is_inline;

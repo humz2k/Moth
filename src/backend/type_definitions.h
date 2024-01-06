@@ -1,6 +1,8 @@
 #ifndef _TYPE_DEFS_H_
 #define _TYPE_DEFS_H_
 
+typedef const char* string_t;
+
 enum scope_t{
     LOCAL_SCOPE,
     FILE_SCOPE
@@ -43,6 +45,10 @@ typedef struct moth_value* MOTH_VALUE;
 #undef list_t
 
 #define list_t MOTH_VALUE
+#include "generic_list/generic_list_header.h"
+#undef list_t
+
+#define list_t string_t
 #include "generic_list/generic_list_header.h"
 #undef list_t
 

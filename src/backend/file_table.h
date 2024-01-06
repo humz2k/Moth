@@ -5,6 +5,8 @@
 
 int initialize_file_table_state(void);
 
+string_t_list get_moth_file_list(void);
+
 MOTH_VALUE get_active_moth_file(void);
 
 MOTH_VALUE_table get_moth_file_table(void);

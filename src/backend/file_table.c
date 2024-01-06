@@ -9,11 +9,18 @@
 static MOTH_VALUE active_moth_file = NULL;
 static MOTH_VALUE_table moth_file_table = NULL;
 static MOTH_VALUE_table local_vars = NULL;
+static string_t_list moth_file_list = NULL;
 static MOTH_VALUE_table template_context = NULL;
 
 int initialize_file_table_state(void){
     moth_file_table = make_MOTH_VALUE_table();
+    moth_file_list = make_string_t_list();
     return 1;
+}
+
+string_t_list get_moth_file_list(void){
+    assert(moth_file_list != NULL);
+    return moth_file_list;
 }
 
 MOTH_VALUE get_active_moth_file(void){
@@ -52,6 +59,8 @@ int create_new_moth_file(const char* name){
     MOTH_VALUE moth_file = make_moth_file(name);
 
     insert_MOTH_VALUE_table(get_moth_file_table(),name,moth_file);
+
+    append_string_t_list(get_moth_file_list(),name);
 
     set_active_moth_file(moth_file);
 

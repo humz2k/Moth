@@ -20,6 +20,7 @@ struct moth_value{
     int modifiable;
     const char* moth_file;
     MOTH_VALUE_table table;
+    string_t_list name_list;
     int declared;
 };
 
@@ -56,6 +57,12 @@ static inline MOTH_VALUE make_moth_value(void){
     MOTH_VALUE out;
     VERIFY_ALLOC(out = alloc_struct_ptr(struct moth_value));
     return out;
+}
+
+static inline int undeclare_moth_value(MOTH_VALUE value){
+    assert(value != NULL);
+    value->declared = 0;
+    return 1;
 }
 
 static inline MOTH_TYPE make_moth_type(void){

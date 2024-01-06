@@ -7,12 +7,21 @@
 #include "error.h"
 #include <assert.h>
 
+static int _module_initialized = 0;
+
+int module_initialized(void){
+    return _module_initialized;
+}
+
 MOTH_VALUE eval_anon_func(NODE expr){
     NOT_IMPLEMENTED;
 }
 
 MOTH_VALUE eval_top_level(NODE expr){
-    
+    if (!module_initialized()){
+        assert(initialize_module());
+    }
+    NOT_IMPLEMENTED;
 }
 
 

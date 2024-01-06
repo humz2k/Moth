@@ -20,6 +20,8 @@ LLVMTypeRef moth_value_to_llvm_type(MOTH_VALUE value);
 
 LLVMTypeRef moth_value_to_llvm_function_type(MOTH_VALUE value);
 
+int clear_moth_file(MOTH_VALUE moth_file);
+
 int function_is_declared(MOTH_VALUE func);
 
 #endif
