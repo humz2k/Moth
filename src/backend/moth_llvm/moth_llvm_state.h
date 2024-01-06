@@ -7,6 +7,4 @@
 #include <llvm-c/Analysis.h>
 #include <llvm-c/BitWriter.h>
 
-extern LLVMBuilderRef builder;
-
 #endif

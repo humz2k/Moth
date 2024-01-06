@@ -46,7 +46,7 @@ static inline const char* _mangle_function_name(const char* moth_file_name, cons
 
 const char* mangle_function_name(MOTH_VALUE func){
     assert(is_function(func));
-    MOTH_TYPE type = val_to_func_ty(func->type);
+    MOTH_TYPE type = func->type;
     return _mangle_function_name(type->moth_file,type->func_ty->name,type->func_ty->inputs);
 }
 
@@ -58,24 +58,34 @@ int is_function(MOTH_VALUE func){
 int function_is_declared(MOTH_VALUE func){
     assert(is_function(func));
     assert((func->declared == 0) || (func->declared == 1));
+    if (func->declared){
+        assert(func->value != NULL);
+    }
     return func->declared;
 }
 
+int function_is_initialized(MOTH_VALUE func){
+    assert(is_function(func));
+    assert((func->declared == 0) || (func->declared == 1));
+    assert((func->initialized == 0) || (func->initialized == 1));
+    return func->initialized;
+}
+
 MOTH_VALUE init_function(MOTH_VALUE func_ty){
-    assert(is_func_ty(func_ty) != NULL);
+    assert(is_func_ty(func_ty));
     //LLVMTypeRef llvm_func_ty = moth_value_to_llvm_function_type(func_ty);
     //const char* name = mangle_function_name(func_ty);
     //LLVMValueRef func = LLVMAddFunction(get_module(),name,llvm_func_ty);
     
     MOTH_VALUE out = make_moth_value();
     out->t = FUNCTION;
-    out->type = func_ty;
+    out->type = func_ty->type;
     out->modifiable = 0;
     out->value = NULL;
     out->scope = FILE_SCOPE;
     out->moth_file = func_ty->moth_file;
     out->declared = 0;
-
+    out->initialized = 0;
     return out;
 }
 
@@ -83,9 +93,27 @@ int declare_function(MOTH_VALUE func){
     assert(is_function(func));
     assert(!function_is_declared(func));
     assert(func->type != NULL);
-    LLVMTypeRef llvm_func_ty = moth_value_to_llvm_function_type(func->type);
+    LLVMTypeRef llvm_func_ty = moth_type_to_llvm_function_type(func->type);
     const char* name = mangle_function_name(func);
     LLVMValueRef llvm_func = LLVMAddFunction(get_module(),name,llvm_func_ty);
     func->value = llvm_func;
+    func->declared = 1;
+    return 1;
+}
+
+int init_builder_in_function(MOTH_VALUE func){
+    assert(is_function(func));
+    assert(!function_is_initialized(func));
+    assert(function_is_declared(func));
+
+    LLVMValueRef llvm_func = func->value;
+
+    LLVMBasicBlockRef entry = LLVMAppendBasicBlock(llvm_func,"entry");
+
+    assert(init_builder());
+    LLVMBuilderRef builder = get_builder();
+
+    LLVMPositionBuilderAtEnd(builder,entry);
+
     return 1;
 }

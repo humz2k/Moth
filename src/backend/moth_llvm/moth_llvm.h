@@ -19,14 +19,22 @@ MOTH_TYPE val_to_type(MOTH_VALUE val);
 
 MOTH_VALUE type_to_val(MOTH_TYPE typ);
 
-MOTH_VALUE val_to_func_ty(MOTH_VALUE val);
+MOTH_TYPE val_to_func_ty(MOTH_VALUE val);
 
 LLVMTypeRef moth_value_to_llvm_type(MOTH_VALUE value);
 
-LLVMTypeRef moth_value_to_llvm_function_type(MOTH_VALUE value);
+//LLVMTypeRef moth_value_to_llvm_function_type(MOTH_VALUE value);
+
+LLVMTypeRef moth_type_to_llvm_function_type(MOTH_TYPE value);
 
 int clear_moth_file(MOTH_VALUE moth_file);
 
 int function_is_declared(MOTH_VALUE func);
+
+LLVMBuilderRef get_builder(void);
+
+int init_builder(void);
+
+int delete_builder(void);
 
 #endif

@@ -47,6 +47,8 @@ MOTH_VALUE eval_function(NODE func) {
 
     assert(declare_function(out));
 
+    assert(init_builder_in_function(out));
+
     return out;
 }
 

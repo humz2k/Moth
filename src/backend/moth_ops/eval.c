@@ -15,6 +15,7 @@ int module_initialized(void){
 
 static int set_module_initialized(int val){
     _module_initialized = val;
+    return 1;
 }
 
 MOTH_VALUE eval_anon_func(NODE expr){
@@ -30,6 +31,10 @@ MOTH_VALUE eval_top_level(NODE expr){
     assert(expr != NULL);
 
     switch(expr->t){
+        case PROGRAM_NODE:
+            return eval(expr);
+        case TEMPLATE_NODE:
+            return eval(expr);
         case REAL_CONSTANT:
             return eval_anon_func(expr);
         case BOOL_CONSTANT:

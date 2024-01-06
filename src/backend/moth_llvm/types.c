@@ -54,7 +54,7 @@ MOTH_VALUE type_to_val(MOTH_TYPE typ){
     return out;
 }
 
-MOTH_VALUE val_to_func_ty(MOTH_VALUE val){
+MOTH_TYPE val_to_func_ty(MOTH_VALUE val){
     MOTH_TYPE out = val_to_type(val);
     assert(out->t == TY_FUNC);
     return out;
@@ -94,7 +94,7 @@ MOTH_VALUE type_node_to_type(NODE node){
         type->t = t;
         type->moth_file = node->moth_file;
         type->ndims = node->data.type_data.ndims;
-        type->base = val_to_type(type_node_to_type(type->base));
+        type->base = val_to_type(type_node_to_type(node->data.type_data.base));
         return type_to_val(type);
     }
 
@@ -176,4 +176,9 @@ int is_func_ty(MOTH_VALUE value){
 LLVMTypeRef moth_value_to_llvm_function_type(MOTH_VALUE value){
     assert(val_to_type(value)->t == TY_FUNC);
     return moth_value_to_llvm_type(value);
+}
+
+LLVMTypeRef moth_type_to_llvm_function_type(MOTH_TYPE value){
+    assert(value->t == TY_FUNC);
+    return moth_type_to_llvm_type(value);
 }

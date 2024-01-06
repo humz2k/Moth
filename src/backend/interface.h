@@ -48,5 +48,6 @@ int in_function(void);
 
 MOTH_VALUE init_function(MOTH_VALUE func_ty);
 int declare_function(MOTH_VALUE func);
+int init_builder_in_function(MOTH_VALUE func);
 
 #endif

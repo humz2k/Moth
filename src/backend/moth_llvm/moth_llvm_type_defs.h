@@ -22,6 +22,7 @@ struct moth_value{
     MOTH_VALUE_table table;
     string_t_list name_list;
     int declared;
+    int initialized;
 };
 
 struct moth_field{
@@ -36,7 +37,7 @@ struct moth_structure_descriptor{
 
 struct moth_func_descriptor{
     int named;
-    char* name;
+    const char* name;
     MOTH_VALUE ret_type;
     MOTH_VALUE_list inputs;
     MODIFIERS mods;
