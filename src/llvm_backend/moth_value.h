@@ -35,4 +35,14 @@ int update_moth_file(MOTH_VALUE moth_file, const char* name, MOTH_VALUE value);
 
 int find_in_moth_file(MOTH_VALUE moth_file, const char* name, MOTH_VALUE* out);
 
+const char* get_moth_file_name(MOTH_VALUE moth_file);
+
+int clear_module(void);
+
+int initialize_module(void);
+
+void print_module(void);
+
+MOTH_VALUE type_node_to_type(NODE node);
+
 #endif

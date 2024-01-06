@@ -11,6 +11,8 @@ int create_new_moth_file(const char* name);
 
 int set_active_moth_file(MOTH_VALUE moth_file);
 
+const char* get_active_moth_file_name(void);
+
 int update_value_in_current_moth_file(const char* name, MOTH_VALUE value);
 
 int find_value(const char* name, MOTH_VALUE* out);

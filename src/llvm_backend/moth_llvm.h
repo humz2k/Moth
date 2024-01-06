@@ -9,6 +9,8 @@
 
 #include "moth_ops.h"
 
+MOTH_VALUE eval(NODE expr);
+
 int compile(void);
 
 #endif
