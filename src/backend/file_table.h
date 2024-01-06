@@ -25,4 +25,10 @@ int update_value_in_current_moth_file(const char* name, MOTH_VALUE value);
 
 int find_value(const char* name, MOTH_VALUE* out);
 
+int init_local_variables(void);
+
+int delete_local_variables(void);
+
+int update_local_variables(const char* name, MOTH_VALUE val);
+
 #endif

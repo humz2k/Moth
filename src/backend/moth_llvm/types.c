@@ -182,3 +182,13 @@ LLVMTypeRef moth_type_to_llvm_function_type(MOTH_TYPE value){
     assert(value->t == TY_FUNC);
     return moth_type_to_llvm_type(value);
 }
+
+int types_equal(MOTH_TYPE left_type, MOTH_TYPE right_type){
+    assert(left_type != NULL);
+    assert(right_type != NULL);
+    if (type_type_is_base(left_type->t)){
+        if (type_type_is_base(right_type->t))
+            return left_type->t == right_type->t;
+    }
+    NOT_IMPLEMENTED;
+}

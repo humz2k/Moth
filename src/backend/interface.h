@@ -49,5 +49,9 @@ int in_function(void);
 MOTH_VALUE init_function(MOTH_VALUE func_ty);
 int declare_function(MOTH_VALUE func);
 int init_builder_in_function(MOTH_VALUE func);
+MOTH_VALUE get_argument(MOTH_VALUE func, int idx);
+
+MOTH_VALUE declare_local_variable(const char* name, MOTH_VALUE type);
+int set_local_variable(MOTH_VALUE var, MOTH_VALUE value);
 
 #endif

@@ -115,5 +115,26 @@ int init_builder_in_function(MOTH_VALUE func){
 
     LLVMPositionBuilderAtEnd(builder,entry);
 
+    func->initialized = 1;
+
     return 1;
+}
+
+MOTH_VALUE get_argument(MOTH_VALUE func, int idx){
+    assert(is_function(func));
+    assert(function_is_declared(func));
+    assert(function_is_initialized(func));
+
+    LLVMValueRef llvm_func = func->value;
+
+    LLVMValueRef argument = LLVMGetParam(llvm_func,idx);
+
+    MOTH_TYPE func_ty = func->type;
+
+    MOTH_VALUE_list func_inputs = func_ty->func_ty->inputs;
+
+    MOTH_VALUE arg_type = get_MOTH_VALUE_list(func_inputs,idx);
+
+    return wrap_local_constant(argument,arg_type);
+
 }

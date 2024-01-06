@@ -94,4 +94,20 @@ int find_value(const char* name, MOTH_VALUE* out){
     return get_MOTH_VALUE_table(get_moth_file_table(),name,out);
 }
 
+int init_local_variables(void){
+    local_vars = make_MOTH_VALUE_table();
+    return 1;
+}
+
+int delete_local_variables(void){
+    local_vars = NULL;
+    return 1;
+}
+
+int update_local_variables(const char* name, MOTH_VALUE val){
+    assert(local_vars != NULL);
+    assert(val != NULL);
+    update_MOTH_VALUE_table(local_vars,name,val);
+    return 1;
+}
 
