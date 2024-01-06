@@ -2,8 +2,10 @@
 #define _MOTH_VALUE_H_
 
 #include "parser/ast.h"
-
 //#include "state_llvm.h"
+
+#include "lists_llvm.h"
+#include "type_definitions.h"
 
 enum scope_t{
     LOCAL_SCOPE,
@@ -18,16 +20,17 @@ typedef enum {
     MOTH_FILE
 } VALUE_TYPE;
 
-struct moth_llvm_type;
-typedef struct moth_llvm_type* MOTH_TYPE;
-struct moth_llvm_field;
-typedef struct moth_llvm_field* MOTH_FIELD;
-struct moth_structure_descriptor;
-typedef struct moth_structure_descriptor* MOTH_STRUCTURE;
-struct moth_func_descriptor;
-typedef struct moth_func_descriptor* MOTH_FUNC_TYPE;
-struct moth_llvm_value;
-typedef struct moth_llvm_value* MOTH_VALUE;
+typedef struct {
+    int is_inline;
+    int is_extern;
+} MODIFIERS;
+
+static inline MODIFIERS make_modifiers(int is_inline, int is_extern){
+    MODIFIERS out;
+    out.is_inline = is_inline;
+    out.is_extern = is_extern;
+    return out;
+}
 
 MOTH_VALUE make_moth_file(const char* name);
 
@@ -44,5 +47,9 @@ int initialize_module(void);
 void print_module(void);
 
 MOTH_VALUE type_node_to_type(NODE node);
+
+int in_function(void);
+
+MOTH_VALUE make_function_type(const char* name, MOTH_VALUE ret_type, MOTH_VALUE_list inputs, MODIFIERS mods);
 
 #endif

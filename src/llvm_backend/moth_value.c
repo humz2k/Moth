@@ -40,8 +40,9 @@ struct moth_structure_descriptor{
 struct moth_func_descriptor{
     int named;
     char* name;
-    MOTH_TYPE ret_type;
-    MOTH_TYPE_list inputs;
+    MOTH_VALUE ret_type;
+    MOTH_VALUE_list inputs;
+    MODIFIERS mods;
 };
 
 struct moth_llvm_type{
@@ -207,6 +208,23 @@ MOTH_VALUE type_node_to_type(NODE node){
 
     PANIC("Something really bad happened");
 
+}
+
+MOTH_VALUE make_function_type(const char* name, MOTH_VALUE ret_type, MOTH_VALUE_list inputs, MODIFIERS mods){
+    MOTH_FUNC_TYPE func_ty;
+    VERIFY_ALLOC(func_ty = alloc_struct_ptr(struct moth_func_descriptor));
+    func_ty->inputs = inputs;
+    func_ty->mods = mods;
+    func_ty->name = name;
+    func_ty->named = 1;
+    func_ty->ret_type = ret_type;
+    MOTH_TYPE type = alloc_type();
+    type->t = TY_FUNC;
+    type->moth_file = get_active_moth_file_name();
+    type->func_ty = func_ty;
+    MOTH_VALUE out = type_to_val(type);
+    update_value_in_current_moth_file(name,out);
+    return out;
 }
 
 /*

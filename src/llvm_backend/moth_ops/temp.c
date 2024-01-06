@@ -5,7 +5,9 @@ MOTH_VALUE eval_constant(NODE constant) NOT_IMPLEMENTED
 
 MOTH_VALUE eval_binop(NODE binop) NOT_IMPLEMENTED
 
-MOTH_VALUE eval_type(NODE type) NOT_IMPLEMENTED
+MOTH_VALUE eval_type(NODE type){
+    return type_node_to_type(type);
+}
 
 MOTH_VALUE eval_var(NODE var) NOT_IMPLEMENTED
 
@@ -44,8 +46,6 @@ MOTH_VALUE eval_elif(NODE elif_stmt) NOT_IMPLEMENTED
 MOTH_VALUE eval_while(NODE while_loop) NOT_IMPLEMENTED
 
 MOTH_VALUE eval_for(NODE for_loop) NOT_IMPLEMENTED
-
-MOTH_VALUE eval_function(NODE func) NOT_IMPLEMENTED
 
 MOTH_VALUE eval_template(NODE temp) NOT_IMPLEMENTED
 

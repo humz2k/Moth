@@ -11,3 +11,7 @@
 #include "generic_list/generic_list.h"
 #undef list_t
 
+#define list_t MOTH_VALUE
+#include "generic_list/generic_list.h"
+#undef list_t
+
