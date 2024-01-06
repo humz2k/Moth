@@ -1,4 +1,4 @@
-#include "llvm_backend/moth_llvm.h"
+#include "backend/moth_llvm.h"
 #include "error.h"
 
 MOTH_VALUE eval_constant(NODE constant) NOT_IMPLEMENTED

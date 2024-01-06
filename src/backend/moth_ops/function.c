@@ -1,5 +1,5 @@
-#include "llvm_backend/moth_llvm.h"
-#include "llvm_backend/lists_llvm.h"
+#include "backend/moth_llvm.h"
+#include "backend/lists_llvm.h"
 #include "error.h"
 #include <string.h>
 #include <stdlib.h>
