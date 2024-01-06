@@ -14,5 +14,10 @@ int compile(void){
 
     eval(program);
 
+    if (module_initialized()){
+        print_module();
+        clear_module();
+    }
+
     return 1;
 }

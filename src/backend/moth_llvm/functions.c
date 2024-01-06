@@ -20,7 +20,9 @@ static inline const char* _mangle_function_name(const char* moth_file_name, cons
 
     const char* strings[n_inputs];
     for (int i = 0; i < n_inputs; i++){
-        strings[i] = type_to_string(get_MOTH_VALUE_list(inputs,i));
+        MOTH_VALUE val = get_MOTH_VALUE_list(inputs,i);
+        const char* tmp = type_to_string(val);
+        strings[i] = tmp;
         len += strlen(strings[i]) + 1;
     }
 
@@ -42,15 +44,48 @@ static inline const char* _mangle_function_name(const char* moth_file_name, cons
     return out;
 }
 
-const char* mangle_function_name(MOTH_VALUE func_ty){
-    assert(func_ty != NULL);
-    MOTH_TYPE type = val_to_func_ty(func_ty);
-    return _mangle_function_name(type->moth_file,type->id,type->func_ty->inputs);
+const char* mangle_function_name(MOTH_VALUE func){
+    assert(is_function(func));
+    MOTH_TYPE type = val_to_func_ty(func->type);
+    return _mangle_function_name(type->moth_file,type->func_ty->name,type->func_ty->inputs);
+}
+
+int is_function(MOTH_VALUE func){
+    assert(func != NULL);
+    return func->t == FUNCTION;
 }
 
 int function_is_declared(MOTH_VALUE func){
-    assert(func != NULL);
-    assert(func->t == FUNCTION);
+    assert(is_function(func));
     assert((func->declared == 0) || (func->declared == 1));
     return func->declared;
+}
+
+MOTH_VALUE init_function(MOTH_VALUE func_ty){
+    assert(is_func_ty(func_ty) != NULL);
+    //LLVMTypeRef llvm_func_ty = moth_value_to_llvm_function_type(func_ty);
+    //const char* name = mangle_function_name(func_ty);
+    //LLVMValueRef func = LLVMAddFunction(get_module(),name,llvm_func_ty);
+    
+    MOTH_VALUE out = make_moth_value();
+    out->t = FUNCTION;
+    out->type = func_ty;
+    out->modifiable = 0;
+    out->value = NULL;
+    out->scope = FILE_SCOPE;
+    out->moth_file = func_ty->moth_file;
+    out->declared = 0;
+
+    return out;
+}
+
+int declare_function(MOTH_VALUE func){
+    assert(is_function(func));
+    assert(!function_is_declared(func));
+    assert(func->type != NULL);
+    LLVMTypeRef llvm_func_ty = moth_value_to_llvm_function_type(func->type);
+    const char* name = mangle_function_name(func);
+    LLVMValueRef llvm_func = LLVMAddFunction(get_module(),name,llvm_func_ty);
+    func->value = llvm_func;
+    return 1;
 }

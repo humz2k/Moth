@@ -8,7 +8,12 @@
 #include "backend/file_table.h"
 #include <assert.h>
 
-LLVMModuleRef mod = NULL;
+static LLVMModuleRef mod = NULL;
+
+LLVMModuleRef get_module(void){
+    assert(mod != NULL);
+    return mod;
+}
 
 int clear_module(void){
 

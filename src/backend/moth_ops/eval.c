@@ -13,6 +13,10 @@ int module_initialized(void){
     return _module_initialized;
 }
 
+static int set_module_initialized(int val){
+    _module_initialized = val;
+}
+
 MOTH_VALUE eval_anon_func(NODE expr){
     NOT_IMPLEMENTED;
 }
@@ -20,8 +24,88 @@ MOTH_VALUE eval_anon_func(NODE expr){
 MOTH_VALUE eval_top_level(NODE expr){
     if (!module_initialized()){
         assert(initialize_module());
+        set_module_initialized(1);
     }
-    NOT_IMPLEMENTED;
+
+    assert(expr != NULL);
+
+    switch(expr->t){
+        case REAL_CONSTANT:
+            return eval_anon_func(expr);
+        case BOOL_CONSTANT:
+            return eval_anon_func(expr);
+        case INTEGER_CONSTANT:
+            return eval_anon_func(expr);
+        case STRING_CONSTANT:
+            return eval_anon_func(expr);
+        case BINOP_NODE:
+            return eval_anon_func(expr);
+        case TYPE_NODE:
+            PANIC("This should be a syntax error!");
+            return NULL;
+        case VAR_NODE:
+            return eval_anon_func(expr);
+        case DECLARATION_NODE:
+            return eval_anon_func(expr);
+        case REFERENCE_NODE:
+            return eval_anon_func(expr);
+        case ASSIGN_NODE:
+            return eval_anon_func(expr);
+        case FUNCTION_CALL_NODE:
+            return eval_anon_func(expr);
+        case INDEX_NODE:
+            return eval_anon_func(expr);
+        case RETURN_NODE:
+            RUNTIME_ERROR("Return outside of function");
+            return NULL;
+        case BREAK_NODE:
+            RUNTIME_ERROR("Break outside of loop");
+            return NULL;
+        case CONTINUE_NODE:
+            RUNTIME_ERROR("Continue outside of loop");
+            return NULL;
+        case ATTRS_NODE:
+            PANIC("This should be a syntax error!\n");
+            return NULL;
+        case STRUCT_NODE:
+            return eval(expr);
+        case OBJECT_NODE:
+            return eval(expr);
+        case PASS_NODE:
+            PANIC("figure out what to do with top level pass");
+            return NULL;
+        case BLOCK_NODE:
+            PANIC("This should be a syntax error!\n");
+            return NULL;
+        case IF_NODE:
+            return eval_anon_func(expr);
+        case ELSE_NODE:
+            PANIC("This should be a syntax error!\n");
+            return NULL;
+        case ELIF_NODE:
+            PANIC("This should be a syntax error!\n");
+            return NULL;
+        case WHILE_LOOP_NODE:
+            return eval_anon_func(expr);
+        case FOR_LOOP_NODE:
+            return eval_anon_func(expr);
+        case FUNCTION_NODE:
+            return eval(expr);
+        case ARRAY_INITIALIZER_NODE:
+            return eval_anon_func(expr);
+        case PRINT_NODE:
+            return eval_anon_func(expr);
+        case SINOP_NODE:
+            return eval_anon_func(expr);
+        case MODIFIER_NODE:
+            PANIC("This should be a syntax error!\n");
+            return NULL;
+        case CAST_NODE:
+            return eval_anon_func(expr);
+    }
+
+    PANIC("Uh oh...");
+    return NULL;
 }
 
 

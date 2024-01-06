@@ -10,6 +10,11 @@
 #include "moth_llvm_type_defs.h"
 #include "moth_llvm_state.h"
 
+int is_function(MOTH_VALUE func);
+int is_func_ty(MOTH_VALUE value);
+
+LLVMModuleRef get_module(void);
+
 MOTH_TYPE val_to_type(MOTH_VALUE val);
 
 MOTH_VALUE type_to_val(MOTH_TYPE typ);

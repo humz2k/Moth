@@ -41,6 +41,12 @@ MOTH_VALUE eval_function(NODE func) {
 
     MOTH_VALUE func_ty = make_function_type(data.id,ret_type,input_types,make_modifiers(is_inline,is_extern));
 
-    return func_ty;
+    MOTH_VALUE out = init_function(func_ty);
+
+    assert(update_value_in_current_moth_file(mangle_function_name(out),out));
+
+    assert(declare_function(out));
+
+    return out;
 }
 

@@ -9,8 +9,9 @@
 #include "backend/file_table.h"
 
 const char* type_to_string(MOTH_VALUE type){
+    assert(type != NULL);
     assert(type->t == TYPE);
-    switch(type->t){
+    switch(type->type->t){
         case TY_I1:
             return "i1";
         case TY_I8:
@@ -133,11 +134,12 @@ static inline LLVMTypeRef moth_type_to_llvm_type(MOTH_TYPE moth_type){
 
     if (moth_type->t == TY_FUNC){
         MOTH_FUNC_TYPE func_ty = moth_type->func_ty;
-        LLVMTypeRef ret_type = moth_type_to_llvm_type(func_ty->ret_type);
+        LLVMTypeRef ret_type = moth_value_to_llvm_type(func_ty->ret_type);
         int n_inputs = len_MOTH_VALUE_list(func_ty->inputs);
         LLVMTypeRef param_types[n_inputs];
         for (int i = 0; i < n_inputs; i++){
-            param_types[i] = moth_type_to_llvm_type(get_MOTH_VALUE_list(func_ty->inputs,i));
+            MOTH_VALUE this_type = get_MOTH_VALUE_list(func_ty->inputs,i);
+            param_types[i] = moth_value_to_llvm_type(this_type);
         }
         LLVMTypeRef out = LLVMFunctionType(ret_type,param_types,n_inputs,0);
         return out;
@@ -165,6 +167,10 @@ MOTH_VALUE make_function_type(const char* name, MOTH_VALUE ret_type, MOTH_VALUE_
     MOTH_VALUE out = type_to_val(type);
     out->declared = 0;
     return out;
+}
+
+int is_func_ty(MOTH_VALUE value){
+    return val_to_type(value)->t == TY_FUNC;
 }
 
 LLVMTypeRef moth_value_to_llvm_function_type(MOTH_VALUE value){

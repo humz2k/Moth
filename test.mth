@@ -1,2 +1,2 @@
-def double test(int a, int b):
+def double test(long a, int b):
     return 1.0

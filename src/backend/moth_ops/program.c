@@ -18,7 +18,7 @@ MOTH_VALUE eval_program(NODE program){
     int n_nodes = len_node_vec(nodes);
 
     for (int i = 0; i < n_nodes; i++){
-        eval(get_node_vec_elem(nodes,i));
+        eval_top_level(get_node_vec_elem(nodes,i));
     }
 
     MOTH_VALUE this_moth_file = get_active_moth_file();
