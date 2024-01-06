@@ -4,6 +4,8 @@
 #include "type_definitions.h"
 #include "parser/ast.h"
 
+int initialize_backend(void);
+
 MOTH_VALUE eval(NODE expr);
 
 MOTH_VALUE eval_top_level(NODE expr);

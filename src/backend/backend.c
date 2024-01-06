@@ -11,6 +11,7 @@
 int compile(void){
     NODE program = get_program();
     initialize_file_table_state();
+    initialize_backend();
 
     eval(program);
 
