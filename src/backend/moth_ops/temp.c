@@ -1,13 +1,9 @@
-#include "backend/moth_llvm.h"
+#include "backend/backend.h"
 #include "error.h"
 
 MOTH_VALUE eval_constant(NODE constant) NOT_IMPLEMENTED
 
 MOTH_VALUE eval_binop(NODE binop) NOT_IMPLEMENTED
-
-MOTH_VALUE eval_type(NODE type){
-    return type_node_to_type(type);
-}
 
 MOTH_VALUE eval_var(NODE var) NOT_IMPLEMENTED
 

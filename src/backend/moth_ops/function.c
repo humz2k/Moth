@@ -1,12 +1,12 @@
-#include "backend/moth_llvm.h"
-//#include "backend/lists_llvm.h"
+#include "backend/interface.h"
+#include "backend/file_table.h"
 #include "error.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "simple_alloc.h"
 
-MOTH_VALUE eval_function(NODE func){
+MOTH_VALUE eval_function(NODE func) {
     assert(func->t == FUNCTION_NODE);
     struct function_node data = func->data.function_data;
     MOTH_VALUE ret_type = type_node_to_type(data.ret_type);

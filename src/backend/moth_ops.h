@@ -1,6 +1,8 @@
 #ifndef _MOTH_OPS_H_
 
-#include "moth_value.h"
+#include "type_definitions.h"
+
+MOTH_VALUE eval_program(NODE program);
 
 MOTH_VALUE eval_constant(NODE constant);
 

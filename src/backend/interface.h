@@ -1,0 +1,46 @@
+#ifndef _INTERFACE_H_
+#define _INTERFACE_H_
+
+#include "type_definitions.h"
+#include "parser/ast.h"
+
+MOTH_VALUE eval(NODE expr);
+
+MOTH_VALUE eval_top_level(NODE expr);
+
+static inline MODIFIERS make_modifiers(int is_inline, int is_extern){
+    MODIFIERS out;
+    out.is_inline = is_inline;
+    out.is_extern = is_extern;
+    return out;
+}
+
+const char* get_moth_file_name(MOTH_VALUE moth_file);
+
+MOTH_VALUE make_moth_file(const char* name);
+
+int update_moth_file(MOTH_VALUE moth_file, const char* key, MOTH_VALUE value);
+
+int find_in_moth_file(MOTH_VALUE moth_file, const char* key, MOTH_VALUE* out);
+
+
+
+int clear_module(void);
+
+int initialize_module(void);
+
+void print_module(void);
+
+
+
+const char* type_to_string(MOTH_VALUE type);
+
+MOTH_VALUE type_node_to_type(NODE node);
+
+const char* mangle_function_name(MOTH_VALUE func_ty);
+
+MOTH_VALUE make_function_type(const char* name, MOTH_VALUE ret_type, MOTH_VALUE_list inputs, MODIFIERS mods);
+
+int in_function(void);
+
+#endif

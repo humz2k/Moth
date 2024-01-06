@@ -24,6 +24,7 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(BUILD_DIR)/backend
 	mkdir -p $(BUILD_DIR)/backend/moth_ops
+	mkdir -p $(BUILD_DIR)/backend/moth_llvm
 	mkdir -p $(BUILD_DIR)/parser
 	mkdir -p $(BUILD_DIR)/generic_list
 	mkdir -p $(BUILD_DIR)/generic_table

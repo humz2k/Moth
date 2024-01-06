@@ -1,4 +1,5 @@
-#include "moth_llvm.h"
+#include "backend/interface.h"
+#include "backend/moth_ops.h"
 #include "parser/ast.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -6,31 +7,17 @@
 #include "error.h"
 #include <assert.h>
 
-MOTH_VALUE eval_program(NODE program){
-    assert(program != NULL);
-    assert(program->t == PROGRAM_NODE);
-    MOTH_VALUE prev_moth_file = get_active_moth_file();
-    
-    assert(create_new_moth_file(program->moth_file));
-
-    NODE_VEC nodes = program->data.program_data.comp_unit_list;
-
-    int n_nodes = len_node_vec(nodes);
-
-    for (int i = 0; i < n_nodes; i++){
-        eval(get_node_vec_elem(nodes,i));
-    }
-
-    MOTH_VALUE this_moth_file = get_active_moth_file();
-
-    assert(set_active_moth_file(prev_moth_file));
-
-    return this_moth_file;
+MOTH_VALUE eval_anon_func(NODE expr){
+    NOT_IMPLEMENTED;
 }
+
+MOTH_VALUE eval_top_level(NODE expr){
+    
+}
+
 
 MOTH_VALUE eval(NODE expr){
     assert(expr != NULL);
-
     switch(expr->t){
         case REAL_CONSTANT:
             return eval_constant(expr);
@@ -100,13 +87,4 @@ MOTH_VALUE eval(NODE expr){
             PANIC("Something bad happened");
     }
     return NULL;
-}
-
-int compile(void){
-    NODE program = get_program();
-    initialize_llvm_state();
-
-    eval(program);
-
-    return 1;
 }

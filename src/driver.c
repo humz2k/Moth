@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "backend/moth_llvm.h"
+#include "backend/backend.h"
 #include "gc.h"
 #include <string.h>
 #include "error.h"
