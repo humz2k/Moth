@@ -227,6 +227,64 @@ MOTH_VALUE make_function_type(const char* name, MOTH_VALUE ret_type, MOTH_VALUE_
     return out;
 }
 
+static LLVMTypeRef moth_type_to_llvm_type(MOTH_TYPE moth_type){
+    assert(moth_type != NULL);
+    if (type_type_is_base(moth_type->t)){
+        switch(moth_type->t){
+            case TY_I1:
+                return LLVMInt1Type();
+            case TY_I8:
+                return LLVMInt8Type();
+            case TY_I16:
+                return LLVMInt16Type();
+            case TY_I32:
+                return LLVMInt32Type();
+            case TY_I64:
+                return LLVMInt64Type();
+            case TY_F16:
+                return LLVMHalfType();
+            case TY_F32:
+                return LLVMFloatType();
+            case TY_F64:
+                return LLVMDoubleType();
+            case TY_STR:
+                return LLVMPointerType(LLVMInt8Type(),0);
+            case TY_VOID:
+                return LLVMVoidType();
+            default:
+                PANIC("SOMETHING BAD HAPPENED");
+        }
+    }
+
+    if (moth_type->t == TY_FUNC){
+        MOTH_FUNC_TYPE func_ty = moth_type->func_ty;
+        LLVMTypeRef ret_type = moth_type_to_llvm_type(func_ty->ret_type);
+        int n_inputs = len_MOTH_VALUE_list(func_ty->inputs);
+        LLVMTypeRef param_types[n_inputs];
+        for (int i = 0; i < n_inputs; i++){
+            param_types[i] = moth_type_to_llvm_type(get_MOTH_VALUE_list(func_ty->inputs,i));
+        }
+        LLVMTypeRef out = LLVMFunctionType(ret_type,param_types,n_inputs,0);
+        return out;
+    }
+
+    NOT_IMPLEMENTED;
+}
+
+static int _initialize_function(MOTH_TYPE func_ty){
+    assert(func_ty != NULL);
+    assert(func_ty->t == TY_FUNC);
+    
+    return 1;
+}
+
+int initialize_function(MOTH_VALUE func_ty){
+    assert(func_ty != NULL);
+    assert(func_ty->t == TYPE);
+    assert(func_ty->type != NULL);
+    return _initialize_function(func_ty->type);
+}
+
 /*
 LLVMValueRef get_llvm_value_of_value(MOTH_VALUE val){
     check_val(val);
