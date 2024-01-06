@@ -45,7 +45,8 @@ MOTH_VALUE make_function_type(const char* name, MOTH_VALUE ret_type, MOTH_VALUE_
 
 int in_function(void);
 
-
+MOTH_VALUE get_current_function(void);
+int finalize_builder_in_function(void);
 MOTH_VALUE init_function(MOTH_VALUE func_ty);
 int declare_function(MOTH_VALUE func);
 int init_builder_in_function(MOTH_VALUE func);

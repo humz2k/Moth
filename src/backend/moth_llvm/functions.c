@@ -8,6 +8,14 @@
 #include "simple_alloc.h"
 #include "backend/file_table.h"
 
+static MOTH_VALUE current_function = NULL;
+
+MOTH_VALUE get_current_function(void){
+    assert(current_function != NULL);
+    assert(is_function(current_function));
+    return current_function;
+}
+
 static inline const char* _mangle_function_name(const char* moth_file_name, const char* name, MOTH_VALUE_list inputs){
 
     assert(moth_file_name != NULL);
@@ -105,6 +113,7 @@ int init_builder_in_function(MOTH_VALUE func){
     assert(is_function(func));
     assert(!function_is_initialized(func));
     assert(function_is_declared(func));
+    assert(current_function == NULL);
 
     LLVMValueRef llvm_func = func->value;
 
@@ -114,9 +123,17 @@ int init_builder_in_function(MOTH_VALUE func){
     LLVMBuilderRef builder = get_builder();
 
     LLVMPositionBuilderAtEnd(builder,entry);
+    current_function = func;
 
     func->initialized = 1;
 
+    return 1;
+}
+
+int finalize_builder_in_function(void){
+    assert(get_current_function() != NULL);
+    current_function = NULL;
+    delete_builder();
     return 1;
 }
 

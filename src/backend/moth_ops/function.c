@@ -58,6 +58,10 @@ MOTH_VALUE eval_function(NODE func) {
         MOTH_VALUE var = declare_local_variable(input_name,type_node_to_type(decl->data.declaration_data.type));
         assert(set_local_variable(var,get_argument(out,i)));
     }
+    
+    eval(func->data.function_data.block);
+
+    finalize_builder_in_function();
 
     return out;
 }
