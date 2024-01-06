@@ -53,5 +53,6 @@ MOTH_VALUE get_argument(MOTH_VALUE func, int idx);
 
 MOTH_VALUE declare_local_variable(const char* name, MOTH_VALUE type);
 int set_local_variable(MOTH_VALUE var, MOTH_VALUE value);
+MOTH_VALUE get_local_variable(MOTH_VALUE var);
 
 #endif

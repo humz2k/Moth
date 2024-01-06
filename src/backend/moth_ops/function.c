@@ -55,7 +55,6 @@ MOTH_VALUE eval_function(NODE func) {
         NODE decl = get_node_vec_elem(input_type_nodes,i);
         assert(decl->t = DECLARATION_NODE);
         const char* input_name = decl->data.declaration_data.var->data.var_data.id;
-        printf("input name = %s\n",input_name);
         MOTH_VALUE var = declare_local_variable(input_name,type_node_to_type(decl->data.declaration_data.type));
         assert(set_local_variable(var,get_argument(out,i)));
     }

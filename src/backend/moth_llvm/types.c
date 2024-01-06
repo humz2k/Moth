@@ -103,7 +103,7 @@ MOTH_VALUE type_node_to_type(NODE node){
     PANIC("Something really bad happened");
 }
 
-static inline LLVMTypeRef moth_type_to_llvm_type(MOTH_TYPE moth_type){
+LLVMTypeRef moth_type_to_llvm_type(MOTH_TYPE moth_type){
     assert(moth_type != NULL);
     if (type_type_is_base(moth_type->t)){
         switch(moth_type->t){

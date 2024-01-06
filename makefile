@@ -6,7 +6,7 @@ SOURCES := $(shell find $(SOURCEDIR) -name '*.c') $(shell find $(SOURCEDIR) -nam
 OBJECTS_1 := $(SOURCES:%.c=%.o)
 OBJECTS := $(OBJECTS_1:%.cpp=%.o)
 OUTPUTS := $(OBJECTS:src%=build%)
-MY_CC ?= clang -Wall -Wpedantic -Wno-gnu -Wno-newline-eof
+MY_CC ?= clang -Wall -Wpedantic -Wno-gnu -Wno-newline-eof -Wno-unused-function -Wno-unneeded-internal-declaration -Werror
 
 moth: $(OUTPUTS) $(BUILD_DIR)/moth.yy.c $(BUILD_DIR)/moth.tab.c 
 	$(MY_CC) -O3 -Ibdwgc/include -I$(shell llvm-config --includedir) -I$(SOURCEDIR) -I$(BUILD_DIR) $^ bdwgc/libgc.a $(shell llvm-config --cflags --ldflags --system-libs --libs core orcjit native) -o $@

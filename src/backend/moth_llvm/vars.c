@@ -55,3 +55,11 @@ int set_local_variable(MOTH_VALUE var, MOTH_VALUE value){
     NOT_IMPLEMENTED;
 }
 
+MOTH_VALUE get_local_variable(MOTH_VALUE var){
+    assert(is_variable(var));
+    LLVMBuilderRef builder = get_builder();
+    MOTH_TYPE type_of_var = var->type;
+    LLVMTypeRef llvm_type = moth_type_to_llvm_type(type_of_var);
+    LLVMValueRef llvm_value = LLVMBuildLoad2(builder,llvm_type,var->value,get_unused_var_name());
+    return wrap_local_constant(llvm_value,type_to_val(type_of_var));
+}

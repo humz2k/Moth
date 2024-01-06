@@ -12,5 +12,6 @@ MOTH_TYPE val_to_func_ty(MOTH_VALUE val);
 LLVMTypeRef moth_value_to_llvm_type(MOTH_VALUE value);
 LLVMTypeRef moth_type_to_llvm_function_type(MOTH_TYPE value);
 int types_equal(MOTH_TYPE left_type, MOTH_TYPE right_type);
+LLVMTypeRef moth_type_to_llvm_type(MOTH_TYPE moth_type);
 
 #endif
