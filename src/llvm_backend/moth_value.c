@@ -15,6 +15,7 @@
 #include "moth_llvm.h"
 
 static LLVMModuleRef mod = NULL;
+static LLVMBuilderRef builder = NULL;
 static int _in_function = 0;
 
 struct moth_llvm_value{
@@ -48,6 +49,7 @@ struct moth_func_descriptor{
 struct moth_llvm_type{
     enum type_type t;
     const char* moth_file;
+    const char* id;
     MOTH_STRUCTURE struct_descriptor;
     MOTH_TYPE base;
     MOTH_TYPE specialize;
@@ -271,18 +273,84 @@ static LLVMTypeRef moth_type_to_llvm_type(MOTH_TYPE moth_type){
     NOT_IMPLEMENTED;
 }
 
-static int _initialize_function(MOTH_TYPE func_ty){
+static LLVMTypeRef _initialize_function(MOTH_TYPE func_ty){
     assert(func_ty != NULL);
     assert(func_ty->t == TY_FUNC);
-    
-    return 1;
+
+    LLVMTypeRef out = moth_type_to_llvm_type(func_ty);
+
+    return out;
 }
 
-int initialize_function(MOTH_VALUE func_ty){
+int initialize_function_declaration(MOTH_VALUE func_ty){
     assert(func_ty != NULL);
     assert(func_ty->t == TYPE);
     assert(func_ty->type != NULL);
-    return _initialize_function(func_ty->type);
+    return (_initialize_function(func_ty->type) != NULL);
+}
+
+static const char* type_to_string(MOTH_VALUE type){
+    assert(type->t == TYPE);
+    switch(type->t){
+        case TY_I1:
+            return "i1";
+        case TY_I8:
+            return "i8";
+        case TY_I16:
+            return "i16";
+        case TY_I32:
+            return "i32";
+        case TY_I64:
+            return "i64";
+        case TY_F16:
+            return "f16";
+        case TY_F32:
+            return "f32";
+        case TY_F64:
+            return "f64";
+        case TY_STR:
+            return "str";
+        case TY_VOID:
+            return "void";
+        default:
+            NOT_IMPLEMENTED;
+    }
+}
+
+static const char* mangle_function_name(const char* name, MOTH_VALUE_list inputs){
+
+    int n_inputs = len_MOTH_VALUE_list(inputs);
+
+    int len = strlen(name) + 2;
+
+    const char* strings[n_inputs];
+    for (int i = 0; i < n_inputs; i++){
+        strings[i] = type_to_string(get_MOTH_VALUE_list(inputs,i));
+        len += strlen(strings[i]) + 1;
+    }
+
+    char* out = GC_MALLOC(sizeof(char) * len);
+
+    strcpy(out,name);
+
+    strcat(out,"_");
+
+    for (int i = 0; i < n_inputs; i++){
+        strcat(out,strings[i]);
+        strcat(out,"_");
+    }
+
+    return out;
+}
+
+int initialize_function_definition(MOTH_VALUE func_ty){
+    assert(func_ty != NULL);
+    assert(func_ty->t == TYPE);
+    assert(func_ty->type != NULL);
+    assert(in_function() == 0);
+    assert(builder == NULL);
+    LLVMTypeRef llvm_func_ty = _initialize_function(func_ty);
+    return 1;
 }
 
 /*
