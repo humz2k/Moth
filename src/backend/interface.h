@@ -45,8 +45,6 @@ const char* mangle_function_name(MOTH_VALUE func_ty);
 
 MOTH_VALUE make_function_type(const char* name, MOTH_VALUE ret_type, MOTH_VALUE_list inputs, MODIFIERS mods);
 
-int in_function(void);
-
 int return_value(MOTH_VALUE val);
 MOTH_VALUE get_current_function(void);
 int finalize_builder_in_function(void);
